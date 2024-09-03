@@ -29,58 +29,27 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(
-                height: 25.h,
-              ),
-              SizedBox(
-                height: 320.h,
+              Container(
+                height: 300.h,
                 width: 375.w,
-                child: Stack(
-                  children: [
-                    Container(
-                      height: 300.h,
-                      width: 375.w,
-                      decoration: BoxDecoration(
-                        image: DecorationImage(
-                          image: AssetImage(widget.imagePath),
-                          fit: BoxFit.cover,
-                        ),
-                        borderRadius: BorderRadius.circular(20.r),
-                      ),
-                    ),
-                    Positioned(
-                      top: 16.h,
-                      left: 16.w,
-                      child: const CustomBackButton(),
-                    ),
-                    const Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: CustomBackButton(),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: CustomBackButton(),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage(widget.imagePath),
+                    fit: BoxFit.cover,
+                  ),
+                  borderRadius: BorderRadius.circular(20.r),
                 ),
               ),
-              SizedBox(height: 32.h),
+              SizedBox(height: 10.h),
               SizedBox(
-                width: 242.w,
+                width: 250.w,
                 child: Text(
                   'Figma Master Class',
                   style: TextStyle(
@@ -115,6 +84,32 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                   fontSize: 16.sp,
                   color: AppColors.fontGrey,
                 ),
+              ),
+              SizedBox(height: 70.h),
+              Row(
+                children: [
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 90.w,
+                        vertical: 20.h,
+                      ),
+                      backgroundColor: AppColors.primaryColor,
+                      foregroundColor: AppColors.appWhite,
+                    ),
+                    onPressed: () {},
+                    child: const Text('Buy Course'),
+                  ),
+                  SizedBox(width: 30.w),
+                  CircleAvatar(
+                    backgroundColor: AppColors.lightGrey,
+                    radius: 30.r,
+                    child: Icon(
+                      Icons.favorite_border_outlined,
+                      size: 30.sp,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
