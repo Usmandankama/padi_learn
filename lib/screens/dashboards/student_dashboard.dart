@@ -16,6 +16,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     return Scaffold(
       backgroundColor: AppColors.appWhite,
       appBar: AppBar(
+        centerTitle: true,
         title: Text(
           'Dashboard',
           style: TextStyle(
@@ -24,6 +25,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(
+              Icons.notifications,
+            ),
+          )
+        ],
         backgroundColor: AppColors.appWhite,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.primaryColor),
@@ -33,6 +42,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
+            SizedBox(height: 15.h),
             Container(
               padding: EdgeInsets.all(16.0.w),
               decoration: BoxDecoration(
