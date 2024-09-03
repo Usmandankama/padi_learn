@@ -19,6 +19,7 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _selectedIndex = 0;
+  bool isStudent = true;
   List<Widget> _screens = []; // Empty list to start with
 
   @override
@@ -42,17 +43,17 @@ class _HomeShellState extends State<HomeShell> {
 
         // Update the screens list based on role
         setState(() {
-          if (role == 'Student') {
+          isStudent = role == 'Student';
+          if (isStudent) {
             _screens = [
               const StudentDashboard(),
-              const CoursesScreen(), // You might want to update this screen based on your role
               const SearchScreen(),
               const StudentProfileScreen(),
             ];
           } else if (role == 'Teacher') {
             _screens = [
               const TeacherDashboardScreen(),
-              const CoursesScreen(), // You might want to update this screen based on your role
+              const CoursesScreen(), // Update as necessary for the teacher
               const SettingsScreen(),
               const TeacherProfileScreen()
             ];
@@ -79,7 +80,7 @@ class _HomeShellState extends State<HomeShell> {
       backgroundColor: AppColors.appWhite,
       body: _screens.isNotEmpty
           ? _screens[_selectedIndex]
-          : Center(child: CircularProgressIndicator()),
+          : const Center(child: CircularProgressIndicator()),
       bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
@@ -94,24 +95,39 @@ class _HomeShellState extends State<HomeShell> {
       showSelectedLabels: true,
       showUnselectedLabels: true,
       type: BottomNavigationBarType.fixed,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.dashboard),
-          label: 'Dashboard',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.book),
-          label: 'Courses',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.search),
-          label: 'Search',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Profile',
-        ),
-      ],
+      items: isStudent
+          ? [
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.dashboard),
+                label: 'Dashboard',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.search),
+                label: 'Search',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: 'Profile',
+              ),
+            ]
+          : [
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.dashboard),
+                label: 'Dashboard',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.book),
+                label: 'Courses',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.settings),
+                label: 'Settings',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: 'Profile',
+              ),
+            ],
     );
   }
 }
