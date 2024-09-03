@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:padi_learn/screens/components/custom_role_dropdown.dart';
 import 'package:padi_learn/screens/components/custom_textfield.dart';
 import 'package:padi_learn/screens/home/home_shell.dart';
+import 'package:padi_learn/screens/login/login_screen.dart';
 import 'package:padi_learn/screens/register/register_screen.dart';
 import 'package:padi_learn/screens/forgot_password/forgot_password_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
@@ -159,7 +160,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const RegisterScreen(),
+                        builder: (context) => const LoginScreen(),
                       ),
                     );
                   },
