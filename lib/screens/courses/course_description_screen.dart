@@ -59,18 +59,11 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
               ),
               Row(
                 children: [
-                  const AvatarStack(),
-                  SizedBox(width: 13.w),
-                  Text(
-                    'Active Students',
-                    style: TextStyle(
-                      fontSize: 16.sp,
-                      color: AppColors.fontGrey,
-                    ),
-                  ),
+                  const Text('by '),
+                  Text(widget.author),
                 ],
               ),
-              SizedBox(height: 23.h),
+              SizedBox(height: 10.h),
               Text(
                 'Description',
                 style: TextStyle(
@@ -84,6 +77,20 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                   fontSize: 16.sp,
                   color: AppColors.fontGrey,
                 ),
+              ),
+              SizedBox(height: 23.h),
+              Row(
+                children: [
+                  const AvatarStack(),
+                  SizedBox(width: 13.w),
+                  Text(
+                    'Active Students',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      color: AppColors.fontGrey,
+                    ),
+                  ),
+                ],
               ),
               SizedBox(height: 70.h),
               Row(
