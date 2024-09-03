@@ -14,29 +14,29 @@ class AvatarStack extends StatelessWidget {
           Positioned(
             left: 0,
             child: CircleAvatar(
-              radius: 20.r, // Adjust the radius as needed
+              radius: 15.r, // Adjust the radius as needed
               backgroundImage: const AssetImage(
                   'assets/images/1.jpg'), // Replace with your asset
             ),
           ),
           Positioned(
-            left: 20.w, // Offset each avatar slightly to the right
+            left: 15.w, // Offset each avatar slightly to the right
             child: CircleAvatar(
-              radius: 20.r,
+              radius: 15.r,
               backgroundImage: const AssetImage('assets/images/2.jpg'),
             ),
           ),
           Positioned(
-            left: 40.w,
+            left: 35.w,
             child: CircleAvatar(
-              radius: 20.r,
+              radius: 15.r,
               backgroundImage: const AssetImage('assets/images/3.jpg'),
             ),
           ),
           Positioned(
-            left: 60.w,
+            left: 55.w,
             child: CircleAvatar(
-              radius: 20.r,
+              radius: 15.r,
               child: const Text('+52'),
             ),
           ),
