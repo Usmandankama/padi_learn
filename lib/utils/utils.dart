@@ -3,10 +3,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:padi_learn/screens/dashboards/student_dashboard.dart';
-import 'package:padi_learn/screens/dashboards/teacher_dashboard.dart';
+import 'package:padi_learn/screens/student/student_dashboard.dart';
 
+import '../screens/dashboards/teacher_dashboard.dart';
 import '../screens/home/home_shell.dart';
+import '../screens/login/login_screen.dart';
 import '../screens/profile/teacher_profle.dart';
 import '../screens/settings/settings_screen.dart';
 
@@ -40,6 +41,25 @@ Future<void> login(BuildContext context, String email, String password) async {
       SnackBar(
         content: Text('Error logging in: $e'),
         backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
+
+Future<void> signOut(BuildContext context) async {
+  try {
+    await FirebaseAuth.instance.signOut();
+    // Navigate back to the login screen
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (route) => false,
+    );
+  } catch (e) {
+    // Handle sign-out error
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error signing out: $e'),
       ),
     );
   }
