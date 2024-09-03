@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:padi_learn/screens/courses/course_description_screen.dart';
+import 'package:padi_learn/screens/student/course_description_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
 
 class StudentDashboard extends StatefulWidget {

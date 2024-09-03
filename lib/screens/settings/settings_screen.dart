@@ -1,32 +1,12 @@
-// ignore_for_file: use_build_context_synchronously
-
+// settings_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:padi_learn/screens/login/login_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
+import 'package:padi_learn/utils/utils.dart'; // Import the utils file
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
-
-  // Sign-out method
-  Future<void> _signOut(BuildContext context) async {
-    try {
-      await FirebaseAuth.instance.signOut();
-      // After signing out, navigate to the login screen or any initial screen
-      Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-              builder: (context) =>
-                  const LoginScreen())); // Adjust route as needed
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Error signing out. Please try again.'),
-        ),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +88,7 @@ class SettingsScreen extends StatelessWidget {
             icon: Icons.logout,
             title: 'Logout',
             onTap: () {
-              _signOut(context); // Call the sign-out method
+              signOut(context); // Use the sign-out method from utils.dart
             },
             titleColor: Colors.red,
           ),

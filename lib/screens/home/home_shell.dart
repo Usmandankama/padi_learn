@@ -2,13 +2,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:padi_learn/screens/dashboards/teacher_dashboard.dart';
-import 'package:padi_learn/screens/dashboards/student_dashboard.dart';
-import 'package:padi_learn/screens/profile/student_profile_screen.dart';
-import 'package:padi_learn/screens/profile/teacher_profle.dart';
+import 'package:padi_learn/screens/student/student_dashboard.dart';
+import 'package:padi_learn/screens/login/login_screen.dart';
 import 'package:padi_learn/screens/search/search_screen.dart';
 import 'package:padi_learn/screens/settings/settings_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
+
+import '../student/student_profile_screen.dart';
+import '../teacher/teacher_dashboard.dart';
+import '../teacher/teacher_profle.dart';
+
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -61,7 +64,11 @@ class _HomeShellState extends State<HomeShell> {
         });
       } else {
         // Handle the case when user is not logged in
-        Navigator.pushReplacementNamed(context, '/login');
+        Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const LoginScreen(),
+            ));
       }
     } catch (e) {
       print('Error fetching user role: $e');
