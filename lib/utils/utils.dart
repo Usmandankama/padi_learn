@@ -4,11 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:padi_learn/screens/student/student_dashboard.dart';
-
-import '../screens/dashboards/teacher_dashboard.dart';
+import 'package:padi_learn/screens/teacher/teacher_dashboard.dart';
+import 'package:padi_learn/screens/teacher/teacher_profle.dart';
 import '../screens/home/home_shell.dart';
 import '../screens/login/login_screen.dart';
-import '../screens/profile/teacher_profle.dart';
 import '../screens/settings/settings_screen.dart';
 
 Future<void> login(BuildContext context, String email, String password) async {

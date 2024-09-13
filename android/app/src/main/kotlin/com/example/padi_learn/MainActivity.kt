@@ -1,4 +1,4 @@
-package com.example.padi_learn
+package com.dankamaInnoHu.padiLearn
 
 import io.flutter.embedding.android.FlutterActivity
 
