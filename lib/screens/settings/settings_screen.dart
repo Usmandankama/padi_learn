@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:padi_learn/screens/login/login_screen.dart';
+import 'package:padi_learn/screens/teacher/editprofile_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
 import 'package:padi_learn/utils/utils.dart'; // Import the utils file
 
@@ -34,7 +35,7 @@ class SettingsScreen extends StatelessWidget {
             icon: Icons.person,
             title: 'Edit Profile',
             onTap: () {
-              // Navigate to edit profile screen
+            Navigator.push(context, MaterialPageRoute(builder: (context)=>EditTeacherProfileScreen()));
             },
           ),
           _buildSettingsItem(
