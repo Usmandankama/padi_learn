@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:padi_learn/screens/teacher/create_course_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
 
 class TeacherProfileScreen extends StatefulWidget {
@@ -12,11 +15,79 @@ class TeacherProfileScreen extends StatefulWidget {
 class _TeacherProfileScreenState extends State<TeacherProfileScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
+  String teacherName = 'Loading...';
+  String profileImageUrl = 'https://via.placeholder.com/150'; // Default profile image
+  String role = 'Instructor';
+  int coursesCount = 0;
+  int totalStudents = 0;
+  double averageRating = 0.0;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _fetchProfileData();  // Fetching the profile data from Firestore
+    _fetchCourseStats();  // Fetching the teacher's courses stats
   }
+
+  Future<void> _fetchProfileData() async {
+    try {
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) return;
+
+      // Fetch teacher's profile info from Firestore
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+      if (userDoc.exists) {
+        final data = userDoc.data();
+        setState(() {
+          teacherName = data?['name'] ?? 'Unknown';  // Update teacher's name
+          profileImageUrl = data?['profileImageUrl'] ?? profileImageUrl;  // Update profile image
+          role = data?['role'] ?? 'Instructor';  // Update role
+        });
+      }
+    } catch (e) {
+      print('Error fetching profile data: $e');
+    }
+  }
+
+ Future<void> _fetchCourseStats() async {
+  try {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return;
+
+    // Fetch teacher's courses from Firestore
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('courses')
+        .where('teacherId', isEqualTo: userId)
+        .get();
+
+    int courses = querySnapshot.docs.length;
+    int students = 0;
+    double totalRating = 0.0;
+    int ratingCount = 0;
+
+    for (var courseDoc in querySnapshot.docs) {
+      final courseData = courseDoc.data();
+      
+      // Casting enrollments and rating to appropriate types
+      students += (courseData['enrollments'] as num?)?.toInt() ?? 0;  // Casting num to int for students
+      final rating = (courseData['rating'] as num?)?.toDouble() ?? 0.0;  // Casting num to double for rating
+      if (rating > 0) {
+        totalRating += rating;
+        ratingCount++;
+      }
+    }
+
+    setState(() {
+      coursesCount = courses;
+      totalStudents = students;
+      averageRating = ratingCount > 0 ? totalRating / ratingCount : 0.0;  // Average rating
+    });
+  } catch (e) {
+    print('Error fetching course stats: $e');
+  }
+}
+
 
   @override
   void dispose() {
@@ -31,10 +102,10 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
       appBar: AppBar(
         backgroundColor: AppColors.appWhite,
         elevation: 0,
-        iconTheme: IconThemeData(color: AppColors.primaryColor),
+        iconTheme: const IconThemeData(color: AppColors.primaryColor),
         actions: [
           IconButton(
-            icon: Icon(Icons.settings, color: AppColors.primaryColor),
+            icon: const Icon(Icons.settings, color: AppColors.primaryColor),
             onPressed: () {
               // Navigate to Settings screen
             },
@@ -61,11 +132,11 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
         children: <Widget>[
           CircleAvatar(
             radius: 50.r,
-            backgroundImage: NetworkImage('https://via.placeholder.com/150'), // Replace with profile image
+            backgroundImage: NetworkImage(profileImageUrl),  // Display profile image
           ),
           SizedBox(height: 10.h),
           Text(
-            'John Doe', // Replace with teacher's name
+            teacherName,  // Display teacher's name
             style: TextStyle(
               fontSize: 24.sp,
               fontWeight: FontWeight.bold,
@@ -74,7 +145,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
           ),
           SizedBox(height: 5.h),
           Text(
-            'Instructor', // Replace with user's role
+            role,  // Display role
             style: TextStyle(
               fontSize: 16.sp,
               color: Colors.grey,
@@ -91,9 +162,9 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: <Widget>[
-          _buildStatColumn('Courses', '10'), // Number of courses taught
-          _buildStatColumn('Students', '1.2K'), // Number of students enrolled
-          _buildStatColumn('Rating', '4.8'), // Overall rating
+          _buildStatColumn('Courses', '$coursesCount'),  // Display number of courses
+          _buildStatColumn('Students', '$totalStudents'),  // Display number of students
+          _buildStatColumn('Rating', averageRating.toStringAsFixed(1)),  // Display average rating
         ],
       ),
     );
@@ -151,6 +222,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
             child: ElevatedButton(
               onPressed: () {
                 // Handle Create New Course
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const CreateCourseScreen()));
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
@@ -176,9 +248,9 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
       labelColor: AppColors.primaryColor,
       unselectedLabelColor: Colors.grey,
       indicatorColor: AppColors.primaryColor,
-      tabs: <Widget>[
-        Tab(text: 'My Courses'),
-        Tab(text: 'Course Reviews'),
+      tabs: const <Widget>[
+        Tab(text: 'My Courses'),  // Tab for "My Courses"
+        Tab(text: 'Course Reviews'),  // Tab for "Course Reviews"
       ],
     );
   }
@@ -189,20 +261,20 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
       child: TabBarView(
         controller: _tabController,
         children: <Widget>[
-          _buildMyCoursesTab(),
-          _buildCourseReviewsTab(),
+          _buildMyCoursesTab(),  // Content for "My Courses" tab
+          _buildCourseReviewsTab(),  // Content for "Course Reviews" tab
         ],
       ),
     );
   }
 
   Widget _buildMyCoursesTab() {
-    // Replace with dynamic content
-    return Center(child: Text('My Courses'));
+    // Replace with dynamic content based on courses fetched
+    return const Center(child: Text('My Courses'));
   }
 
   Widget _buildCourseReviewsTab() {
-    // Replace with dynamic content
-    return Center(child: Text('Course Reviews'));
+    // Replace with dynamic content based on reviews fetched
+    return const Center(child: Text('Course Reviews'));
   }
 }
