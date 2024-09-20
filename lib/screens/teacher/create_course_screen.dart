@@ -1,6 +1,5 @@
-// create_course_screen.dart
-
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
@@ -23,7 +22,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   bool _isLoading = false;
 
   Future<void> _pickVideo() async {
-    final pickedFile = await ImagePicker().pickVideo(source: ImageSource.gallery);
+    final pickedFile =
+        await ImagePicker().pickVideo(source: ImageSource.gallery);
 
     if (pickedFile != null) {
       setState(() {
@@ -50,9 +50,10 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
     try {
       // Upload the video to Firebase Storage
-      final storageRef = FirebaseStorage.instance
-          .ref()
-          .child('courses_videos/${DateTime.now().millisecondsSinceEpoch}.mp4');
+      final userId =
+          FirebaseAuth.instance.currentUser!.uid; // Get the current user's ID
+      final storageRef = FirebaseStorage.instance.ref().child(
+          'courses_videos/$userId/${DateTime.now().millisecondsSinceEpoch}.mp4');
       final uploadTask = storageRef.putFile(_videoFile!);
 
       final snapshot = await uploadTask;
@@ -63,8 +64,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
         'videoUrl': videoUrl,
+        'userId': userId, // Associate this course with the current user
         'createdAt': Timestamp.now(),
-        // Add other necessary fields like teacher ID, etc.
       });
 
       // Show success message
@@ -94,25 +95,32 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       appBar: AppBar(
         title: Text(
           'Create Course',
-          style: TextStyle(color: AppColors.primaryColor),
+          style: TextStyle(
+              color: AppColors.primaryColor,
+              fontSize: 18.sp,
+              fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
         iconTheme: IconThemeData(color: AppColors.primaryColor),
         elevation: 0,
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.0.w),
+        padding: EdgeInsets.symmetric(horizontal: 24.0.w, vertical: 16.0.h),
         child: Form(
           key: _formKey,
           child: ListView(
             children: [
+              // Course Title Field
               TextFormField(
                 controller: _titleController,
                 decoration: InputDecoration(
                   labelText: 'Course Title',
+                  labelStyle: TextStyle(fontSize: 16.sp),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
                   ),
+                  contentPadding:
+                      EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -122,13 +130,18 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                 },
               ),
               SizedBox(height: 20.h),
+
+              // Course Description Field
               TextFormField(
                 controller: _descriptionController,
                 decoration: InputDecoration(
                   labelText: 'Course Description',
+                  labelStyle: TextStyle(fontSize: 16.sp),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
                   ),
+                  contentPadding:
+                      EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
                 ),
                 maxLines: 5,
                 validator: (value) {
@@ -139,31 +152,65 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                 },
               ),
               SizedBox(height: 20.h),
+
+              // Upload Video Button
               ElevatedButton.icon(
                 onPressed: _pickVideo,
-                icon: Icon(Icons.video_library),
-                label: Text('Upload Video'),
+                icon: Icon(Icons.video_library,
+                    size: 24.sp, color: AppColors.primaryColor),
+                label: Text(
+                  'Upload Video',
+                  style:
+                      TextStyle(fontSize: 16.sp, color: AppColors.primaryColor),
+                ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
+                  padding: EdgeInsets.symmetric(vertical: 14.h),
+                  backgroundColor: AppColors.lightGrey,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
                 ),
               ),
+
+              // Show selected video file if available
               if (_videoFile != null)
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: 10.h),
-                  child: Text(
-                    'Selected video: ${_videoFile!.path.split('/').last}',
-                    style: TextStyle(fontSize: 14.sp, color: AppColors.primaryColor),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle, color: AppColors.primaryColor),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: Text(
+                          'Selected video: ${_videoFile!.path.split('/').last}',
+                          style: TextStyle(
+                              fontSize: 14.sp, color: AppColors.primaryColor),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+
               SizedBox(height: 20.h),
+
+              // Create Course Button with Loading Indicator
               ElevatedButton(
                 onPressed: _isLoading ? null : _uploadCourse,
                 child: _isLoading
                     ? CircularProgressIndicator(color: Colors.white)
-                    : Text('Create Course'),
+                    : Text(
+                        'Create Course',
+                        style: TextStyle(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryColor),
+                      ),
                 style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 16.0.h),
-                  backgroundColor: AppColors.primaryColor,
+                  padding: EdgeInsets.symmetric(vertical: 16.h),
+                  backgroundColor: AppColors.lightGrey,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
                 ),
               ),
             ],
