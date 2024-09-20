@@ -38,6 +38,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _submitForm() async {
     final email = emailController.text;
     final password = passwordController.text;
+    final name = nameController.text;
     final role = selectedRole;
 
     if (passwordController.text != confirmPasswordController.text) {
@@ -63,7 +64,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     try {
-      await signUp(context, email, password, role!);
+      await signUp(context, email, password, role!,name);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
