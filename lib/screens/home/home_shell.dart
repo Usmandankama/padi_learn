@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:padi_learn/screens/marketplace/marketplace_screen.dart';
 import 'package:padi_learn/screens/student/student_dashboard.dart';
 import 'package:padi_learn/screens/login/login_screen.dart';
 import 'package:padi_learn/screens/search/search_screen.dart';
@@ -56,7 +57,7 @@ class _HomeShellState extends State<HomeShell> {
           } else if (role == 'Teacher') {
             _screens = [
               const TeacherDashboardScreen(),
-              const CoursesScreen(), // Update as necessary for the teacher
+              const MarketplaceScreen(), 
               const SettingsScreen(),
               const TeacherProfileScreen()
             ];
