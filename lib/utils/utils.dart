@@ -80,7 +80,7 @@ Future<String> getUserRole(String uid) async {
 }
 
 Future<void> signUp(
-    BuildContext context, String email, String password, String role) async {
+    BuildContext context, String email, String password, String role,name) async {
   try {
     UserCredential userCredential =
         await FirebaseAuth.instance.createUserWithEmailAndPassword(
@@ -93,6 +93,7 @@ Future<void> signUp(
         .collection('users')
         .doc(userCredential.user!.uid)
         .set({
+          'name': name,
       'email': email,
       'role': role, // 'student' or 'teacher'
     });
@@ -156,4 +157,10 @@ Future<void> _initializeUserRole(BuildContext context) async {
   } catch (e) {
     print('Error fetching user role: $e');
   }
+}
+
+Future<List<QueryDocumentSnapshot>> _fetchAllCourses() async {
+  final querySnapshot =
+      await FirebaseFirestore.instance.collection('courses').get();
+  return querySnapshot.docs;
 }
