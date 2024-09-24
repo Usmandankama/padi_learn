@@ -18,8 +18,18 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  String? _selectedCategory;
   File? _videoFile;
+  File? _thumbnailFile; // For custom thumbnail
   bool _isLoading = false;
+
+  final List<String> _categories = [
+    'Programming',
+    'Design',
+    'Marketing',
+    'Business',
+    'Data Science',
+  ];
 
   Future<void> _pickVideo() async {
     final pickedFile =
@@ -32,14 +42,25 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     }
   }
 
+  Future<void> _pickThumbnail() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _thumbnailFile = File(pickedFile.path);
+      });
+    }
+  }
+
   Future<void> _uploadCourse() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    if (_videoFile == null) {
+    if (_videoFile == null || _thumbnailFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select a video to upload')),
+        SnackBar(content: Text('Please select both a video and a thumbnail')),
       );
       return;
     }
@@ -50,20 +71,29 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
     try {
       // Upload the video to Firebase Storage
-      final userId =
-          FirebaseAuth.instance.currentUser!.uid; // Get the current user's ID
-      final storageRef = FirebaseStorage.instance.ref().child(
-          'courses_videos/$userId/${DateTime.now().millisecondsSinceEpoch}.mp4');
-      final uploadTask = storageRef.putFile(_videoFile!);
+      final userId = FirebaseAuth.instance.currentUser!.uid; // Get the current user's ID
 
-      final snapshot = await uploadTask;
-      final videoUrl = await snapshot.ref.getDownloadURL();
+      // Upload the video
+      final videoStorageRef = FirebaseStorage.instance.ref().child(
+          'courses_videos/$userId/${DateTime.now().millisecondsSinceEpoch}.mp4');
+      final videoUploadTask = videoStorageRef.putFile(_videoFile!);
+      final videoSnapshot = await videoUploadTask;
+      final videoUrl = await videoSnapshot.ref.getDownloadURL();
+
+      // Upload the thumbnail
+      final thumbnailStorageRef = FirebaseStorage.instance.ref().child(
+          'courses_thumbnails/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg');
+      final thumbnailUploadTask = thumbnailStorageRef.putFile(_thumbnailFile!);
+      final thumbnailSnapshot = await thumbnailUploadTask;
+      final thumbnailUrl = await thumbnailSnapshot.ref.getDownloadURL();
 
       // Save the course information to Firestore
       await FirebaseFirestore.instance.collection('courses').add({
         'title': _titleController.text.trim(),
-        'description': _descriptionController.text.trim(),
+        'description': _descriptionController.text. trim(),
+        'category': _selectedCategory,
         'videoUrl': videoUrl,
+        'thumbnailUrl': thumbnailUrl, // Save the thumbnail URL
         'userId': userId, // Associate this course with the current user
         'createdAt': Timestamp.now(),
       });
@@ -77,6 +107,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       _formKey.currentState!.reset();
       setState(() {
         _videoFile = null;
+        _thumbnailFile = null;
+        _selectedCategory = null;
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -153,6 +185,37 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
               ),
               SizedBox(height: 20.h),
 
+              // Course Category Dropdown
+              DropdownButtonFormField<String>(
+                value: _selectedCategory,
+                decoration: InputDecoration(
+                  labelText: 'Category',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  contentPadding:
+                      EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
+                ),
+                items: _categories.map((String category) {
+                  return DropdownMenuItem<String>(
+                    value: category,
+                    child: Text(category, style: TextStyle(fontSize: 16.sp)),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedCategory = value;
+                  });
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select a category';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20.h),
+
               // Upload Video Button
               ElevatedButton.icon(
                 onPressed: _pickVideo,
@@ -183,6 +246,46 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                       Expanded(
                         child: Text(
                           'Selected video: ${_videoFile!.path.split('/').last}',
+                          style: TextStyle(
+                              fontSize: 14.sp, color: AppColors.primaryColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              SizedBox(height: 20.h),
+
+              // Upload Thumbnail Button
+              ElevatedButton.icon(
+                onPressed: _pickThumbnail,
+                icon: Icon(Icons.image,
+                    size: 24.sp, color: AppColors.primaryColor),
+                label: Text(
+                  'Upload Thumbnail',
+                  style:
+                      TextStyle(fontSize: 16.sp, color: AppColors.primaryColor),
+                ),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: 14.h),
+                  backgroundColor: AppColors.lightGrey,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                ),
+              ),
+
+              // Show selected thumbnail file if available
+              if (_thumbnailFile != null)
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: 10.h),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle, color: AppColors.primaryColor),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: Text(
+                          'Selected thumbnail: ${_thumbnailFile!.path.split('/').last}',
                           style: TextStyle(
                               fontSize: 14.sp, color: AppColors.primaryColor),
                         ),
