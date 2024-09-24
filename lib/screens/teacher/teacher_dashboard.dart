@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:padi_learn/screens/teacher/components/analytics_section.dart';
+import 'package:padi_learn/screens/teacher/components/earning_widget.dart';
 import 'package:padi_learn/utils/colors.dart';
-
 import 'components/courseList.dart';
-import 'components/profile_section.dart';
 
 class TeacherDashboardScreen extends StatefulWidget {
   const TeacherDashboardScreen({super.key});
@@ -18,7 +16,8 @@ class TeacherDashboardScreen extends StatefulWidget {
 class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   late Future<List<QueryDocumentSnapshot>> _userCourses;
   String teacherName = "Loading...";
-  String profileImageUrl = "https://via.placeholder.com/150"; // Default profile image
+  String profileImageUrl =
+      "https://via.placeholder.com/150"; // Default profile image
   int totalCoursesUploaded = 0;
   double totalEarnings = 0.0;
 
@@ -41,11 +40,14 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         return;
       }
 
-      final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
 
       if (userDoc.exists) {
         final data = userDoc.data();
-        
+
         if (data != null && data.containsKey('name')) {
           setState(() {
             teacherName = data['name'] ?? 'Unknown Name';
@@ -86,7 +88,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
 
       for (var courseDoc in querySnapshot.docs) {
         final courseData = courseDoc.data();
-        if (courseData.containsKey('price') && courseData.containsKey('enrollments')) {
+        if (courseData.containsKey('price') &&
+            courseData.containsKey('enrollments')) {
           final double price = courseData['price'] ?? 0.0;
           final int enrollments = courseData['enrollments'] ?? 0;
           earnings += price * enrollments;
@@ -116,97 +119,49 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     return Scaffold(
       backgroundColor: AppColors.appWhite,
       appBar: AppBar(
-        title: Text(
-          'Dashboard',
-          style: TextStyle(
-            color: AppColors.primaryColor,
-            fontSize: 22.sp,
-            fontWeight: FontWeight.bold,
-          ),
+        backgroundColor: AppColors.primaryAccent,
+        foregroundColor: AppColors.fontGrey,
+        title: Row(
+          children: [
+            GestureDetector(
+              onTap: (){},
+              child: CircleAvatar(
+                radius: 25, // Adjust the size as needed
+                backgroundImage: NetworkImage(profileImageUrl),
+              ),
+            ),
+            const SizedBox(width: 10), // Space between image and text
+            Text(
+              teacherName,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16.sp,
+              ),
+            ),
+          ],
         ),
-        backgroundColor: AppColors.appWhite,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.primaryColor),
+        toolbarHeight: 80.h,
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 16.0.w, vertical: 16.0.h),
+        padding: EdgeInsets.symmetric(horizontal: 10.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            ProfileSection(
-              teacherName: teacherName,
-              profileImageUrl: profileImageUrl,
+            const SizedBox(
+              height: 350,
+              child: EarningsWidget(),
             ),
-            SizedBox(height: 20.h),
-            
-            // EARNINGS SECTION
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Total Earnings',
-                  style: TextStyle(
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryColor,
-                  ),
-                ),
-                Text(
-                  '\$${totalEarnings.toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryColor,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 20.h),
-
-            // COURSES UPLOADED SECTION
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Courses Uploaded',
-                  style: TextStyle(
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryColor,
-                  ),
-                ),
-                Text(
-                  '$totalCoursesUploaded',
-                  style: TextStyle(
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryColor,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 20.h),
-
-            // COURSE ANALYTICS SECTION
-            Text(
-              'Course Analytics',
-              style: TextStyle(
-                fontSize: 20.sp,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primaryColor,
-              ),
-            ),
-            SizedBox(height: 10.h),
-            const AnalyticsSection(),
-            SizedBox(height: 20.h),
-
+            const SizedBox(height: 10),
             // YOUR COURSES SECTION
-            Text(
-              'Your Courses',
-              style: TextStyle(
-                fontSize: 20.sp,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primaryColor,
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                'Manage Courses',
+                style: TextStyle(
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryColor,
+                ),
               ),
             ),
             SizedBox(height: 10.h),
