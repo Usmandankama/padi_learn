@@ -25,50 +25,64 @@ class CoursesList extends StatelessWidget {
       ),
       itemBuilder: (context, index) {
         final courseData = courses[index].data() as Map<String, dynamic>;
+        final thumbnailUrl = courseData['thumbnailUrl'] ?? '';
+
         return Container(
-          padding: EdgeInsets.all(16.w),
           decoration: BoxDecoration(
             color: AppColors.primaryColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(10.r),
+            image: thumbnailUrl.isNotEmpty
+                ? DecorationImage(
+                    image: NetworkImage(thumbnailUrl),
+                    fit: BoxFit.cover,
+                    colorFilter: ColorFilter.mode(
+                      Colors.black.withOpacity(0.3),
+                      BlendMode.darken,
+                    ),
+                  )
+                : null, // Only add if thumbnail URL exists
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                courseData['title'] ?? 'No Title',
-                style: TextStyle(
-                  color: AppColors.primaryColor,
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 5.h),
-              Text(
-                'Students Enrolled: ${courseData['enrollments'] ?? 0}', // Replace with dynamic student count
-                style: TextStyle(
-                  color: AppColors.primaryColor,
-                  fontSize: 14.sp,
-                ),
-              ),
-              const Spacer(),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: <Widget>[
-                  IconButton(
-                    icon: Icon(Icons.edit, color: AppColors.primaryColor),
-                    onPressed: () {
-                      // Handle course edit
-                    },
+          child: Padding(
+            padding: EdgeInsets.all(16.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  courseData['title'] ?? 'No Title',
+                  style: TextStyle(
+                    color: AppColors.appWhite,
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.bold,
                   ),
-                  IconButton(
-                    icon: Icon(Icons.delete, color: AppColors.primaryColor),
-                    onPressed: () {
-                      // Handle course delete
-                    },
+                ),
+                SizedBox(height: 5.h),
+                Text(
+                  'Students Enrolled: ${courseData['enrollments'] ?? 0}', // Replace with dynamic student count
+                  style: TextStyle(
+                    color: AppColors.appWhite,
+                    fontSize: 14.sp,
                   ),
-                ],
-              ),
-            ],
+                ),
+                const Spacer(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: <Widget>[
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: AppColors.appWhite),
+                      onPressed: () {
+                        // Handle course edit
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: AppColors.appWhite),
+                      onPressed: () {
+                        // Handle course delete
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       },
