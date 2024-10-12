@@ -17,6 +17,7 @@ class CreateCourseScreen extends StatefulWidget {
 class _CreateCourseScreenState extends State<CreateCourseScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _priceController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   String? _selectedCategory;
   File? _videoFile;
@@ -60,7 +61,9 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
     if (_videoFile == null || _thumbnailFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select both a video and a thumbnail')),
+        const SnackBar(
+          content: Text('Please select both a video and a thumbnail'),
+        ),
       );
       return;
     }
@@ -71,7 +74,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
     try {
       // Upload the video to Firebase Storage
-      final userId = FirebaseAuth.instance.currentUser!.uid; // Get the current user's ID
+      final userId =
+          FirebaseAuth.instance.currentUser!.uid; // Get the current user's ID
 
       // Upload the video
       final videoStorageRef = FirebaseStorage.instance.ref().child(
@@ -90,8 +94,10 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       // Save the course information to Firestore
       await FirebaseFirestore.instance.collection('courses').add({
         'title': _titleController.text.trim(),
-        'description': _descriptionController.text. trim(),
+        'description': _descriptionController.text.trim(),
+        'price': _priceController.text.trim(),
         'category': _selectedCategory,
+        // 'author': ,
         'videoUrl': videoUrl,
         'thumbnailUrl': thumbnailUrl, // Save the thumbnail URL
         'userId': userId, // Associate this course with the current user
@@ -100,7 +106,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Course created successfully!')),
+        const SnackBar(content: Text('Course created successfully!')),
       );
 
       // Clear the form
@@ -110,6 +116,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
         _thumbnailFile = null;
         _selectedCategory = null;
       });
+      // Navigate back to the CoursesScreen
+      Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to create course: $e')),
@@ -133,7 +141,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
               fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
-        iconTheme: IconThemeData(color: AppColors.primaryColor),
+        iconTheme: const IconThemeData(color: AppColors.primaryColor),
         elevation: 0,
       ),
       body: Padding(
@@ -216,6 +224,27 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
               ),
               SizedBox(height: 20.h),
 
+              TextFormField(
+                keyboardType: TextInputType.number,
+                controller: _priceController,
+                decoration: InputDecoration(
+                  labelText: 'Input Price',
+                  labelStyle: TextStyle(fontSize: 16.sp),
+                  
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  contentPadding:
+                      EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a course title';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20.h),
               // Upload Video Button
               ElevatedButton.icon(
                 onPressed: _pickVideo,
@@ -241,7 +270,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                   padding: EdgeInsets.symmetric(vertical: 10.h),
                   child: Row(
                     children: [
-                      Icon(Icons.check_circle, color: AppColors.primaryColor),
+                      const Icon(Icons.check_circle,
+                          color: AppColors.primaryColor),
                       SizedBox(width: 8.w),
                       Expanded(
                         child: Text(
@@ -281,7 +311,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                   padding: EdgeInsets.symmetric(vertical: 10.h),
                   child: Row(
                     children: [
-                      Icon(Icons.check_circle, color: AppColors.primaryColor),
+                      const Icon(Icons.check_circle,
+                          color: AppColors.primaryColor),
                       SizedBox(width: 8.w),
                       Expanded(
                         child: Text(
@@ -299,22 +330,23 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
               // Create Course Button with Loading Indicator
               ElevatedButton(
                 onPressed: _isLoading ? null : _uploadCourse,
-                child: _isLoading
-                    ? CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                        'Create Course',
-                        style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primaryColor),
-                      ),
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: 16.h),
-                  backgroundColor: AppColors.lightGrey,
+                  backgroundColor: AppColors.primaryColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                 ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Text(
+                        'Create Course',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.appWhite,
+                        ),
+                      ),
               ),
             ],
           ),

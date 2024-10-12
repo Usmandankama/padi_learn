@@ -164,9 +164,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
               context,
               MaterialPageRoute(
                 builder: (context) => const CourseDescriptionScreen(
-                  imagePath: 'assets/images/1.jpg',
+                  imagePath: NetworkImage('https://images.pexels.com/photos/9042878/pexels-photo-9042878.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'),
                   author: 'Usman Abubakar',
-                  price: 20000,
+                  price: '20000',
                   description: 'Course description',
                   courseTitle: 'Figma Master Course',
                 ),

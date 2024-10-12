@@ -119,7 +119,7 @@ Future<void> signUp(
 }
 
 Future<void> _initializeUserRole(BuildContext context) async {
-  List<Widget> _screens = []; // Empty list to start with
+  List<Widget> screens = []; // Empty list to start with
 
   try {
     // Get the current user
@@ -136,14 +136,14 @@ Future<void> _initializeUserRole(BuildContext context) async {
       // Update the screens list based on role
 
       if (role == 'student') {
-        _screens = [
+        screens = [
           const StudentDashboard(),
           const CoursesScreen(), // You might want to update this screen based on your role
           const SettingsScreen(),
           const TeacherProfileScreen(), // If you need different profile screens, adjust accordingly
         ];
       } else if (role == 'teacher') {
-        _screens = [
+        screens = [
           const TeacherDashboardScreen(),
           const CoursesScreen(), // You might want to update this screen based on your role
           const SettingsScreen(),

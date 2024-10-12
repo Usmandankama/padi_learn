@@ -44,7 +44,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (passwordController.text != confirmPasswordController.text) {
       // Show error for password mismatch
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Passwords do not match'),
           backgroundColor: Colors.red,
         ),
@@ -55,7 +55,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (role == 'Select role') {
       // Show error for role selection
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Please select a role'),
           backgroundColor: Colors.red,
         ),

@@ -7,10 +7,10 @@ class ProfileSection extends StatelessWidget {
   final String profileImageUrl;
 
   const ProfileSection({
-    Key? key,
+    super.key,
     required this.teacherName,
     required this.profileImageUrl,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

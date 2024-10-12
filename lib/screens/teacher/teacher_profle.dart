@@ -6,7 +6,7 @@ import 'package:padi_learn/screens/teacher/create_course_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
 
 class TeacherProfileScreen extends StatefulWidget {
-  const TeacherProfileScreen({Key? key}) : super(key: key);
+  const TeacherProfileScreen({super.key});
 
   @override
   _TeacherProfileScreenState createState() => _TeacherProfileScreenState();

@@ -35,7 +35,7 @@ class SettingsScreen extends StatelessWidget {
             icon: Icons.person,
             title: 'Edit Profile',
             onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context)=>EditTeacherProfileScreen()));
+            Navigator.push(context, MaterialPageRoute(builder: (context)=>const EditTeacherProfileScreen()));
             },
           ),
           _buildSettingsItem(

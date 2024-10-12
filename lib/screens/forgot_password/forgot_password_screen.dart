@@ -9,7 +9,7 @@ class ForgotPasswordScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final TextEditingController _emailController = TextEditingController();
+    final TextEditingController emailController = TextEditingController();
 
     return Scaffold(
       backgroundColor: AppColors.appWhite,
@@ -33,11 +33,11 @@ class ForgotPasswordScreen extends StatelessWidget {
               style: TextStyle(fontSize: 16.sp, color: AppColors.fontGrey),
             ),
             SizedBox(height: 40.h),
-            _buildTextField(_emailController, 'Email', Icons.email),
+            _buildTextField(emailController, 'Email', Icons.email),
             SizedBox(height: 40.h),
             ElevatedButton(
               onPressed: () {
-                _resetPassword(context, _emailController.text.trim());
+                _resetPassword(context, emailController.text.trim());
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,

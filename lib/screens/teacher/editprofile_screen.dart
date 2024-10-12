@@ -9,7 +9,7 @@ import 'dart:io';
 import 'package:padi_learn/utils/colors.dart';
 
 class EditTeacherProfileScreen extends StatefulWidget {
-  const EditTeacherProfileScreen({Key? key}) : super(key: key);
+  const EditTeacherProfileScreen({super.key});
 
   @override
   _EditTeacherProfileScreenState createState() => _EditTeacherProfileScreenState();
@@ -22,9 +22,9 @@ class _EditTeacherProfileScreenState extends State<EditTeacherProfileScreen> {
 
   File? _image;
   String? _profileImageUrl;
-  TextEditingController _nameController = TextEditingController();
-  TextEditingController _emailController = TextEditingController();
-  TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   
   bool _isLoading = false;
 
@@ -99,10 +99,10 @@ class _EditTeacherProfileScreenState extends State<EditTeacherProfileScreen> {
       // Upload profile image if changed
       await _uploadProfileImage(user.uid);
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Profile updated successfully')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile updated successfully')));
     } catch (e) {
       print('Error updating profile: $e');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update profile')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to update profile')));
     }
 
     setState(() {
@@ -114,14 +114,14 @@ class _EditTeacherProfileScreenState extends State<EditTeacherProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Edit Profile', style: TextStyle(color: AppColors.primaryColor)),
+        title: const Text('Edit Profile', style: TextStyle(color: AppColors.primaryColor)),
         backgroundColor: AppColors.appWhite,
-        iconTheme: IconThemeData(color: AppColors.primaryColor),
+        iconTheme: const IconThemeData(color: AppColors.primaryColor),
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: <Widget>[
                   Center(
@@ -131,13 +131,13 @@ class _EditTeacherProfileScreenState extends State<EditTeacherProfileScreen> {
                           radius: 50.r,
                           backgroundImage: _image != null
                               ? FileImage(_image!)
-                              : (_profileImageUrl != null ? NetworkImage(_profileImageUrl!) : AssetImage('assets/profile_placeholder.png')) as ImageProvider,
+                              : (_profileImageUrl != null ? NetworkImage(_profileImageUrl!) : const AssetImage('assets/profile_placeholder.png')) as ImageProvider,
                         ),
                         Positioned(
                           bottom: 0,
                           right: 0,
                           child: IconButton(
-                            icon: Icon(Icons.camera_alt, color: AppColors.primaryColor),
+                            icon: const Icon(Icons.camera_alt, color: AppColors.primaryColor),
                             onPressed: _pickImage,
                           ),
                         ),
@@ -147,7 +147,7 @@ class _EditTeacherProfileScreenState extends State<EditTeacherProfileScreen> {
                   SizedBox(height: 20.h),
                   TextField(
                     controller: _nameController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Name',
                       border: OutlineInputBorder(),
                     ),
@@ -155,7 +155,7 @@ class _EditTeacherProfileScreenState extends State<EditTeacherProfileScreen> {
                   SizedBox(height: 20.h),
                   TextField(
                     controller: _emailController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Email',
                       border: OutlineInputBorder(),
                     ),
@@ -163,7 +163,7 @@ class _EditTeacherProfileScreenState extends State<EditTeacherProfileScreen> {
                   SizedBox(height: 20.h),
                   TextField(
                     controller: _passwordController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'New Password',
                       border: OutlineInputBorder(),
                     ),

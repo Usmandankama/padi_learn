@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:padi_learn/screens/components/avatar_stack.dart';
-import 'package:padi_learn/screens/components/custom_back_button.dart';
 import 'package:padi_learn/utils/colors.dart';
 
 class CourseDescriptionScreen extends StatefulWidget {
-  final String imagePath;
+  final NetworkImage imagePath;
   final String author;
-  final double price;
+  final String price;
   final String description;
   final String courseTitle;
 
@@ -41,7 +40,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                 width: 375.w,
                 decoration: BoxDecoration(
                   image: DecorationImage(
-                    image: AssetImage(widget.imagePath),
+                    image: widget.imagePath,
                     fit: BoxFit.cover,
                   ),
                   borderRadius: BorderRadius.circular(20.r),

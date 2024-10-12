@@ -4,7 +4,7 @@ import 'package:padi_learn/utils/colors.dart';
 import 'package:padi_learn/screens/settings/settings_screen.dart'; // Import your settings screen
 
 class StudentProfileScreen extends StatefulWidget {
-  const StudentProfileScreen({Key? key}) : super(key: key);
+  const StudentProfileScreen({super.key});
 
   @override
   _StudentProfileScreenState createState() => _StudentProfileScreenState();
@@ -33,10 +33,10 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
       appBar: AppBar(
         backgroundColor: AppColors.appWhite,
         elevation: 0,
-        iconTheme: IconThemeData(color: AppColors.primaryColor),
+        iconTheme: const IconThemeData(color: AppColors.primaryColor),
         actions: [
           IconButton(
-            icon: Icon(Icons.settings, color: AppColors.primaryColor),
+            icon: const Icon(Icons.settings, color: AppColors.primaryColor),
             onPressed: () {
               // Navigate to Settings screen
               Navigator.push(
@@ -67,7 +67,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
         children: <Widget>[
           CircleAvatar(
             radius: 50.r,
-            backgroundImage: NetworkImage(
+            backgroundImage: const NetworkImage(
                 'https://via.placeholder.com/150'), // Replace with profile image
           ),
           SizedBox(height: 10.h),
@@ -119,7 +119,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
               color: Colors.grey.withOpacity(0.2),
               spreadRadius: 2,
               blurRadius: 5,
-              offset: Offset(0, 3),
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -180,7 +180,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
       labelColor: AppColors.primaryColor,
       unselectedLabelColor: Colors.grey,
       indicatorColor: AppColors.primaryColor,
-      tabs: <Widget>[
+      tabs: const <Widget>[
         Tab(text: 'My Courses'),
         Tab(text: 'Liked Courses'),
       ],
@@ -202,11 +202,11 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
 
   Widget _buildMyCoursesTab() {
     // Replace with dynamic content
-    return Center(child: Text('My Courses'));
+    return const Center(child: Text('My Courses'));
   }
 
   Widget _buildLikedCoursesTab() {
     // Replace with dynamic content
-    return Center(child: Text('Liked Courses'));
+    return const Center(child: Text('Liked Courses'));
   }
 }

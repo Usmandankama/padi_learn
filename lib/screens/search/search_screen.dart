@@ -27,7 +27,7 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
         backgroundColor: AppColors.appWhite,
         elevation: 0,
-        iconTheme: IconThemeData(color: AppColors.primaryColor),
+        iconTheme: const IconThemeData(color: AppColors.primaryColor),
       ),
       body: Padding(
         padding: EdgeInsets.all(16.0.w),
@@ -50,7 +50,7 @@ class _SearchScreenState extends State<SearchScreen> {
         // Handle search logic here
       },
       decoration: InputDecoration(
-        prefixIcon: Icon(Icons.search, color: AppColors.primaryColor),
+        prefixIcon: const Icon(Icons.search, color: AppColors.primaryColor),
         hintText: 'Search for courses...',
         hintStyle: TextStyle(color: AppColors.primaryColor.withOpacity(0.7)),
         filled: true,

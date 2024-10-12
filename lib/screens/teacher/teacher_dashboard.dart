@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:padi_learn/screens/teacher/components/earning_widget.dart';
+import 'package:padi_learn/screens/teacher/create_course_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
 import 'components/courseList.dart';
 
@@ -124,7 +125,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         title: Row(
           children: [
             GestureDetector(
-              onTap: (){},
+              onTap: () {},
               child: CircleAvatar(
                 radius: 25, // Adjust the size as needed
                 backgroundImage: NetworkImage(profileImageUrl),
@@ -155,18 +156,42 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             // YOUR COURSES SECTION
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Text(
-                'Manage Courses',
-                style: TextStyle(
-                  fontSize: 20.sp,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryColor,
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Manage Courses',
+                    style: TextStyle(
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryColor,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CreateCourseScreen(),
+                        ),
+                      );
+                    },
+                    icon: Icon(
+                      Icons.add,
+                      color: AppColors.primaryColor,
+                      size: 25.sp,
+                    ),
+                  ),
+                ],
               ),
             ),
             SizedBox(height: 10.h),
-            FutureBuilder<List<QueryDocumentSnapshot>>(
-              future: _userCourses,
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('courses')
+                  .where('userId',
+                      isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                  .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -174,10 +199,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 if (snapshot.hasError) {
                   return const Center(child: Text('Error loading courses'));
                 }
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return const Center(child: Text('No courses found'));
                 }
-                return CoursesList(courses: snapshot.data!);
+                return CoursesList(courses: snapshot.data!.docs);
               },
             ),
             SizedBox(height: 20.h),
