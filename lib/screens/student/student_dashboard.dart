@@ -92,7 +92,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   return const Center(child: Text('No courses available'));
                 }
                           
-                return CoursesGrid(courses: filteredCourses);
+                return CoursesGridLimited(courses: filteredCourses);
               }),
             ),
           ]),
