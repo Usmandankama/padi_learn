@@ -1,143 +1,109 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:padi_learn/screens/description/course_description_screen.dart';
+import 'package:get/get.dart';
 import 'package:padi_learn/utils/colors.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-
-import '../editCourse_screen.dart';
+import '../../../controller/course_controller.dart';
+import '../../description/course_description_screen.dart';
 
 class CoursesList extends StatelessWidget {
-  final List<QueryDocumentSnapshot> courses;
+  final List courses;
 
-  const CoursesList({
-    super.key,
-    required this.courses,
-  });
-
-  // Function to delete a course
-  Future<void> _deleteCourse(String courseId) async {
-    try {
-      await FirebaseFirestore.instance.collection('courses').doc(courseId).delete();
-      print("Course deleted successfully");
-    } catch (e) {
-      print("Failed to delete the course: $e");
-    }
-  }
-
-  // Function to navigate to edit course screen
-  void _editCourse(BuildContext context, String courseId, Map<String, dynamic> courseData) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EditCourseScreen(courseId: courseId, courseData: courseData),
-      ),
-    );
-  }
+  const CoursesList({super.key, required this.courses});
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      physics: const NeverScrollableScrollPhysics(), // Prevent scrolling
+    final CoursesController controller = Get.put(CoursesController());
+
+    return ListView.builder(
       shrinkWrap: true,
-      itemCount: courses.length,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2, // Number of items per row
-        childAspectRatio: 1.0, // Adjust aspect ratio to fit your design
-        crossAxisSpacing: 10.w,
-        mainAxisSpacing: 10.h,
-      ),
+      padding: const EdgeInsets.all(8.0),
+      itemCount: courses.length, // Display all courses
       itemBuilder: (context, index) {
         final courseData = courses[index].data() as Map<String, dynamic>;
-        final thumbnailUrl = courseData['thumbnailUrl'] ?? '';
-        final courseId = courses[index].id; // Get the course document ID
-        final courseTitle = courseData['title'] ?? 'No Title';
-        final author = courseData['author'] ?? 'Unknown Author';
-        final price = courseData['price'] ?? 'Free';
-        final description = courseData['description'] ?? 'No description available';
+        final title = courseData['title'] ?? 'No Title'; // Get title
+        final thumbnailUrl =
+            courseData['thumbnailUrl'] ?? ''; // Fetch thumbnail URL
+        final price = courseData['price'] ?? 'Free'; // Fetch price
+        final description = courseData['description'] ??
+            'No description available'; // Fetch description
 
-        return Container(
+        return GestureDetector(
+          onTap: () {
+            // Set selected course details in the controller
+            controller.selectCourse(
+                title, thumbnailUrl, price.toString(), description);
+            Get.to(() => CourseDescriptionScreen());
+          },
+          child: Container(
+            height: 300.h,
+            width: double.infinity,
             decoration: BoxDecoration(
-              color: AppColors.primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10.r),
-              image: thumbnailUrl.isNotEmpty
-                  ? DecorationImage(
-                      image: NetworkImage(thumbnailUrl),
-                      fit: BoxFit.cover,
-                      colorFilter: ColorFilter.mode(
-                        Colors.black.withOpacity(0.3),
-                        BlendMode.darken,
-                      ),
-                    )
-                  : null, // Only add if thumbnail URL exists
+              color: AppColors.appWhite,
+              borderRadius: BorderRadius.all(
+                Radius.circular(
+                  10.r,
+                ),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  blurRadius: 1,
+                  color: Colors.black.withOpacity(.2),
+                  spreadRadius: 1,
+                ),
+              ],
             ),
-            child: Padding(
-              padding: EdgeInsets.all(16.w),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    courseTitle,
-                    style: TextStyle(
-                      color: AppColors.appWhite,
-                      fontSize: 16.sp,
+            margin: const EdgeInsets.only(bottom: 15.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Course thumbnail
+                ClipRRect(
+                  borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(10.r),
+                      topRight: Radius.circular(10.r)),
+                  child: Image.network(
+                    thumbnailUrl,
+                    height: 200.h,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors
+                            .grey, // Placeholder if thumbnail fails to load
+                        child: const Center(
+                          child: Icon(Icons.broken_image, color: Colors.white),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                // Course details
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0, top: 10),
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18.0,
                       fontWeight: FontWeight.bold,
                     ),
+                    maxLines: 2,
                   ),
-                  SizedBox(height: 5.h),
-                  Text(
-                    'Students Enrolled: ${courseData['enrollments'] ?? 0}', // Replace with dynamic student count
-                    style: TextStyle(
-                      color: AppColors.appWhite,
-                      fontSize: 14.sp,
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: Text(
+                    '\$${price.toString()}',
+                    style: const TextStyle(
+                      fontSize: 16.0,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
                     ),
                   ),
-                  const Spacer(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: <Widget>[
-                      IconButton(
-                        icon: const Icon(Icons.edit, color: AppColors.appWhite),
-                        onPressed: () {
-                          _editCourse(context, courseId, courseData); // Call edit function
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: AppColors.appWhite),
-                        onPressed: () async {
-                          // Confirm deletion before deleting
-                          bool confirmDelete = await showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                title: const Text("Delete Course"),
-                                content: const Text("Are you sure you want to delete this course?"),
-                                actions: <Widget>[
-                                  TextButton(
-                                    child: const Text("Cancel"),
-                                    onPressed: () {
-                                      Navigator.of(context).pop(false);
-                                    },
-                                  ),
-                                  TextButton(
-                                    child: const Text("Delete"),
-                                    onPressed: () {
-                                      Navigator.of(context).pop(true);
-                                    },
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                          if (confirmDelete) {
-                            _deleteCourse(courseId); // Call delete function
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
         );
       },
     );
