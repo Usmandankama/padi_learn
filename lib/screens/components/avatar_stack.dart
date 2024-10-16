@@ -8,7 +8,7 @@ class AvatarStack extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: 40.h, // Adjust the height as necessary
-      width: 100.w, // Adjust the width to accommodate the stacked avatars
+      width: 50.w, // Adjust the width to accommodate the stacked avatars
       child: Stack(
         children: [
           Positioned(
