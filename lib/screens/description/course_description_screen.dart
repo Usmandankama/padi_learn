@@ -82,7 +82,7 @@ class CourseDescriptionScreen extends StatelessWidget {
                             ),
                             child: Center(
                               child: Text(
-                                'N${coursesController.selectedCoursePrice.value}',
+                                'NGN ${coursesController.selectedCoursePrice.value}',
                                 style: const TextStyle(
                                   color: AppColors.primaryColor,
                                   fontWeight: FontWeight.bold,
