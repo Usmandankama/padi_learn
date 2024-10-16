@@ -16,7 +16,7 @@ class _AnalyticItemState extends State<AnalyticItem> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 200.h,
+      height: 150.h,
       width: 180.w,
       decoration: BoxDecoration(
         boxShadow: const [

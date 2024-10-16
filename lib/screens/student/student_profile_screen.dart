@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
+import 'package:padi_learn/controller/user_controller.dart';
 import 'package:padi_learn/utils/colors.dart';
 import 'package:padi_learn/screens/settings/settings_screen.dart'; // Import your settings screen
 
@@ -28,6 +30,10 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
 
   @override
   Widget build(BuildContext context) {
+    final UserController controller = Get.find<UserController>();
+    print('Username is ');
+    print(controller.userName.value);
+
     return Scaffold(
       backgroundColor: AppColors.appWhite,
       appBar: AppBar(
@@ -62,6 +68,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
   }
 
   Widget _buildProfileHeader() {
+    final UserController controller = Get.find<UserController>();
     return Center(
       child: Column(
         children: <Widget>[
@@ -71,14 +78,14 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
                 'https://via.placeholder.com/150'), // Replace with profile image
           ),
           SizedBox(height: 10.h),
-          Text(
-            'John Doe', // Replace with user's name
-            style: TextStyle(
-              fontSize: 24.sp,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primaryColor,
-            ),
-          ),
+          Obx(() => Text(
+                controller.userName.value,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24.sp,
+                  color: AppColors.primaryColor,
+                ),
+              )),
           SizedBox(height: 5.h),
           Text(
             '@johndoe', // Replace with user's username

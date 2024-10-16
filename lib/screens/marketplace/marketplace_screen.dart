@@ -1,126 +1,117 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
+import '../../controller/marketplace_controller.dart';
+import '../../utils/colors.dart';
 import 'components/courseGrid.dart';
 
 class MarketplaceScreen extends StatefulWidget {
   const MarketplaceScreen({super.key});
 
   @override
-  _MarketplaceScreenState createState() => _MarketplaceScreenState();
+  State<MarketplaceScreen> createState() => _MarketplaceScreenState();
 }
 
 class _MarketplaceScreenState extends State<MarketplaceScreen> {
-  late Future<List<QueryDocumentSnapshot>> _courses;
-  String searchQuery = '';
-  String selectedFilter = 'All';
-
-  @override
-  void initState() {
-    super.initState();
-    _courses = _fetchAllCourses(); // Fetch all courses from Firestore
-  }
-
-  Future<List<QueryDocumentSnapshot>> _fetchAllCourses() async {
-    final querySnapshot = await FirebaseFirestore.instance.collection('courses').get();
-    return querySnapshot.docs;
-  }
-
-  // Function to filter courses by search query
-  List<QueryDocumentSnapshot> _filterCourses(List<QueryDocumentSnapshot> courses) {
-    return courses.where((course) {
-      final courseData = course.data() as Map<String, dynamic>;
-      final title = courseData['title'].toString().toLowerCase();
-      return title.contains(searchQuery.toLowerCase()) &&
-          (selectedFilter == 'All' || courseData['category'] == selectedFilter);
-    }).toList();
-  }
-
   @override
   Widget build(BuildContext context) {
+    final MarketplaceController controller = Get.find<MarketplaceController>();
+
     return Scaffold(
+      backgroundColor: AppColors.appWhite,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.appWhite,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
-        actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.filter_list, color: Colors.black),
-            onPressed: () {
-              // Handle filter actions
-            },
-          )
-        ],
+        title: Text(
+          "Marketplace",
+          style: TextStyle(
+            color: AppColors.primaryColor,
+            fontSize: 22.sp,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
       ),
-      body: Column(
-        children: <Widget>[
-          // Search Field
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Search courses...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
+      body: SingleChildScrollView(
+        child: Column(
+          children: <Widget>[
+            // Search Field without Obx, using setState instead for updates
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search courses',
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    color: AppColors.primaryColor,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                    borderSide: BorderSide(
+                      color: AppColors.primaryColor,
+                      width: 2.w,
+                    ),
+                  ),
                 ),
+                onChanged: (value) {
+                  setState(() {
+                    controller.searchQuery.value = value; // Update search query
+                  });
+                },
               ),
-              onChanged: (value) {
-                setState(() {
-                  searchQuery = value;
-                });
-              },
             ),
-          ),
-          // Filter Bar
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: <Widget>[
-                // Dropdown filter for category
-                DropdownButton<String>(
-                  value: selectedFilter,
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      selectedFilter = newValue!;
-                    });
-                  },
-                  items: <String>['All', 'Programming', 'Design', 'Marketing']
-                      .map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                ),
-              ],
+            // Filter Bar for category selection without Obx
+            Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    // Dropdown filter for category without Obx
+                    DropdownButton<String>(
+                      value: controller.selectedFilter.value,
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            controller.selectedFilter.value =
+                                newValue; // Update selected filter
+                          });
+                        }
+                      },
+                      items: <String>[
+                        'All',
+                        'Programming',
+                        'Design',
+                        'Marketing'
+                      ].map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                )),
+
+            // Display the courses in a GridView without Obx
+            SizedBox(
+              height: 500.h,
+              child: controller.courses.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : Builder(builder: (context) {
+                      // Apply search and filter
+                      final filteredCourses = controller.filterCourses();
+
+                      if (filteredCourses.isEmpty) {
+                        return const Center(
+                            child: Text('No courses available'));
+                      }
+
+                      return CoursesGrid(courses: filteredCourses);
+                    }),
             ),
-          ),
-          // Display the courses in a GridView
-          Expanded(
-            child: FutureBuilder<List<QueryDocumentSnapshot>>(
-              future: _courses,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (snapshot.hasError) {
-                  return const Center(child: Text('Error loading courses'));
-                }
-
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No courses available'));
-                }
-
-                // Apply search and filter
-                final filteredCourses = _filterCourses(snapshot.data!);
-
-                return CoursesGrid(courses: filteredCourses);
-              },
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

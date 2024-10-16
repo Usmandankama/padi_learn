@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:padi_learn/screens/student/course_description_screen.dart';
+import 'package:get/get.dart';
+import 'package:padi_learn/screens/description/course_description_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
+
+import '../../controller/marketplace_controller.dart';
+import '../marketplace/components/courseGrid.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -13,6 +17,8 @@ class StudentDashboard extends StatefulWidget {
 class _StudentDashboardState extends State<StudentDashboard> {
   @override
   Widget build(BuildContext context) {
+    final MarketplaceController controller = Get.find<MarketplaceController>();
+
     return Scaffold(
       backgroundColor: AppColors.appWhite,
       appBar: AppBar(
@@ -37,11 +43,10 @@ class _StudentDashboardState extends State<StudentDashboard> {
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.primaryColor),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 16.0.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
+      body: ListView(
+        shrinkWrap: true,
+          padding: EdgeInsets.symmetric(horizontal: 16.0.w),
+          children: [
             SizedBox(height: 15.h),
             Container(
               padding: EdgeInsets.all(16.0.w),
@@ -75,16 +80,28 @@ class _StudentDashboardState extends State<StudentDashboard> {
               ),
             ),
             SizedBox(height: 10.h),
-            _buildCoursesToBuyGrid(),
-          ],
-        ),
-      ),
+            SizedBox(
+              child: Obx(() {
+                if (controller.courses.isEmpty) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                          
+                final filteredCourses = controller.filterCourses();
+                          
+                if (filteredCourses.isEmpty) {
+                  return const Center(child: Text('No courses available'));
+                }
+                          
+                return CoursesGrid(courses: filteredCourses);
+              }),
+            ),
+          ]),
     );
   }
 
   Widget _buildOngoingCoursesSection() {
     return SizedBox(
-      height: 180.h,
+      height: 210.h,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: 5,
@@ -143,86 +160,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
           );
         },
       ),
-    );
-  }
-
-  Widget _buildCoursesToBuyGrid() {
-    return GridView.builder(
-      physics: const NeverScrollableScrollPhysics(), // Prevent scrolling
-      shrinkWrap: true,
-      itemCount: 6, // Replace with your dynamic item count
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16.w,
-        mainAxisSpacing: 16.h,
-        childAspectRatio: 3 / 4, // Adjust as necessary
-      ),
-      itemBuilder: (context, index) {
-        return GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const CourseDescriptionScreen(
-                  imagePath: NetworkImage('https://images.pexels.com/photos/9042878/pexels-photo-9042878.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'),
-                  author: 'Usman Abubakar',
-                  price: '20000',
-                  description: 'Course description',
-                  courseTitle: 'Figma Master Course',
-                ),
-              ),
-            );
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppColors.primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10.r),
-            ),
-            child: Padding(
-              padding: EdgeInsets.all(12.0.w),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Container(
-                    height: 100.h,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryColor.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
-                    child: Center(
-                      child: Text(
-                        'Course Image', // Placeholder for course image
-                        style: TextStyle(
-                          color: AppColors.primaryColor,
-                          fontSize: 14.sp,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 10.h),
-                  Text(
-                    'Course Title',
-                    style: TextStyle(
-                      color: AppColors.primaryColor,
-                      fontSize: 16.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 5.h),
-                  Text(
-                    '\$49.99', // Placeholder for course price
-                    style: TextStyle(
-                      color: AppColors.primaryColor,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 }

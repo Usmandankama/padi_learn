@@ -1,24 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth for current user
-import '../../student/course_description_screen.dart';
+import 'package:get/get.dart';
+import '../../../controller/course_controller.dart';
+import '../../description/course_description_screen.dart';
 
 class CoursesGrid extends StatelessWidget {
   final List courses;
 
   const CoursesGrid({super.key, required this.courses});
 
-  // Get current user from Firebase Auth
-  String _getCurrentUserName() {
-    final User? user = FirebaseAuth.instance.currentUser;
-    return user?.displayName ?? 'Unknown User'; // Get the display name, or default to 'Unknown User'
-  }
-
   @override
   Widget build(BuildContext context) {
-    final currentUser = _getCurrentUserName(); // Fetch the current user's name
+    final CoursesController controller = Get.put(CoursesController());
 
     return GridView.builder(
+      shrinkWrap: true,
       padding: const EdgeInsets.all(8.0),
+      physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         childAspectRatio: 1.0,
@@ -32,22 +29,12 @@ class CoursesGrid extends StatelessWidget {
         final thumbnailUrl = courseData['thumbnailUrl'] ?? ''; // Fetch thumbnail URL
         final price = courseData['price'] ?? 'Free'; // Fetch price
         final description = courseData['description'] ?? 'No description available'; // Fetch description
-        final courseTitle = courseData['title'] ?? 'No Title'; // Fetch course title
 
         return GestureDetector(
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CourseDescriptionScreen(
-                  imagePath: NetworkImage(thumbnailUrl), // Load the image from the URL
-                  author: currentUser, // Use current user's name as the author
-                  price: price,
-                  description: description,
-                  courseTitle: courseTitle,
-                ),
-              ),
-            );
+            // Set selected course details in the controller
+            controller.selectCourse(title, thumbnailUrl, price.toString(), description);
+            Get.to(() => CourseDescriptionScreen());
           },
           child: Card(
             elevation: 3,

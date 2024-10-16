@@ -144,7 +144,7 @@ Future<void> _initializeUserRole(BuildContext context) async {
         ];
       } else if (role == 'teacher') {
         screens = [
-          const TeacherDashboardScreen(),
+          TeacherDashboardScreen(),
           const CoursesScreen(), // You might want to update this screen based on your role
           const SettingsScreen(),
           const TeacherProfileScreen(),

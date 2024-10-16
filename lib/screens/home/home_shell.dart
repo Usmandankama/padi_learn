@@ -5,8 +5,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:padi_learn/screens/marketplace/marketplace_screen.dart';
 import 'package:padi_learn/screens/student/student_dashboard.dart';
 import 'package:padi_learn/screens/login/login_screen.dart';
-import 'package:padi_learn/screens/search/search_screen.dart';
-import 'package:padi_learn/screens/settings/settings_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
 
 import '../student/student_profile_screen.dart';
@@ -51,14 +49,13 @@ class _HomeShellState extends State<HomeShell> {
           if (isStudent) {
             _screens = [
               const StudentDashboard(),
-              const SearchScreen(),
+              const MarketplaceScreen(),
               const StudentProfileScreen(),
             ];
           } else if (role == 'Teacher') {
             _screens = [
-              const TeacherDashboardScreen(),
+              TeacherDashboardScreen(),
               const MarketplaceScreen(), 
-              const SettingsScreen(),
               const TeacherProfileScreen()
             ];
           }
@@ -127,10 +124,7 @@ class _HomeShellState extends State<HomeShell> {
                 icon: Icon(Icons.book),
                 label: 'Courses',
               ),
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.settings),
-                label: 'Settings',
-              ),
+            
               const BottomNavigationBarItem(
                 icon: Icon(Icons.person),
                 label: 'Profile',
