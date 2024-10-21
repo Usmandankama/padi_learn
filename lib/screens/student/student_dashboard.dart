@@ -86,13 +86,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   return const Center(child: CircularProgressIndicator());
                 }
                           
-                final filteredCourses = controller.filterCourses();
+                final allCourses = controller.allCourses();
                           
-                if (filteredCourses.isEmpty) {
+                if (allCourses.isEmpty) {
                   return const Center(child: Text('No courses available'));
                 }
                           
-                return CoursesGridLimited(courses: filteredCourses);
+                return CoursesGridLimited(courses: allCourses);
               }),
             ),
           ]),
