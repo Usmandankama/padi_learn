@@ -15,6 +15,7 @@ class CoursesList extends StatelessWidget {
     final CoursesController controller = Get.put(CoursesController());
 
     return ListView.builder(
+      physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
       padding: const EdgeInsets.all(8.0),
       itemCount: courses.length, // Display all courses
@@ -42,7 +43,7 @@ class CoursesList extends StatelessWidget {
               borderRadius: BorderRadius.all(
                 Radius.circular(
                   10.r,
-                ),
+                ),  
               ),
               boxShadow: [
                 BoxShadow(

@@ -19,7 +19,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     final MarketplaceController controller = Get.find<MarketplaceController>();
 
     // Categories for the filter
-    final List<String> categories = ['All', 'Programming', 'Design', 'Marketing'];
+    final List<String> categories = ['All', 'Programming', 'Design', 'Marketing', 'Business'];
 
     return Scaffold(
       backgroundColor: AppColors.appWhite,

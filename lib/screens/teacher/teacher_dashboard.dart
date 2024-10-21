@@ -45,7 +45,7 @@ class TeacherDashboardScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             SizedBox(
-              height: 350.h,
+              height: 360.h,
               child: const EarningsWidget(),
             ),
             SizedBox(height: 10.h),
