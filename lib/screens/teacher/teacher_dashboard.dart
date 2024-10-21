@@ -16,28 +16,26 @@ class TeacherDashboardScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.appWhite,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryAccent,
-        foregroundColor: AppColors.fontGrey,
-        title: Row(
-          children: [
-            GestureDetector(
-              onTap: () {},
-              child: Obx(() => CircleAvatar(
-                radius: 25,
-                backgroundImage: NetworkImage(controller.profileImageUrl.value),
-              )),
-            ),
-            SizedBox(width: 10.w),
-            Obx(() => Text(
-              controller.teacherName.value,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16.sp,
-              ),
-            )),
-          ],
+        centerTitle: true,
+        title: Text(
+          'Dashboard',
+          style: TextStyle(
+            color: AppColors.primaryColor,
+            fontSize: 22.sp,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        toolbarHeight: 80.h,
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(
+              Icons.notifications,
+            ),
+          )
+        ],
+        backgroundColor: AppColors.appWhite,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AppColors.primaryColor),
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 10.w),
