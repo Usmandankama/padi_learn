@@ -85,6 +85,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: AppColors.appWhite,
       body: Padding(
         padding: EdgeInsets.all(16.0.w),

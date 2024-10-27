@@ -9,6 +9,8 @@ class MarketplaceController extends GetxController {
   var selectedFilter = 'All'.obs;
   late StreamSubscription<QuerySnapshot> courseSubscription;
 
+  get isLoading => null;
+
   @override
   void onInit() {
     super.onInit();

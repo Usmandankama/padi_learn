@@ -3,7 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:padi_learn/controller/user_controller.dart';
 import 'package:padi_learn/utils/colors.dart';
-import 'package:padi_learn/screens/settings/settings_screen.dart'; // Import your settings screen
+import 'package:padi_learn/screens/settings/settings_screen.dart';
 
 class StudentProfileScreen extends StatefulWidget {
   const StudentProfileScreen({super.key});
@@ -31,8 +31,6 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
   @override
   Widget build(BuildContext context) {
     final UserController controller = Get.find<UserController>();
-    print('Username is ');
-    print(controller.userName.value);
 
     return Scaffold(
       backgroundColor: AppColors.appWhite,
@@ -57,7 +55,6 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
         child: Column(
           children: <Widget>[
             _buildProfileHeader(),
-            _buildCourseAnalytics(),
             _buildProfileActions(),
             _buildTabBar(),
             _buildTabBarView(),
@@ -87,74 +84,11 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
                 ),
               )),
           SizedBox(height: 5.h),
-          Text(
-            '@johndoe', // Replace with user's username
-            style: TextStyle(
-              fontSize: 16.sp,
-              color: Colors.grey,
-            ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildCourseAnalytics() {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 16.w),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          _buildAnalyticsContainer('Courses Completed', '15'),
-          _buildAnalyticsContainer('Ongoing Courses', '3'),
-          _buildAnalyticsContainer('Hours Spent', '120h'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAnalyticsContainer(String label, String count) {
-    return Expanded(
-      child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 5.w),
-        padding: EdgeInsets.all(12.w),
-        decoration: BoxDecoration(
-          color: AppColors.primaryColor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
-              spreadRadius: 2,
-              blurRadius: 5,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              count,
-              style: TextStyle(
-                fontSize: 20.sp,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primaryColor,
-              ),
-            ),
-            SizedBox(height: 5.h),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: Colors.grey,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildProfileActions() {
     return Padding(
@@ -165,7 +99,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primaryColor,
-          padding: EdgeInsets.symmetric(vertical: 15.h),
+          padding: const EdgeInsets.all(15),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12.r),
           ),

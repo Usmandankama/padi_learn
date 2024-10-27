@@ -117,7 +117,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                     
                     return Padding(
                       padding: const EdgeInsets.all(15),
-                      child: CoursesList(courses: filteredCourses));
+                      child: TeacherCourseList(courses: filteredCourses, onEdit: (String ) {  }, onDelete: (String ) {  },));
                   }),
           ),
         ],

@@ -22,11 +22,12 @@ class CoursesList extends StatelessWidget {
         final thumbnailUrl = courseData['thumbnailUrl'] ?? ''; // Fetch thumbnail URL
         final price = courseData['price'] ?? 'Free'; // Fetch price
         final description = courseData['description'] ?? 'No description available'; // Fetch description
+        final courseId = courses[index].id; // Get the course ID
 
         return GestureDetector(
           onTap: () {
             // Set selected course details in the controller
-            controller.selectCourse(title, thumbnailUrl, price.toString(), description);
+            controller.selectCourse(courseId, title, thumbnailUrl, price.toString(), description);
             Get.to(() => CourseDescriptionScreen());
           },
           child: Card(

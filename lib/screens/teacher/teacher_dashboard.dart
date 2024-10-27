@@ -92,7 +92,7 @@ class TeacherDashboardScreen extends StatelessWidget {
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return const Center(child: Text('No courses found'));
                 }
-                return CoursesList(courses: snapshot.data!.docs);
+                return TeacherCourseList(courses: snapshot.data!.docs, onEdit: (String ) {  }, onDelete: (String ) {  },);
               },
             ),
             SizedBox(height: 20.h),

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:padi_learn/controller/user_controller.dart';
 import 'package:padi_learn/screens/description/course_description_screen.dart';
+import 'package:padi_learn/screens/student/components/ongoingCourses.dart';
 import 'package:padi_learn/utils/colors.dart';
 
 import '../../controller/marketplace_controller.dart';
@@ -18,7 +20,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
   @override
   Widget build(BuildContext context) {
     final MarketplaceController controller = Get.find<MarketplaceController>();
-
+    final UserController userController = Get.find<UserController>();
+    print(userController.fetchUserInfo().toString());
     return Scaffold(
       backgroundColor: AppColors.appWhite,
       appBar: AppBar(
@@ -44,7 +47,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
         iconTheme: const IconThemeData(color: AppColors.primaryColor),
       ),
       body: ListView(
-        shrinkWrap: true,
+          shrinkWrap: true,
           padding: EdgeInsets.symmetric(horizontal: 16.0.w),
           children: [
             SizedBox(height: 15.h),
@@ -66,7 +69,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
                     ),
                   ),
                   SizedBox(height: 10.h),
-                  _buildOngoingCoursesSection(),
+                  OngoingCoursesWidget(
+                    userId: userController.userId.toString(),
+                  ),
                 ],
               ),
             ),
@@ -85,13 +90,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 if (controller.courses.isEmpty) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                          
+
                 final allCourses = controller.allCourses();
-                          
+
                 if (allCourses.isEmpty) {
                   return const Center(child: Text('No courses available'));
                 }
-                          
+
                 return CoursesGridLimited(courses: allCourses);
               }),
             ),
@@ -99,67 +104,67 @@ class _StudentDashboardState extends State<StudentDashboard> {
     );
   }
 
-  Widget _buildOngoingCoursesSection() {
-    return SizedBox(
-      height: 210.h,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: 5,
-        itemBuilder: (context, index) {
-          return GestureDetector(
-            onTap: () {},
-            child: Container(
-              width: 250.w,
-              margin: EdgeInsets.only(right: 10.w),
-              decoration: BoxDecoration(
-                color: AppColors.appWhite,
-                borderRadius: BorderRadius.circular(10.r),
-              ),
-              child: Padding(
-                padding: EdgeInsets.all(12.0.w),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Container(
-                      height: 100.h,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryColor.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Course Image', // Placeholder for course image
-                          style: TextStyle(
-                            color: AppColors.primaryColor,
-                            fontSize: 14.sp,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 10.h),
-                    Text(
-                      'Course Title',
-                      style: TextStyle(
-                        color: AppColors.primaryColor,
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 5.h),
-                    Text(
-                      'Progress: 50%', // Placeholder for progress
-                      style: TextStyle(
-                        color: AppColors.primaryColor,
-                        fontSize: 14.sp,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
+  // Widget _buildOngoingCoursesSection() {
+  //   return SizedBox(
+  //     height: 210.h,
+  //     child: ListView.builder(
+  //       scrollDirection: Axis.horizontal,
+  //       itemCount: 5,
+  //       itemBuilder: (context, index) {
+  //         return GestureDetector(
+  //           onTap: () {},
+  //           child: Container(
+  //             width: 250.w,
+  //             margin: EdgeInsets.only(right: 10.w),
+  //             decoration: BoxDecoration(
+  //               color: AppColors.appWhite,
+  //               borderRadius: BorderRadius.circular(10.r),
+  //             ),
+  //             child: Padding(
+  //               padding: EdgeInsets.all(12.0.w),
+  //               child: Column(
+  //                 crossAxisAlignment: CrossAxisAlignment.start,
+  //                 children: <Widget>[
+  //                   Container(
+  //                     height: 100.h,
+  //                     decoration: BoxDecoration(
+  //                       color: AppColors.primaryColor.withOpacity(0.3),
+  //                       borderRadius: BorderRadius.circular(8.r),
+  //                     ),
+  //                     child: Center(
+  //                       child: Text(
+  //                         'Course Image', // Placeholder for course image
+  //                         style: TextStyle(
+  //                           color: AppColors.primaryColor,
+  //                           fontSize: 14.sp,
+  //                         ),
+  //                       ),
+  //                     ),
+  //                   ),
+  //                   SizedBox(height: 10.h),
+  //                   Text(
+  //                     'Course Title',
+  //                     style: TextStyle(
+  //                       color: AppColors.primaryColor,
+  //                       fontSize: 16.sp,
+  //                       fontWeight: FontWeight.bold,
+  //                     ),
+  //                   ),
+  //                   SizedBox(height: 5.h),
+  //                   Text(
+  //                     'Progress: 50%', // Placeholder for progress
+  //                     style: TextStyle(
+  //                       color: AppColors.primaryColor,
+  //                       fontSize: 14.sp,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //           ),
+  //         );
+  //       },
+  //     ),
+  //   );
+  // }
 }
