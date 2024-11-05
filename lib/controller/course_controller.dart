@@ -10,6 +10,7 @@ class CoursesController extends GetxController {
   var selectedCourseImage = ''.obs;
   var selectedCoursePrice = ''.obs;
   var selectedCourseDescription = ''.obs;
+  var selectedCourseAuthor = ''.obs;
 
   // Get UserController instance
   final UserController userController = Get.find<UserController>();
@@ -31,11 +32,12 @@ class CoursesController extends GetxController {
   }
 
   // Method to set the selected course details
-  void selectCourse(String id, String title, String image, String price, String description) {
+  void selectCourse(String id, String title, String image, String price, String description, String author) {
     selectedCourseId.value = id; // Set the selected course ID
     selectedCourseTitle.value = title;
     selectedCourseImage.value = image;
     selectedCoursePrice.value = price;
+    selectedCourseAuthor.value = author;
     selectedCourseDescription.value = description;
   }
 
