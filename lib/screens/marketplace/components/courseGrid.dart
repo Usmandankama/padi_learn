@@ -29,6 +29,7 @@ class CoursesGridLimited extends StatelessWidget {
         final courseData = courses[index].data() as Map<String, dynamic>;
         final title = courseData['title'] ?? 'No Title'; // Get title
         final thumbnailUrl = courseData['thumbnailUrl'] ?? ''; // Fetch thumbnail URL
+        final author = courseData['author'] ?? ''; 
         final price = courseData['price'] ?? 'Free'; // Fetch price
         final description = courseData['description'] ?? 'No description available'; // Fetch description
         final courseId = courses[index].id; // Get the course ID
@@ -36,7 +37,7 @@ class CoursesGridLimited extends StatelessWidget {
         return GestureDetector(
           onTap: () {
             // Set selected course details in the controller
-            controller.selectCourse(courseId, title, thumbnailUrl, price.toString(), description);
+            controller.selectCourse(courseId, title, thumbnailUrl, price.toString(), description,author);
             Get.to(() => CourseDescriptionScreen());
           },
           child: Card(
