@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:padi_learn/screens/teacher/components/courseList.dart';
+import 'package:padi_learn/screens/teacher/components/teacher_course_list.dart';
 import '../../controller/marketplace_controller.dart';
 import '../../utils/colors.dart';
+import '../student/components/marketPlaceList.dart';
 import 'components/courseGrid.dart';
 
 class MarketplaceScreen extends StatefulWidget {
@@ -19,7 +20,13 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     final MarketplaceController controller = Get.find<MarketplaceController>();
 
     // Categories for the filter
-    final List<String> categories = ['All', 'Programming', 'Design', 'Marketing', 'Business'];
+    final List<String> categories = [
+      'All',
+      'Programming',
+      'Design',
+      'Marketing',
+      'Business'
+    ];
 
     return Scaffold(
       backgroundColor: AppColors.appWhite,
@@ -74,18 +81,22 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                 itemBuilder: (context, index) {
                   String category = categories[index];
                   bool isSelected = controller.selectedFilter.value == category;
-                    
+
                   return GestureDetector(
                     onTap: () {
                       setState(() {
-                        controller.selectedFilter.value = category; // Update selected category
+                        controller.selectedFilter.value =
+                            category; // Update selected category
                       });
                     },
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 5.0),
-                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 10, horizontal: 20),
                       decoration: BoxDecoration(
-                        color: isSelected ? AppColors.primaryColor : Colors.grey[300],
+                        color: isSelected
+                            ? AppColors.primaryColor
+                            : Colors.grey[300],
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Center(
@@ -110,14 +121,14 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                 : Builder(builder: (context) {
                     // Apply search and filter
                     final filteredCourses = controller.filterCourses();
-                    
+
                     if (filteredCourses.isEmpty) {
                       return const Center(child: Text('No courses available'));
                     }
-                    
+
                     return Padding(
-                      padding: const EdgeInsets.all(15),
-                      child: TeacherCourseList(courses: filteredCourses, onEdit: (String ) {  }, onDelete: (String ) {  },));
+                        padding: const EdgeInsets.all(15),
+                        child: CoursesList(courses: filteredCourses));
                   }),
           ),
         ],
