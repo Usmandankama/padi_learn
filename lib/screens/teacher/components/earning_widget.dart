@@ -93,10 +93,15 @@ class _EarningsWidgetState extends State<EarningsWidget> {
         const SizedBox(height: 20),
         Row(
           children: [
-            AnalyticItem(title: 'Earnings', earning: totalEarnings.toDouble()),
+            AnalyticItem(
+              title: 'Enrollments',
+              statsData: totalEarnings,
+            ),
             SizedBox(width: 5.w),
             AnalyticItem(
-                title: 'Courses Sold', earning: coursesSold.toDouble()),
+              title: 'Courses Sold',
+              statsData: coursesSold,
+            ),
             SizedBox(width: 5.w),
           ],
         ),

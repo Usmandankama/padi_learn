@@ -6,7 +6,7 @@ import 'package:padi_learn/screens/teacher/components/earning_widget.dart';
 import 'package:padi_learn/screens/teacher/create_course_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
 import '../../controller/teacherController.dart';
-import 'components/courseList.dart';
+import 'components/teacher_course_list.dart';
 
 class TeacherDashboardScreen extends StatelessWidget {
   final TeacherDashboardController controller = Get.put(TeacherDashboardController());

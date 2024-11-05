@@ -4,9 +4,9 @@ import 'package:padi_learn/utils/colors.dart';
 
 class AnalyticItem extends StatefulWidget {
   final String title;
-  final double earning;
+  final dynamic statsData;
 
-  const AnalyticItem({super.key, required this.title, required this.earning});
+  const AnalyticItem({super.key, required this.title, required this.statsData});
 
   @override
   State<AnalyticItem> createState() => _AnalyticItemState();
@@ -34,7 +34,7 @@ class _AnalyticItemState extends State<AnalyticItem> {
         children: [
           Column(
             children: [
-              SizedBox(height: 20.h),
+              SizedBox(height: 30.h),
               Text(
                 widget.title,
                 style: TextStyle(
@@ -43,11 +43,12 @@ class _AnalyticItemState extends State<AnalyticItem> {
                   fontWeight: FontWeight.w700,
                 ),
               ),
+              SizedBox(height: 10.h),
               Text(
-                '${widget.earning}',
+                '${widget.statsData}',
                 style: TextStyle(
                   color: AppColors.appWhite,
-                  fontSize: 15.sp,
+                  fontSize: 18.sp,
                 ),
               ),
             ],
