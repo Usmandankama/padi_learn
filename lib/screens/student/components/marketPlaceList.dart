@@ -22,6 +22,7 @@ class CoursesList extends StatelessWidget {
       itemBuilder: (context, index) {
         final courseData = courses[index].data() as Map<String, dynamic>;
         final title = courseData['title'] ?? 'No Title'; // Get title
+        final author = courseData['author'] ?? ''; 
         final thumbnailUrl = courseData['thumbnailUrl'] ?? ''; // Fetch thumbnail URL
         final price = courseData['price'] ?? 'Free'; // Fetch price
         final description = courseData['description'] ?? 'No description available'; // Fetch description
@@ -36,6 +37,7 @@ class CoursesList extends StatelessWidget {
               thumbnailUrl,
               price.toString(),
               description,
+              author
             );
             Get.to(() => CourseDescriptionScreen());
           },
