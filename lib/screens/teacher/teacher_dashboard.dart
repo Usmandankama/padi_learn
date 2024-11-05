@@ -9,6 +9,7 @@ import '../../controller/teacherController.dart';
 import 'components/teacher_course_list.dart';
 
 class TeacherDashboardScreen extends StatelessWidget {
+  // Instantiate the TeacherDashboardController for managing course data and state
   final TeacherDashboardController controller = Get.put(TeacherDashboardController());
 
   @override
@@ -26,11 +27,10 @@ class TeacherDashboardScreen extends StatelessWidget {
           ),
         ),
         actions: [
+          // Notification button placeholder
           IconButton(
-            onPressed: () {},
-            icon: const Icon(
-              Icons.notifications,
-            ),
+            onPressed: () {}, 
+            icon: const Icon(Icons.notifications),
           )
         ],
         backgroundColor: AppColors.appWhite,
@@ -42,11 +42,14 @@ class TeacherDashboardScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
+            // Earnings Widget Section
             SizedBox(
               height: 360.h,
-              child: const EarningsWidget(),
+              child: const EarningsWidget(), // Displays financial metrics for the teacher
             ),
             SizedBox(height: 10.h),
+            
+            // Course Management Header
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Row(
@@ -60,6 +63,7 @@ class TeacherDashboardScreen extends StatelessWidget {
                       color: AppColors.primaryColor,
                     ),
                   ),
+                  // Button to navigate to Create Course Screen
                   IconButton(
                     onPressed: () {
                       Navigator.push(
@@ -79,20 +83,23 @@ class TeacherDashboardScreen extends StatelessWidget {
               ),
             ),
             SizedBox(height: 10.h),
-            // Using the stream from the controller
+
+            // StreamBuilder for Courses
             StreamBuilder<QuerySnapshot>(
-              stream: controller.courseStream(),
+              stream: controller.courseStream(), // Subscribe to the Firestore course stream
               builder: (context, snapshot) {
+                // Handling different states of the stream
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator()); // Loading state
                 }
                 if (snapshot.hasError) {
-                  return const Center(child: Text('Error loading courses'));
+                  return const Center(child: Text('Error loading courses')); // Error handling
                 }
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text('No courses found'));
+                  return const Center(child: Text('No courses found')); // Empty state
                 }
-                return TeacherCourseList(courses: snapshot.data!.docs, onEdit: (String ) {  }, onDelete: (String ) {  },);
+                // Display the list of courses using the TeacherCourseList widget
+                return TeacherCourseList(courses: snapshot.data!.docs);
               },
             ),
             SizedBox(height: 20.h),
