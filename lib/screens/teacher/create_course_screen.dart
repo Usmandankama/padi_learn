@@ -19,6 +19,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _authorController = TextEditingController();
   String? _selectedCategory;
   File? _videoFile;
   File? _thumbnailFile; // For custom thumbnail
@@ -97,7 +98,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
         'description': _descriptionController.text.trim(),
         'price': _priceController.text.trim(),
         'category': _selectedCategory,
-        // 'author': ,
+        'author': _authorController.text.trim(),
         'videoUrl': videoUrl,
         'thumbnailUrl': thumbnailUrl, // Save the thumbnail URL
         'userId': userId, // Associate this course with the current user
@@ -223,7 +224,6 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                 },
               ),
               SizedBox(height: 20.h),
-
               TextFormField(
                 keyboardType: TextInputType.number,
                 controller: _priceController,
@@ -239,7 +239,27 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter a course title';
+                    return 'Please enter a course price';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20.h),
+              TextFormField(
+                controller: _authorController,
+                decoration: InputDecoration(
+                  labelText: 'Author Name',
+                  labelStyle: TextStyle(fontSize: 16.sp),
+                  
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  contentPadding:
+                      EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter author name';
                   }
                   return null;
                 },
