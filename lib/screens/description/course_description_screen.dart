@@ -7,7 +7,8 @@ import '../../controller/course_controller.dart';
 
 class CourseDescriptionScreen extends StatefulWidget {
   @override
-  State<CourseDescriptionScreen> createState() => _CourseDescriptionScreenState();
+  State<CourseDescriptionScreen> createState() =>
+      _CourseDescriptionScreenState();
 }
 
 class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
@@ -17,7 +18,8 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final int courseFee = int.parse(coursesController.selectedCoursePrice.value);
+    final int courseFee =
+        int.parse(coursesController.selectedCoursePrice.value);
 
     // Check if the course is free and set state only if it has changed
     if (isFree != (courseFee == 0)) {
@@ -40,7 +42,8 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                   width: double.infinity,
                   decoration: BoxDecoration(
                     image: DecorationImage(
-                      image: NetworkImage(coursesController.selectedCourseImage.value),
+                      image: NetworkImage(
+                          coursesController.selectedCourseImage.value),
                       fit: BoxFit.cover,
                     ),
                     borderRadius: BorderRadius.circular(20.r),
@@ -71,7 +74,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                               radius: 15.r,
                             ),
                             SizedBox(width: 10.w),
-                            const Text('Author'),
+                            Text(coursesController.selectedCourseAuthor.value),
                           ],
                         ),
                       ),
@@ -91,7 +94,9 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                         ),
                         child: Center(
                           child: Text(
-                            isFree ? 'Free' : 'NGN ${coursesController.selectedCoursePrice.value}',
+                            isFree
+                                ? 'Free'
+                                : 'NGN ${coursesController.selectedCoursePrice.value}',
                             style: const TextStyle(
                               color: AppColors.primaryColor,
                               fontWeight: FontWeight.bold,
@@ -116,28 +121,26 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                   ),
                 ),
               ),
+              // Obx(
+              //   () => Row(
+              //     children: [
+              //       const Text('by'),
+              //       SizedBox(width: 5.w),
+              //       Text(
+              //         coursesController.getCurrentUserName(),
+              //         style: TextStyle(
+              //           fontSize: 16.sp,
+              //           color: AppColors.fontGrey,
+              //         ),
+              //       ),
+              //     ],
+              //   ),
+              // ),
               SizedBox(height: 10.h),
-              Obx(
-                () => Row(
-                  children: [
-                    const Text('by'),
-                    SizedBox(width: 5.w),
-                    Text(
-                      coursesController.getCurrentUserName(),
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        color: AppColors.fontGrey,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 30.h),
               Text(
                 'Description',
                 style: TextStyle(
                   fontSize: 20.sp,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
               Obx(
@@ -164,7 +167,8 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                     }
                   },
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 100.w, vertical: 30.h),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 100.w, vertical: 30.h),
                     child: Text(
                       isFree ? 'Get for free' : 'Buy course',
                       style: TextStyle(
@@ -175,8 +179,10 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                 ),
               ),
               // Circular Progress Indicator
-              if (isLoading) 
-                Center(child: CircularProgressIndicator()), // Show loading indicator when in progress
+              if (isLoading)
+                Center(
+                    child:
+                        CircularProgressIndicator()), // Show loading indicator when in progress
             ],
           ),
         ),
@@ -192,11 +198,13 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
     final currentUser = coursesController.getCurrentUser();
 
     if (currentUser != null) {
-      final userRef = FirebaseFirestore.instance.collection('users').doc(currentUser.uid);
+      final userRef =
+          FirebaseFirestore.instance.collection('users').doc(currentUser.uid);
 
       // Prepare course data to be added
       final courseData = {
-        'id': coursesController.selectedCourseId.value, // Assuming you have this
+        'id':
+            coursesController.selectedCourseId.value, // Assuming you have this
         'title': coursesController.selectedCourseTitle.value,
         'image': coursesController.selectedCourseImage.value,
         'description': coursesController.selectedCourseDescription.value,
@@ -238,11 +246,13 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
     final currentUser = coursesController.getCurrentUser();
 
     if (currentUser != null) {
-      final userRef = FirebaseFirestore.instance.collection('users').doc(currentUser.uid);
+      final userRef =
+          FirebaseFirestore.instance.collection('users').doc(currentUser.uid);
 
       // Prepare course data to be added
       final courseData = {
-        'id': coursesController.selectedCourseId.value, // Assuming you have this
+        'id':
+            coursesController.selectedCourseId.value, // Assuming you have this
         'title': coursesController.selectedCourseTitle.value,
         'image': coursesController.selectedCourseImage.value,
         'description': coursesController.selectedCourseDescription.value,
