@@ -11,6 +11,7 @@ class CoursesController extends GetxController {
   var selectedCoursePrice = ''.obs;
   var selectedCourseDescription = ''.obs;
   var selectedCourseAuthor = ''.obs;
+  var selectedCourseVideoUrl = ''.obs; // New observable for course video URL
 
   // Get UserController instance
   final UserController userController = Get.find<UserController>();
@@ -31,14 +32,15 @@ class CoursesController extends GetxController {
     }
   }
 
-  // Method to set the selected course details
-  void selectCourse(String id, String title, String image, String price, String description, String author) {
+  // Method to set the selected course details, now including video URL
+  void selectCourse(String id, String title, String image, String price, String description, String author, String videoUrl) {
     selectedCourseId.value = id; // Set the selected course ID
     selectedCourseTitle.value = title;
     selectedCourseImage.value = image;
     selectedCoursePrice.value = price;
     selectedCourseAuthor.value = author;
     selectedCourseDescription.value = description;
+    selectedCourseVideoUrl.value = videoUrl; // Set the selected course video URL
   }
 
   // Access current user's name from UserController
