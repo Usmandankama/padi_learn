@@ -10,7 +10,7 @@ class CustomRoleDropdown extends StatelessWidget {
     super.key,
     required this.value,
     required this.items,
-    required this.onChanged,
+    required this.onChanged, MaterialColor? borderColor,
   });
 
   @override
