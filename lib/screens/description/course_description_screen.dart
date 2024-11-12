@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:padi_learn/screens/videoplayer/vvideoPlayer.dart';
 import 'package:padi_learn/utils/colors.dart';
 import '../../controller/course_controller.dart';
 
@@ -18,8 +19,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final int courseFee =
-        int.parse(coursesController.selectedCoursePrice.value);
+    var courseFee = coursesController.selectedCoursePrice.value;
 
     // Check if the course is free and set state only if it has changed
     if (isFree != (courseFee == 0)) {
@@ -42,10 +42,11 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                   width: double.infinity,
                   decoration: BoxDecoration(
                     image: DecorationImage(
-                      image: NetworkImage(
-                          coursesController.selectedCourseImage.value),
-                      fit: BoxFit.cover,
-                    ),
+                        image: NetworkImage(
+                          coursesController.selectedCourseImage.value,
+                        ),
+                        fit: BoxFit.cover,
+                        filterQuality: FilterQuality.high),
                     borderRadius: BorderRadius.circular(20.r),
                   ),
                   child: Row(
@@ -55,7 +56,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                       // Author Info
                       Container(
                         height: 50.h,
-                        width: 100.w,
+                        // width: 100.w,
                         decoration: BoxDecoration(
                           color: AppColors.appWhite,
                           boxShadow: [
@@ -70,17 +71,24 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            CircleAvatar(
-                              radius: 15.r,
+                            Padding(
+                              padding: const EdgeInsets.only(left: 10),
+                              child: CircleAvatar(
+                                radius: 15.r,
+                              ),
                             ),
                             SizedBox(width: 10.w),
-                            Text(coursesController.selectedCourseAuthor.value),
+                            Padding(
+                              padding: const EdgeInsets.only(right: 10.0),
+                              child: Text(
+                                coursesController.selectedCourseAuthor.value,
+                              ),
+                            ),
                           ],
                         ),
                       ),
                       Container(
                         height: 50.h,
-                        width: 100.w,
                         decoration: BoxDecoration(
                           color: AppColors.appWhite,
                           boxShadow: [
@@ -93,13 +101,16 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                           borderRadius: BorderRadius.circular(30.r),
                         ),
                         child: Center(
-                          child: Text(
-                            isFree
-                                ? 'Free'
-                                : 'NGN ${coursesController.selectedCoursePrice.value}',
-                            style: const TextStyle(
-                              color: AppColors.primaryColor,
-                              fontWeight: FontWeight.bold,
+                          child: Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: Text(
+                              isFree
+                                  ? 'Free'
+                                  : 'NGN ${coursesController.selectedCoursePrice.value}',
+                              style: const TextStyle(
+                                color: AppColors.primaryColor,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
@@ -180,9 +191,12 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
               ),
               // Circular Progress Indicator
               if (isLoading)
-                Center(
+                const Center(
                     child:
                         CircularProgressIndicator()), // Show loading indicator when in progress
+              // TextButton(onPressed: () {
+              //   Navigator.push(context, MaterialPageRoute(builder: (context)=> VideoPlayerScreen(videoUrl: videoUrl, title: 'Hello', description: 'hello')))
+              // }, child: Text('click to watch'))
             ],
           ),
         ),
@@ -208,6 +222,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
         'title': coursesController.selectedCourseTitle.value,
         'image': coursesController.selectedCourseImage.value,
         'description': coursesController.selectedCourseDescription.value,
+        'video_url': coursesController.selectedCourseVideoUrl.value,
         'progress': 0, // Initial progress
       };
 
@@ -256,6 +271,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
         'title': coursesController.selectedCourseTitle.value,
         'image': coursesController.selectedCourseImage.value,
         'description': coursesController.selectedCourseDescription.value,
+        'video_url': coursesController.selectedCourseVideoUrl.value,
         'progress': 0, // Initial progress
       };
 
