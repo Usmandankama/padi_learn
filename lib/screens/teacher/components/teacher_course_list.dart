@@ -31,14 +31,14 @@ class TeacherCourseList extends StatelessWidget {
             courses[index].id; // Get course ID for editing/deleting
 
         return GestureDetector(
-          onTap: () {
-            // Navigate to course details page
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => CourseDescriptionScreen()),
-            );
-          },
+          // onTap: () {
+          //   // Navigate to course details page
+          //   Navigator.push(
+          //     context,
+          //     MaterialPageRoute(
+          //         builder: (context) => ),
+          //   );
+          // },
           child: Container(
             height: 300.h,
             width: double.infinity,
