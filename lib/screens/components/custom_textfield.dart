@@ -13,7 +13,7 @@ class CustomTextfield extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.controller,
-    this.obscureText = false,
+    this.obscureText = false, MaterialColor? borderColor,
   });
 
   @override
