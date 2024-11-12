@@ -19,16 +19,21 @@ class CoursesList extends StatelessWidget {
       itemBuilder: (context, index) {
         final courseData = courses[index].data() as Map<String, dynamic>;
         final title = courseData['title'] ?? 'No Title'; // Get title
-        final author = courseData['author'] ?? ''; 
-        final thumbnailUrl = courseData['thumbnailUrl'] ?? ''; // Fetch thumbnail URL
+        final author = courseData['author'] ?? '';
+        final thumbnailUrl =
+            courseData['thumbnailUrl'] ?? ''; // Fetch thumbnail URL
         final price = courseData['price'] ?? 'Free'; // Fetch price
-        final description = courseData['description'] ?? 'No description available'; // Fetch description
+        final videoUrl = courseData['videoUrl'] ?? ''; // Fetch video URL
+        final description = courseData['description'] ??
+            'No description available'; // Fetch description
         final courseId = courses[index].id; // Get the course ID
 
         return GestureDetector(
           onTap: () {
             // Set selected course details in the controller
-            controller.selectCourse(courseId, title, thumbnailUrl, price.toString(), description, author);
+            controller.selectCourse(courseId, title, thumbnailUrl,
+                price.toString(), description, author, videoUrl);
+
             Get.to(() => CourseDescriptionScreen());
           },
           child: Card(
@@ -52,7 +57,8 @@ class CoursesList extends StatelessWidget {
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
-                        color: Colors.grey, // Placeholder if thumbnail fails to load
+                        color: Colors
+                            .grey, // Placeholder if thumbnail fails to load
                         child: const Center(
                           child: Icon(Icons.broken_image, color: Colors.white),
                         ),
