@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:padi_learn/screens/videoplayer/vvideoPlayer.dart';
 import 'package:padi_learn/utils/colors.dart';
 import '../../../controller/ongoing_courses_controller.dart';
 
@@ -34,12 +35,11 @@ class OngoingCoursesWidget extends StatelessWidget {
               final imageUrl =
                   courseData['image'] ?? ''; // Match your data structure
               final title = courseData['title'] ?? 'Course Title';
-              final progress = courseData['progress'] ??
-                  0; // Assuming progress is stored as an integer
-              print(courseData);
+              final progress = courseData['progress'] ?? 0;
+
               return GestureDetector(
                 onTap: () {
-                  // Handle course tap, possibly navigate to course details
+                  Get.to(() => VideoPlayerPage(courseId: courseData['id']));
                 },
                 child: Container(
                   width: 250.w,
@@ -60,49 +60,38 @@ class OngoingCoursesWidget extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Container(
-                            height: 100.h,
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryColor.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8.r),
+                          height: 100.h,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8.r),
+                            child: Image.network(
+                              imageUrl,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                              loadingBuilder: (context, child, progress) {
+                                if (progress == null) return child;
+                                return Center(
+                                  child: CircularProgressIndicator(
+                                    value: progress.expectedTotalBytes != null
+                                        ? progress.cumulativeBytesLoaded /
+                                            progress.expectedTotalBytes!
+                                        : null,
+                                  ),
+                                );
+                              },
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Center(
+                                  child: Icon(Icons.broken_image,
+                                      color: AppColors.primaryColor),
+                                );
+                              },
                             ),
-                            child:
-                                //  imageUrl.isNotEmpty
-                                ClipRRect(
-                              borderRadius: BorderRadius.circular(8.r),
-                              child: Image.network(
-                                imageUrl,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                height: double.infinity,
-                                loadingBuilder: (context, child, progress) {
-                                  if (progress == null) return child;
-                                  return Center(
-                                    child: CircularProgressIndicator(
-                                      value: progress.expectedTotalBytes != null
-                                          ? progress.cumulativeBytesLoaded /
-                                              progress.expectedTotalBytes!
-                                          : null,
-                                    ),
-                                  );
-                                },
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Center(
-                                    child: Icon(Icons.broken_image,
-                                        color: AppColors.primaryColor),
-                                  );
-                                },
-                              ),
-                            )
-                            // : Center(
-                            //     child: Text(
-                            //       'No Image',
-                            //       style: TextStyle(
-                            //         color: AppColors.primaryColor,
-                            //         fontSize: 14.sp,
-                            //       ),
-                            //     ),
-                            //   ),
-                            ),
+                          ),
+                        ),
                         SizedBox(height: 10.h),
                         Text(
                           title,
