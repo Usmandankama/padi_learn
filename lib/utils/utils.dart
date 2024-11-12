@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:padi_learn/screens/student/student_dashboard.dart';
 import 'package:padi_learn/screens/teacher/teacher_dashboard.dart';
 import 'package:padi_learn/screens/teacher/teacher_profle.dart';
@@ -26,6 +27,8 @@ Future<void> login(BuildContext context, String email, String password) async {
     );
 
     // Show success message
+    Get.snackbar("Success", ' logged in',snackPosition: SnackPosition.BOTTOM);
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Login successful'),
@@ -36,12 +39,14 @@ Future<void> login(BuildContext context, String email, String password) async {
     print('Error logging in: $e');
 
     // Show error message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Error logging in: $e'),
-        backgroundColor: Colors.red,
-      ),
-    );
+
+    Get.snackbar("Error", 'Error logging in',snackPosition: SnackPosition.BOTTOM);
+    // ScaffoldMessenger.of(context).showSnackBar(
+    //   SnackBar(
+    //     content: Text('Error logging in: $e'),
+    //     backgroundColor: Colors.red,
+    //   ),
+    // );
   }
 }
 
