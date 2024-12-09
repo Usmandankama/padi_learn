@@ -27,7 +27,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   double _playbackSpeed = 1.0;
   bool _isFullscreen = false;
 
-
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
@@ -82,129 +81,135 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     }
   }
 
-Widget _buildVideoPlayer() {
-  return Stack(
-    alignment: Alignment.bottomCenter,
-    children: [
-      if (_videoController != null && _videoController!.value.isInitialized)
-        GestureDetector(
-          onTap: () {
-            setState(() {
-              _showControls = !_showControls;
-            });
-            if (_showControls) {
-              Future.delayed(const Duration(seconds: 3), () {
-                setState(() {
-                  _showControls = false;
-                });
+  Widget _buildVideoPlayer() {
+    return Stack(
+      alignment: Alignment.bottomCenter,
+      children: [
+        if (_videoController != null && _videoController!.value.isInitialized)
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _showControls = !_showControls;
               });
-            }
-          },
-          onDoubleTapDown: (details) {
-            final tapPosition = details.localPosition.dx;
-            final screenWidth = MediaQuery.of(context).size.width;
+              if (_showControls) {
+                Future.delayed(const Duration(seconds: 3), () {
+                  setState(() {
+                    _showControls = false;
+                  });
+                });
+              }
+            },
+            onDoubleTapDown: (details) {
+              final tapPosition = details.localPosition.dx;
+              final screenWidth = MediaQuery.of(context).size.width;
 
-            if (tapPosition < screenWidth / 2) {
-              _videoController!.seekTo(
-                _videoController!.value.position - const Duration(seconds: 10),
-              );
-            } else {
-              _videoController!.seekTo(
-                _videoController!.value.position + const Duration(seconds: 10),
-              );
-            }
-          },
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: AspectRatio(
-              aspectRatio: 3.5 / 2.5,
-              child: VideoPlayer(_videoController!),
+              if (tapPosition < screenWidth / 2) {
+                _videoController!.seekTo(
+                  _videoController!.value.position -
+                      const Duration(seconds: 10),
+                );
+              } else {
+                _videoController!.seekTo(
+                  _videoController!.value.position +
+                      const Duration(seconds: 10),
+                );
+              }
+            },
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: AspectRatio(
+                aspectRatio: 3.5 / 2.5,
+                child: VideoPlayer(_videoController!),
+              ),
+            ),
+          ),
+        if (_isBuffering) const Center(child: CircularProgressIndicator()),
+        if (_showControls) _buildControls(),
+      ],
+    );
+  }
+
+  Widget _buildControls() {
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.black26.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    _videoController!.value.isPlaying
+                        ? Icons.pause
+                        : Icons.play_arrow,
+                    color: Colors.white,
+                    size: 30,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _videoController!.value.isPlaying
+                          ? _videoController!.pause()
+                          : _videoController!.play();
+                    });
+                  },
+                ),
+                Expanded(
+                  child: Slider(
+                    value:
+                        _videoController!.value.position.inSeconds.toDouble(),
+                    max: _videoController!.value.duration.inSeconds.toDouble(),
+                    onChanged: (value) {
+                      _videoController!
+                          .seekTo(Duration(seconds: value.toInt()));
+                    },
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.fullscreen,
+                      color: Colors.white, size: 30),
+                  onPressed: () {
+                    if (_isFullscreen) {
+                      _exitFullscreenMode();
+                    } else {
+                      _enterFullscreenMode();
+                    }
+                  },
+                ),
+                DropdownButton<double>(
+                  dropdownColor: Colors.black,
+                  value: _playbackSpeed,
+                  onChanged: (value) {
+                    setState(() {
+                      _playbackSpeed = value!;
+                      _videoController!.setPlaybackSpeed(_playbackSpeed);
+                    });
+                  },
+                  items: [0.5, 1.0, 1.5, 2.0]
+                      .map((speed) => DropdownMenuItem(
+                            value: speed,
+                            child: Text(
+                              '${speed}x',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ))
+                      .toList(),
+                ),
+              ],
             ),
           ),
         ),
-      if (_isBuffering) const Center(child: CircularProgressIndicator()),
-      if (_showControls)
-        _buildControls(),
-    ],
-  );
-}
-
-Widget _buildControls() {
-  return Align(
-    alignment: Alignment.bottomCenter,
-    child: Container(
-      decoration: BoxDecoration(
-        color: Colors.black26.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(10),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              IconButton(
-                icon: Icon(
-                  _videoController!.value.isPlaying ? Icons.pause : Icons.play_arrow,
-                  color: Colors.white,
-                  size: 30,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _videoController!.value.isPlaying
-                        ? _videoController!.pause()
-                        : _videoController!.play();
-                  });
-                },
-              ),
-              Expanded(
-                child: Slider(
-                  value: _videoController!.value.position.inSeconds.toDouble(),
-                  max: _videoController!.value.duration.inSeconds.toDouble(),
-                  onChanged: (value) {
-                    _videoController!.seekTo(Duration(seconds: value.toInt()));
-                  },
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.fullscreen, color: Colors.white, size: 30),
-                onPressed: () {
-                  if (_isFullscreen) {
-                    _exitFullscreenMode();
-                  } else {
-                    _enterFullscreenMode();
-                  }
-                },
-              ),
-              DropdownButton<double>(
-                dropdownColor: Colors.black,
-                value: _playbackSpeed,
-                onChanged: (value) {
-                  setState(() {
-                    _playbackSpeed = value!;
-                    _videoController!.setPlaybackSpeed(_playbackSpeed);
-                  });
-                },
-                items: [0.5, 1.0, 1.5, 2.0]
-                    .map((speed) => DropdownMenuItem(
-                          value: speed,
-                          child: Text(
-                            '${speed}x',
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ))
-                    .toList(),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
-}
+    );
+  }
 
-void _enterFullscreenMode() {
+ void _enterFullscreenMode() {
   _isFullscreen = true;
   Navigator.push(
     context,
@@ -226,13 +231,18 @@ void _enterFullscreenMode() {
               }
             }
 
+            final aspectRatio = _videoController!.value.aspectRatio;
+
             return GestureDetector(
               onTap: toggleControls,
               child: Stack(
                 alignment: Alignment.bottomCenter,
                 children: [
                   Center(
-                    child: VideoPlayer(_videoController!),
+                    child: AspectRatio(
+                      aspectRatio: aspectRatio,
+                      child: VideoPlayer(_videoController!),
+                    ),
                   ),
                   if (_showControls)
                     Align(
@@ -246,7 +256,8 @@ void _enterFullscreenMode() {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
                               children: [
                                 IconButton(
                                   icon: Icon(
@@ -266,10 +277,15 @@ void _enterFullscreenMode() {
                                 ),
                                 Expanded(
                                   child: Slider(
-                                    value: _videoController!.value.position.inSeconds.toDouble(),
-                                    max: _videoController!.value.duration.inSeconds.toDouble(),
+                                    value: _videoController!
+                                        .value.position.inSeconds
+                                        .toDouble(),
+                                    max: _videoController!
+                                        .value.duration.inSeconds
+                                        .toDouble(),
                                     onChanged: (value) {
-                                      _videoController!.seekTo(Duration(seconds: value.toInt()));
+                                      _videoController!.seekTo(
+                                          Duration(seconds: value.toInt()));
                                     },
                                   ),
                                 ),
@@ -286,7 +302,8 @@ void _enterFullscreenMode() {
                                   onChanged: (value) {
                                     setFullscreenState(() {
                                       _playbackSpeed = value!;
-                                      _videoController!.setPlaybackSpeed(_playbackSpeed);
+                                      _videoController!
+                                          .setPlaybackSpeed(_playbackSpeed);
                                     });
                                   },
                                   items: [0.5, 1.0, 1.5, 2.0]
@@ -294,7 +311,8 @@ void _enterFullscreenMode() {
                                             value: speed,
                                             child: Text(
                                               '${speed}x',
-                                              style: const TextStyle(color: Colors.white),
+                                              style: const TextStyle(
+                                                  color: Colors.white),
                                             ),
                                           ))
                                       .toList(),
@@ -320,53 +338,15 @@ void _enterFullscreenMode() {
   ]);
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 }
-void _exitFullscreenMode() {
-  _isFullscreen = false;
-  Navigator.pop(context);
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-}
 
-
-  Widget _buildCommentList() {
-    return reviews.isEmpty
-        ? const Text('No comments yet')
-        : ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: reviews.length,
-            itemBuilder: (context, index) {
-              final review = reviews[index];
-              return Column(
-                children: [
-                  ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: AppColors.primaryColor.withOpacity(0.1),
-                      child: const Icon(Icons.person,
-                          color: AppColors.primaryColor),
-                    ),
-                    title: Text(
-                      review['username'] ?? 'Anonymous',
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 14.sp),
-                    ),
-                    subtitle: Text(review['comment'] ?? '',
-                        style: TextStyle(fontSize: 12.sp)),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.thumb_up, color: Colors.grey),
-                      onPressed: () {
-                        // Increment like count in Firestore
-                      },
-                    ),
-                  ),
-                  Divider(color: Colors.grey.shade200, thickness: 0.5),
-                ],
-              );
-            },
-          );
+  void _exitFullscreenMode() {
+    _isFullscreen = false;
+    Navigator.pop(context);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
 
   @override
@@ -375,6 +355,7 @@ void _exitFullscreenMode() {
       appBar: AppBar(
         title: Text(courseData['title'] ?? 'Course Details'),
         backgroundColor: AppColors.primaryColor,
+        foregroundColor: AppColors.appWhite,
         actions: [
           IconButton(
             icon: const Icon(Icons.share),
@@ -403,24 +384,23 @@ void _exitFullscreenMode() {
               _buildVideoPlayer(),
               SizedBox(height: 10.h),
               Text(
-                courseData['description'] ?? 'No description available',
-                style: TextStyle(
-                  color: AppColors.fontGrey,
-                  fontSize: 16.sp,
-                ),
-              ),
-              const Divider(color: Colors.grey, thickness: 0.5),
-              SizedBox(height: 10.h),
-              Text(
-                'Comments',
+                'Description',
                 style: TextStyle(
                   color: AppColors.primaryColor,
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 30.sp,
                 ),
               ),
               SizedBox(height: 10.h),
-              _buildCommentList(),
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0),
+                child: Text(
+                  courseData['description'] ?? 'No description available',
+                  style: TextStyle(
+                    color: AppColors.fontGrey,
+                    fontSize: 16.sp,
+                  ),
+                ),
+              ),
             ],
           ),
         );
