@@ -5,10 +5,12 @@ import 'package:padi_learn/utils/colors.dart';
 import '../../../controller/course_controller.dart';
 import '../../description/course_description_screen.dart';
 
-class CoursesList extends StatelessWidget {
+class MarketPlaceList extends StatelessWidget {
   final List courses;
+  final String userRole;
 
-  const CoursesList({super.key, required this.courses});
+  const MarketPlaceList(
+      {super.key, required this.courses, required this.userRole});
 
   @override
   Widget build(BuildContext context) {
@@ -44,8 +46,11 @@ class CoursesList extends StatelessWidget {
               author,
               videoUrl,
             );
-
-            Get.to(() => CourseDescriptionScreen());
+            if (userRole == 'Student') {
+              Get.to(
+                () => CourseDescriptionScreen(),
+              );
+            }
           },
           child: Container(
             height: 300.h,

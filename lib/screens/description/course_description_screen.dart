@@ -132,21 +132,6 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                   ),
                 ),
               ),
-              // Obx(
-              //   () => Row(
-              //     children: [
-              //       const Text('by'),
-              //       SizedBox(width: 5.w),
-              //       Text(
-              //         coursesController.getCurrentUserName(),
-              //         style: TextStyle(
-              //           fontSize: 16.sp,
-              //           color: AppColors.fontGrey,
-              //         ),
-              //       ),
-              //     ],
-              //   ),
-              // ),
               SizedBox(height: 10.h),
               Text(
                 'Description',
@@ -192,11 +177,8 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
               // Circular Progress Indicator
               if (isLoading)
                 const Center(
-                    child:
-                        CircularProgressIndicator()), // Show loading indicator when in progress
-              // TextButton(onPressed: () {
-              //   Navigator.push(context, MaterialPageRoute(builder: (context)=> VideoPlayerScreen(videoUrl: videoUrl, title: 'Hello', description: 'hello')))
-              // }, child: Text('click to watch'))
+                  child: CircularProgressIndicator(),
+                ), // Show loading indicator when in progress
             ],
           ),
         ),

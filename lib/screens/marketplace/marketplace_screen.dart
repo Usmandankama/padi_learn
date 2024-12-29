@@ -8,7 +8,8 @@ import '../student/components/marketPlaceList.dart';
 import 'components/courseGrid.dart';
 
 class MarketplaceScreen extends StatefulWidget {
-  const MarketplaceScreen({super.key});
+  final String userRole;
+  const MarketplaceScreen({super.key, required this.userRole});
 
   @override
   State<MarketplaceScreen> createState() => _MarketplaceScreenState();
@@ -128,7 +129,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
 
                     return Padding(
                         padding: const EdgeInsets.all(15),
-                        child: CoursesList(courses: filteredCourses));
+                        child: MarketPlaceList(courses: filteredCourses, userRole: widget.userRole,));
                   }),
           ),
         ],
