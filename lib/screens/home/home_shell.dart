@@ -49,13 +49,13 @@ class _HomeShellState extends State<HomeShell> {
           if (isStudent) {
             _screens = [
               const StudentDashboard(),
-              const MarketplaceScreen(),
+              MarketplaceScreen(userRole: role,),
               const StudentProfileScreen(),
             ];
           } else if (role == 'Teacher') {
             _screens = [
               TeacherDashboardScreen(),
-              const MarketplaceScreen(), 
+              MarketplaceScreen(userRole: role,), 
               const TeacherProfileScreen()
             ];
           }
