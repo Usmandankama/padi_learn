@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -47,10 +49,12 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Course updated successfully')),
+        const SnackBar(
+          content: Text('Course updated successfully'),
+        ),
       );
+      Navigator.pop(context);
     } catch (e) {
-      print('Error updating course: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to update course')),
       );

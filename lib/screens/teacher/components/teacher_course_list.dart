@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore package
 import 'package:padi_learn/screens/description/course_description_screen.dart';
+import 'package:padi_learn/screens/teacher/editCourse_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
 
 class TeacherCourseList extends StatelessWidget {
@@ -22,7 +23,7 @@ class TeacherCourseList extends StatelessWidget {
       itemCount: courses.length, // Display all courses
       itemBuilder: (context, index) {
         final courseData = courses[index].data() as Map<String, dynamic>;
-        
+
         final title = courseData['title'] ?? 'No Title'; // Get title
         final thumbnailUrl =
             courseData['thumbnailUrl'] ?? ''; // Fetch thumbnail URL
@@ -121,8 +122,17 @@ class TeacherCourseList extends StatelessWidget {
                         IconButton(
                           icon: const Icon(Icons.edit),
                           onPressed: () {
-                            _editCourse(context, courseId, title,
-                                price); // Call the edit function
+                            // _editCourse(context, courseId, title,
+                            //     price);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EditCourseScreen(
+                                  courseId: courseId,
+                                  courseData: courseData,
+                                ),
+                              ),
+                            );
                           },
                           color: AppColors.primaryColor,
                         ),
