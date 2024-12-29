@@ -20,8 +20,16 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
   late TextEditingController _priceController;
-
+  String? _selectedCategory;
   bool _isLoading = false;
+
+  final List<String> _categories = [
+    'Programming',
+    'Design',
+    'Marketing',
+    'Business',
+    'Data Science',
+  ];
 
   @override
   void initState() {
@@ -31,9 +39,14 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
         TextEditingController(text: widget.courseData['description']);
     _priceController =
         TextEditingController(text: widget.courseData['price'].toString());
+    _selectedCategory = widget.courseData['category'];
   }
 
-  Future<void> _saveChanges() async {
+  Future<void> _updateCourse() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -43,20 +56,19 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
           .collection('courses')
           .doc(widget.courseId)
           .update({
-        'title': _titleController.text,
-        'description': _descriptionController.text,
-        'price': double.tryParse(_priceController.text) ?? 0,
+        'title': _titleController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'price': double.parse(_priceController.text.trim()),
+        'category': _selectedCategory,
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Course updated successfully'),
-        ),
+        const SnackBar(content: Text('Course updated successfully!')),
       );
       Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update course')),
+        SnackBar(content: Text('Failed to update course: $e')),
       );
     } finally {
       setState(() {
@@ -65,83 +77,140 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    _priceController.dispose();
-    super.dispose();
-  }
+  final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Course'),
-        backgroundColor: AppColors.primaryAccent,
+        title: Text(
+          'Edit Course',
+          style: TextStyle(
+              color: AppColors.primaryColor,
+              fontSize: 18.sp,
+              fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: AppColors.primaryColor),
+        elevation: 0,
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextFormField(
-                      controller: _titleController,
-                      decoration: const InputDecoration(
-                        labelText: 'Course Title',
-                        labelStyle: TextStyle(color: AppColors.primaryColor),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppColors.primaryColor),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 20.h),
-                    TextFormField(
-                      controller: _descriptionController,
-                      maxLines: 4,
-                      decoration: const InputDecoration(
-                        labelText: 'Description',
-                        labelStyle: TextStyle(color: AppColors.primaryColor),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppColors.primaryColor),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 20.h),
-                    TextFormField(
-                      controller: _priceController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Price',
-                        labelStyle: TextStyle(color: AppColors.primaryColor),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: AppColors.primaryColor),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 20.h),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _saveChanges,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10.r),
-                          ),
-                        ),
-                        child: const Text(
-                          'Save Changes',
-                          style: TextStyle(color: AppColors.appWhite),
-                        ),
-                      ),
-                    ),
-                  ],
+        padding: EdgeInsets.symmetric(horizontal: 24.0.w, vertical: 16.0.h),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              TextFormField(
+                controller: _titleController,
+                decoration: InputDecoration(
+                  labelText: 'Course Title',
+                  labelStyle: TextStyle(fontSize: 16.sp),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  contentPadding:
+                      EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
                 ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a course title';
+                  }
+                  return null;
+                },
               ),
+              SizedBox(height: 20.h),
+              TextFormField(
+                controller: _descriptionController,
+                decoration: InputDecoration(
+                  labelText: 'Course Description',
+                  labelStyle: TextStyle(fontSize: 16.sp),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  contentPadding:
+                      EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
+                ),
+                maxLines: 5,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a course description';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20.h),
+              DropdownButtonFormField<String>(
+                value: _selectedCategory,
+                decoration: InputDecoration(
+                  labelText: 'Category',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  contentPadding:
+                      EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
+                ),
+                items: _categories.map((String category) {
+                  return DropdownMenuItem<String>(
+                    value: category,
+                    child: Text(category, style: TextStyle(fontSize: 16.sp)),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedCategory = value;
+                  });
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select a category';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20.h),
+              TextFormField(
+                controller: _priceController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Course Price',
+                  labelStyle: TextStyle(fontSize: 16.sp),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  contentPadding:
+                      EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a course price';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20.h),
+              ElevatedButton(
+                onPressed: _isLoading ? null : _updateCourse,
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: 16.h),
+                  backgroundColor: AppColors.primaryColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Text(
+                        'Update Course',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.appWhite,
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
