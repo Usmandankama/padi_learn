@@ -87,10 +87,10 @@ Future<String> getUserRole(String uid) async {
 Future<void> signUp(
     BuildContext context, String email, String password, String role,name) async {
   try {
-    UserCredential userCredential =
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
-      email: email,
-      password: password,
+      UserCredential userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
     );
 
     // Save user role in Firestore

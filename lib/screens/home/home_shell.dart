@@ -6,7 +6,6 @@ import 'package:padi_learn/screens/marketplace/marketplace_screen.dart';
 import 'package:padi_learn/screens/student/student_dashboard.dart';
 import 'package:padi_learn/screens/login/login_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
-
 import '../student/student_profile_screen.dart';
 import '../teacher/teacher_dashboard.dart';
 import '../teacher/teacher_profle.dart';
