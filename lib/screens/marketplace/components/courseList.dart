@@ -45,27 +45,27 @@ class CoursesList extends StatelessWidget {
             child: Row(
               children: [
                 // Course thumbnail
-                ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(10),
-                    bottomLeft: Radius.circular(10),
-                  ),
-                  child: Image.network(
-                    thumbnailUrl,
-                    height: 100.0,
-                    width: 100.0,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors
-                            .grey, // Placeholder if thumbnail fails to load
-                        child: const Center(
-                          child: Icon(Icons.broken_image, color: Colors.white),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+                // ClipRRect(
+                //   borderRadius: const BorderRadius.only(
+                //     topLeft: Radius.circular(10),
+                //     bottomLeft: Radius.circular(10),
+                //   ),
+                //   child: Image.network(
+                //     thumbnailUrl,
+                //     height: 100.0,
+                //     width: 100.0,
+                //     fit: BoxFit.cover,
+                //     errorBuilder: (context, error, stackTrace) {
+                //       return Container(
+                //         color: Colors
+                //             .grey, // Placeholder if thumbnail fails to load
+                //         child: const Center(
+                //           child: Icon(Icons.broken_image, color: Colors.white),
+                //         ),
+                //       );
+                //     },
+                //   ),
+                // ),
                 const SizedBox(width: 10),
                 // Course details
                 Expanded(

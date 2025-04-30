@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:padi_learn/controller/course_controller.dart';
 import 'package:padi_learn/controller/teacherController.dart';
+import 'package:padi_learn/screens/settings/settings_screen.dart';
 import 'controller/marketplace_controller.dart';
 import 'controller/user_controller.dart';
 import 'screens/onbooading/spalsh_screen.dart';

@@ -1,0 +1,2 @@
+C:/Users/USMAN/Desktop/Github projects/padi_learn/android/app/.cxx/Debug/406k511f/x86/CMakeFiles/edit_cache.dir
+C:/Users/USMAN/Desktop/Github projects/padi_learn/android/app/.cxx/Debug/406k511f/x86/CMakeFiles/rebuild_cache.dir

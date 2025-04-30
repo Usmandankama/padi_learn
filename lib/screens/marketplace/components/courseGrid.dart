@@ -61,20 +61,6 @@ class CoursesGridLimited extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: <Widget>[
-                  // Display the custom thumbnail as the background
-                  Image.network(
-                    thumbnailUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors
-                            .grey, // Placeholder if thumbnail fails to load
-                        child: const Center(
-                          child: Icon(Icons.broken_image, color: Colors.white),
-                        ),
-                      );
-                    },
-                  ),
                   // Overlay course title and price
                   Positioned(
                     bottom: 10,
