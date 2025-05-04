@@ -47,12 +47,16 @@ class _SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       backgroundColor: AppColors.primaryColor,
       body: Center(
-        child: Text(
-          'padiLearn',
-          style: TextStyle(
-            color: AppColors.appWhite,
-            fontSize: 30.sp,
-            fontWeight: FontWeight.w700,
+        child: CircleAvatar(
+          backgroundColor: Colors.white,
+          maxRadius: 100.r,
+          child: Text(
+            'PadiLearn',
+            style: TextStyle(
+              color: AppColors.primaryColor,
+              fontSize: 25.sp,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ),
