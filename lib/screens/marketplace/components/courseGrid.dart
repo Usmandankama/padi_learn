@@ -28,8 +28,7 @@ class CoursesGridLimited extends StatelessWidget {
       itemBuilder: (context, index) {
         final courseData = courses[index].data() as Map<String, dynamic>;
         final title = courseData['title'] ?? 'No Title'; // Get title
-        final thumbnailUrl =
-            courseData['thumbnailUrl'] ?? ''; // Fetch thumbnail URL
+        final thumbnailUrl = courseData['thumbnailUrl'] ?? ''; // Fetch thumbnail URL
         final author = courseData['author'] ?? '';
         final price = courseData['price'] ?? 'Free'; // Fetch price
         final description = courseData['description'] ??
@@ -61,6 +60,10 @@ class CoursesGridLimited extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: <Widget>[
+                  Image.network(
+                    thumbnailUrl, // or use Image.network('your_url')
+                    fit: BoxFit.cover,
+                  ),
                   // Overlay course title and price
                   Positioned(
                     bottom: 10,
