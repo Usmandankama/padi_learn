@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore package
-import 'package:padi_learn/screens/description/course_description_screen.dart';
 import 'package:padi_learn/screens/teacher/editCourse_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
 
@@ -32,14 +31,6 @@ class TeacherCourseList extends StatelessWidget {
             courses[index].id; // Get course ID for editing/deleting
 
         return GestureDetector(
-          // onTap: () {
-          //   // Navigate to course details page
-          //   Navigator.push(
-          //     context,
-          //     MaterialPageRoute(
-          //         builder: (context) => ),
-          //   );
-          // },
           child: Container(
             height: 300.h,
             width: double.infinity,
@@ -63,26 +54,26 @@ class TeacherCourseList extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Course thumbnail
-                // ClipRRect(
-                //   borderRadius: BorderRadius.only(
-                //       topLeft: Radius.circular(10.r),
-                //       topRight: Radius.circular(10.r)),
-                //   child: Image.network(
-                //     thumbnailUrl,
-                //     height: 200.h,
-                //     width: double.infinity,
-                //     fit: BoxFit.cover,
-                //     errorBuilder: (context, error, stackTrace) {
-                //       return Container(
-                //         color: Colors
-                //             .grey, // Placeholder if thumbnail fails to load
-                //         child: const Center(
-                //           child: Icon(Icons.broken_image, color: Colors.white),
-                //         ),
-                //       );
-                //     },
-                //   ),
-                // ),
+                ClipRRect(
+                  borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(10.r),
+                      topRight: Radius.circular(10.r)),
+                  child: Image.network(
+                    thumbnailUrl,
+                    height: 200.h,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors
+                            .grey, // Placeholder if thumbnail fails to load
+                        child: const Center(
+                          child: Icon(Icons.broken_image, color: Colors.white),
+                        ),
+                      );
+                    },
+                  ),
+                ),
                 const SizedBox(width: 10),
                 // Course details
                 Row(
