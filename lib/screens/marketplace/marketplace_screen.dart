@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:padi_learn/screens/teacher/components/teacher_course_list.dart';
 import '../../controller/marketplace_controller.dart';
 import '../../utils/colors.dart';
 import '../student/components/marketPlaceList.dart';
-import 'components/courseGrid.dart';
 
 class MarketplaceScreen extends StatefulWidget {
   final String userRole;
