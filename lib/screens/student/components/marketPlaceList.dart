@@ -73,27 +73,27 @@ class MarketPlaceList extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Course thumbnail
-                // ClipRRect(
-                //   borderRadius: BorderRadius.only(
-                //     topLeft: Radius.circular(10.r),
-                //     topRight: Radius.circular(10.r),
-                //   ),
-                //   child: Image.network(
-                //     thumbnailUrl,
-                //     height: 200.h,
-                //     width: double.infinity,
-                //     fit: BoxFit.cover,
-                //     errorBuilder: (context, error, stackTrace) {
-                //       return Container(
-                //         color: Colors
-                //             .grey, // Placeholder if thumbnail fails to load
-                //         child: const Center(
-                //           child: Icon(Icons.broken_image, color: Colors.white),
-                //         ),
-                //       );
-                //     },
-                //   ),
-                // ),
+                ClipRRect(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(10.r),
+                    topRight: Radius.circular(10.r),
+                  ),
+                  child: Image.network(
+                    thumbnailUrl,
+                    height: 200.h,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors
+                            .grey, // Placeholder if thumbnail fails to load
+                        child: const Center(
+                          child: Icon(Icons.broken_image, color: Colors.white),
+                        ),
+                      );
+                    },
+                  ),
+                ),
                 const SizedBox(width: 10),
                 // Course details
                 Padding(
