@@ -55,7 +55,8 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
         child: Column(
           children: <Widget>[
             _buildProfileHeader(),
-            _buildProfileActions(),
+            SizedBox(height: 20.h),
+            // _buildProfileActions(),
             _buildTabBar(),
             _buildTabBarView(),
           ],
@@ -71,8 +72,11 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
         children: <Widget>[
           CircleAvatar(
             radius: 50.r,
-            backgroundImage: const NetworkImage(
-                'https://via.placeholder.com/150'), // Replace with profile image
+            backgroundImage:  NetworkImage(
+              controller.profileImageUrl.value.isNotEmpty
+                  ? controller.profileImageUrl.value
+                  : 'https://via.placeholder.com/150', // Placeholder image
+            ), // Replace with profile image
           ),
           SizedBox(height: 10.h),
           Obx(() => Text(
@@ -89,31 +93,30 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
     );
   }
 
-
-  Widget _buildProfileActions() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 20.h),
-      child: ElevatedButton(
-        onPressed: () {
-          // Handle Edit Profile
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryColor,
-          padding: const EdgeInsets.all(15),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-        ),
-        child: Text(
-          'Edit Profile',
-          style: TextStyle(
-            color: AppColors.appWhite,
-            fontSize: 16.sp,
-          ),
-        ),
-      ),
-    );
-  }
+  // Widget _buildProfileActions() {
+  //   return Padding(
+  //     padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 20.h),
+  //     child: ElevatedButton(
+  //       onPressed: () {
+  //         // Handle Edit Profile
+  //       },
+  //       style: ElevatedButton.styleFrom(
+  //         backgroundColor: AppColors.primaryColor,
+  //         padding: const EdgeInsets.all(15),
+  //         shape: RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.circular(12.r),
+  //         ),
+  //       ),
+  //       child: Text(
+  //         'Edit Profile',
+  //         style: TextStyle(
+  //           color: AppColors.appWhite,
+  //           fontSize: 16.sp,
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildTabBar() {
     return TabBar(

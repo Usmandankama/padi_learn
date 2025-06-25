@@ -58,8 +58,10 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                     ),
                     Positioned(
                       top: 270.h,
+                      left: 0,
+                      right: 0,
                       child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           // Author Info
@@ -97,7 +99,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                               ],
                             ),
                           ),
-                          SizedBox(width: 115.w),
+                          SizedBox(width: 5.w),
                           Container(
                             height: 40.h,
                             decoration: BoxDecoration(
