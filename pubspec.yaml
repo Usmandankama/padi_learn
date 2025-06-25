@@ -44,6 +44,7 @@ dependencies:
   # video_thumbnail: ^0.5.3
   get: ^4.6.6
   video_player: ^2.9.2
+  google_fonts: ^6.2.1
 
 dev_dependencies:
   flutter_test:
