@@ -24,7 +24,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       'Programming',
       'Design',
       'Marketing',
-      'Business'
+      'Business',
     ];
 
     return Scaffold(
@@ -64,7 +64,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
               ),
               onChanged: (value) {
                 setState(() {
-                  controller.searchQuery.value = value; // Update search query
+                  // Update search query
+                  controller.searchQuery.value = value;
                 });
               },
             ),
@@ -80,7 +81,6 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                 itemBuilder: (context, index) {
                   String category = categories[index];
                   bool isSelected = controller.selectedFilter.value == category;
-
                   return GestureDetector(
                     onTap: () {
                       setState(() {
@@ -113,23 +113,31 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
             ),
           ),
           // Display the courses in a GridView
-          SizedBox(
-            // height: 500.h,
-            child: controller.courses.isEmpty
-                ? const Center(child: CircularProgressIndicator())
-                : Builder(builder: (context) {
-                    // Apply search and filter
-                    final filteredCourses = controller.filterCourses();
-
-                    if (filteredCourses.isEmpty) {
-                      return const Center(child: Text('No courses available'));
-                    }
-
-                    return Padding(
+          Obx(() {
+            return SizedBox(
+              // height: 500.h,
+              child: controller.courses.isEmpty
+                  ? const Center(
+                      child: CircularProgressIndicator(),
+                    )
+                  : Builder(builder: (context) {
+                      // Apply search and filter
+                      final filteredCourses = controller.filterCourses();
+                      if (filteredCourses.isEmpty) {
+                        return const Center(
+                          child: Text('No courses available'),
+                        );
+                      }
+                      return Padding(
                         padding: const EdgeInsets.all(15),
-                        child: MarketPlaceList(courses: filteredCourses, userRole: widget.userRole,));
-                  }),
-          ),
+                        child: MarketPlaceList(
+                          courses: filteredCourses,
+                          userRole: widget.userRole,
+                        ),
+                      );
+                    }),
+            );
+          }),
         ],
       ),
     );

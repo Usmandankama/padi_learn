@@ -5,7 +5,7 @@ import '../../../../controller/teacherController.dart';
 import '../../../../utils/colors.dart';
 
 class ProfileStats extends StatelessWidget {
-  final TeacherDashboardController controller;
+  final TeacherController controller;
 
   const ProfileStats({required this.controller});
 

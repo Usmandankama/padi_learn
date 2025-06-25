@@ -2,18 +2,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:padi_learn/controller/teacherController.dart';
 import 'package:padi_learn/screens/teacher/components/earning_widget.dart';
+import 'package:padi_learn/screens/teacher/components/teacher_course_list.dart';
 import 'package:padi_learn/screens/teacher/create_course_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
-import '../../controller/teacherController.dart';
-import 'components/teacher_course_list.dart';
 
 class TeacherDashboardScreen extends StatelessWidget {
-  // Instantiate the TeacherDashboardController for managing course data and state
-  final TeacherDashboardController controller = Get.put(TeacherDashboardController());
+  const TeacherDashboardScreen({super.key});
 
+  // Instantiate the TeacherDashboardController for managing course data and state
   @override
   Widget build(BuildContext context) {
+    final TeacherController controller = Get.put(TeacherController());
     return Scaffold(
       backgroundColor: AppColors.appWhite,
       appBar: AppBar(
@@ -83,7 +84,7 @@ class TeacherDashboardScreen extends StatelessWidget {
               ),
             ),
             SizedBox(height: 10.h),
-
+          
             // StreamBuilder for Courses
             StreamBuilder<QuerySnapshot>(
               stream: controller.courseStream(), // Subscribe to the Firestore course stream

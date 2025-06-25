@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:padi_learn/controller/user_controller.dart';
-import 'package:padi_learn/screens/description/course_description_screen.dart';
 import 'package:padi_learn/screens/student/components/ongoingCourses.dart';
 import 'package:padi_learn/utils/colors.dart';
 
@@ -25,7 +25,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     return Scaffold(
       backgroundColor: AppColors.appWhite,
       appBar: AppBar(
-        centerTitle: true,
+        centerTitle: true,  
         title: Text(
           'Dashboard',
           style: TextStyle(
@@ -78,11 +78,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
             SizedBox(height: 20.h),
             Text(
               'Courses to Buy',
-              style: TextStyle(
-                fontSize: 20.sp,
-                fontWeight: FontWeight.bold,
+              style: GoogleFonts.playfair(
                 color: AppColors.primaryColor,
-              ),
+                fontSize: 32.sp,
+                fontWeight: FontWeight.bold,
+              ),  
             ),
             SizedBox(height: 10.h),
             SizedBox(

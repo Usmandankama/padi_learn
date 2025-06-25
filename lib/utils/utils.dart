@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:padi_learn/screens/student/student_dashboard.dart';
+import 'package:padi_learn/screens/teacher/my_courses.dart';
 import 'package:padi_learn/screens/teacher/teacher_dashboard.dart';
 import 'package:padi_learn/screens/teacher/teacher_profle.dart';
 import '../screens/home/home_shell.dart';
@@ -143,15 +144,15 @@ Future<void> _initializeUserRole(BuildContext context) async {
       if (role == 'student') {
         screens = [
           const StudentDashboard(),
-          const CoursesScreen(), // You might want to update this screen based on your role
+          // const TeacherMyCoursesPage(), // You might want to update this screen based on your role
           const SettingsScreen(),
           const TeacherProfileScreen(), // If you need different profile screens, adjust accordingly
         ];
       } else if (role == 'teacher') {
         screens = [
           TeacherDashboardScreen(),
-          const CoursesScreen(), // You might want to update this screen based on your role
-          const SettingsScreen(),
+          const TeacherMyCoursesPage(), // You might want to update this screen based on your role
+          // const SettingsScreen(),
           const TeacherProfileScreen(),
         ];
       }

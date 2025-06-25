@@ -20,7 +20,7 @@ class TeacherProfileScreen extends StatefulWidget {
 class _TeacherProfileScreenState extends State<TeacherProfileScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final TeacherDashboardController controller = Get.find();
+  final TeacherController controller = Get.find();
 
   @override
   void initState() {

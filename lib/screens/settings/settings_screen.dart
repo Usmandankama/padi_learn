@@ -1,7 +1,6 @@
 // settings_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:padi_learn/screens/login/login_screen.dart';
 import 'package:padi_learn/screens/teacher/editprofile_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
 import 'package:padi_learn/utils/utils.dart'; // Import the utils file

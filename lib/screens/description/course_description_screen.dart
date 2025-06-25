@@ -37,86 +37,99 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Obx(
-                () => Container(
-                  height: 300.h,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                        image: NetworkImage(
-                          coursesController.selectedCourseImage.value,
-                        ),
-                        fit: BoxFit.cover,
-                        filterQuality: FilterQuality.high),
-                    borderRadius: BorderRadius.circular(20.r),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Author Info
-                      Container(
-                        height: 50.h,
-                        // width: 100.w,
-                        decoration: BoxDecoration(
-                          color: AppColors.appWhite,
-                          boxShadow: [
-                            BoxShadow(
-                              blurRadius: 2,
-                              color: Colors.black.withOpacity(.4),
-                              spreadRadius: 2,
+                () => Stack(
+                  children: [
+                    SizedBox(
+                      height: 350.h,
+                      width: double.infinity,
+                    ),
+                    Container(
+                      height: 300.h,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                            image: NetworkImage(
+                              coursesController.selectedCourseImage.value,
                             ),
-                          ],
-                          borderRadius: BorderRadius.circular(30.r),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(left: 10),
-                              child: CircleAvatar(
-                                radius: 15.r,
-                              ),
-                            ),
-                            SizedBox(width: 10.w),
-                            Padding(
-                              padding: const EdgeInsets.only(right: 10.0),
-                              child: Text(
-                                coursesController.selectedCourseAuthor.value,
-                              ),
-                            ),
-                          ],
-                        ),
+                            fit: BoxFit.cover,
+                            filterQuality: FilterQuality.high),
+                        borderRadius: BorderRadius.circular(20.r),
                       ),
-                      Container(
-                        height: 50.h,
-                        decoration: BoxDecoration(
-                          color: AppColors.appWhite,
-                          boxShadow: [
-                            BoxShadow(
-                              blurRadius: 2,
-                              color: Colors.black.withOpacity(.4),
-                              spreadRadius: 2,
+                    ),
+                    Positioned(
+                      top: 270.h,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Author Info
+                          Container(
+                            height: 40.h,
+                            // width: 100.w,
+                            decoration: BoxDecoration(
+                              color: AppColors.appWhite,
+                              boxShadow: [
+                                BoxShadow(
+                                  blurRadius: .5,
+                                  color: Colors.black.withOpacity(.4),
+                                  spreadRadius: .5,
+                                ),
+                              ],
+                              borderRadius: BorderRadius.circular(30.r),
                             ),
-                          ],
-                          borderRadius: BorderRadius.circular(30.r),
-                        ),
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(10.0),
-                            child: Text(
-                              isFree
-                                  ? 'Free'
-                                  : 'NGN ${coursesController.selectedCoursePrice.value}',
-                              style: const TextStyle(
-                                color: AppColors.primaryColor,
-                                fontWeight: FontWeight.bold,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 5),
+                                  child: CircleAvatar(
+                                    radius: 15.r,
+                                  ),
+                                ),
+                                SizedBox(width: 5.w),
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 10.0),
+                                  child: Text(
+                                    coursesController
+                                        .selectedCourseAuthor.value,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(width: 115.w),
+                          Container(
+                            height: 40.h,
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryColor,
+                              boxShadow: [
+                                BoxShadow(
+                                  blurRadius: .5,
+                                  color: Colors.black.withOpacity(.4),
+                                  spreadRadius: .5,
+                                ),
+                              ],
+                              borderRadius: BorderRadius.circular(30.r),
+                            ),
+                            child: Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: Text(
+                                  isFree
+                                      ? 'Free'
+                                      : 'NGN ${coursesController.selectedCoursePrice.value}',
+                                  style: const TextStyle(
+                                    color: AppColors.appWhite,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               SizedBox(height: 20.h),

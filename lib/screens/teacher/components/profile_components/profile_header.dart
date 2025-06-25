@@ -6,9 +6,12 @@ import '../../../../controller/teacherController.dart';
 import '../../../../utils/colors.dart';
 
 class ProfileHeader extends StatelessWidget {
-  final TeacherDashboardController controller;
+  final TeacherController controller;
 
-  const ProfileHeader({required this.controller});
+  const ProfileHeader({
+    super.key,
+    required this.controller,
+  });
 
   @override
   Widget build(BuildContext context) {

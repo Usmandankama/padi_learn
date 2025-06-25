@@ -46,7 +46,7 @@ class MarketPlaceList extends StatelessWidget {
               author,
               videoUrl,
             );
-            if (userRole == 'Student') {
+            if (userRole == 'Student' || userRole == 'student') {
               Get.to(
                 () => CourseDescriptionScreen(),
               );
@@ -78,20 +78,24 @@ class MarketPlaceList extends StatelessWidget {
                     topLeft: Radius.circular(10.r),
                     topRight: Radius.circular(10.r),
                   ),
-                  child: Image.network(
-                    thumbnailUrl,
-                    height: 200.h,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors
-                            .grey, // Placeholder if thumbnail fails to load
-                        child: const Center(
-                          child: Icon(Icons.broken_image, color: Colors.white),
-                        ),
-                      );
-                    },
+                  child: AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: Image.network(
+                      thumbnailUrl,
+                      height: 200.h,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors
+                              .grey, // Placeholder if thumbnail fails to load
+                          child: const Center(
+                            child:
+                                Icon(Icons.broken_image, color: Colors.white),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -105,6 +109,14 @@ class MarketPlaceList extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                     maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.only(left: 8.w, bottom: 8.h),
+                  child: Text(
+                    'By $author',
+                    style: TextStyle(fontSize: 12.sp, color: Colors.black54),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),

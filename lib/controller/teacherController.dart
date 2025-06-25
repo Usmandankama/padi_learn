@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 
-class TeacherDashboardController extends GetxController {
+class TeacherController extends GetxController {
   // Observable variables
   var teacherName = 'Loading...'.obs;
   var profileImageUrl = "https://via.placeholder.com/150".obs;
