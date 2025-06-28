@@ -1,0 +1,41 @@
+// lib/controller/enrollment_controller.dart
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+class EnrollmentController {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final String userId;
+
+  EnrollmentController({required this.userId});
+
+  String _docId(String courseId) => '${userId}_$courseId';
+
+  Future<bool> isUserEnrolled(String courseId) async {
+    final doc = await _firestore.collection('enrollments').doc(_docId(courseId)).get();
+    return doc.exists;
+  }
+
+  Future<void> enrollUser({
+    required String courseId,
+    required String title,
+    required String image,
+    required String videoUrl,
+    bool isFree = false,
+  }) async {
+    final docRef = _firestore.collection('enrollments').doc(_docId(courseId));
+
+    final doc = await docRef.get();
+    if (doc.exists) return;
+
+    await docRef.set({
+      'userId': userId,
+      'courseId': courseId,
+      'title': title,
+      'image': image,
+      'videoUrl': videoUrl,
+      'progress': 0,
+      'isFree': isFree,
+      'enrolledAt': Timestamp.now(),
+    });
+  }
+}
