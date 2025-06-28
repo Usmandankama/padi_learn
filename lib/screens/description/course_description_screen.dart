@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:padi_learn/controller/course_controller.dart';
 import 'package:padi_learn/controller/teacher_controllers/enrollment_controller';
 import 'package:padi_learn/screens/description/components/course_header.dart';
-import 'package:padi_learn/screens/videoplayer/vvideoPlayer.dart';
+import 'package:padi_learn/screens/videoplayer/videoPlayer.dart';
 import 'package:padi_learn/utils/colors.dart';
 
 /// Screen that displays full course details with the option to enroll or continue learning.

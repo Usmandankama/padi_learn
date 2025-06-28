@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:padi_learn/screens/videoplayer/vvideoPlayer.dart';
+import 'package:padi_learn/screens/videoplayer/videoPlayer.dart';
 import 'package:padi_learn/utils/colors.dart';
 import '../../../controller/ongoing_courses_controller.dart';
 
