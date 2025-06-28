@@ -6,12 +6,11 @@ class OngoingCoursesController extends GetxController {
 
   OngoingCoursesController({required this.userId});
 
-  // Observable list of courses
+  // Observable list of ongoing courses
   var ongoingCourses = <Map<String, dynamic>>[].obs;
   var isLoading = true.obs;
   var errorMessage = ''.obs;
 
-  // Firebase instance
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
@@ -20,34 +19,25 @@ class OngoingCoursesController extends GetxController {
     fetchOngoingCourses();
   }
 
-  // Fetch ongoing courses in real-time
   void fetchOngoingCourses() {
     _firestore
-        .collection('users')
-        .doc(userId)
+        .collection('enrollments')
+        .where('userId', isEqualTo: userId)
         .snapshots()
-        .listen((userDoc) {
-      if (userDoc.exists) {
-        // Extract the ongoingCourses field
-        final ongoingCoursesData = userDoc.data()?['ongoingCourses'] as List<dynamic>? ?? [];
+        .listen((snapshot) {
+      final data = snapshot.docs.map((doc) => doc.data()).toList();
 
-        // Map the courses and update the observable list
-        ongoingCourses.value = ongoingCoursesData.map((course) {
-          return {
-            'id': course['id'], // Assuming the course ID is included
-            'title': course['title'], // Assuming title is available
-            'image': course['image'], // Assuming thumbnail URL is available
-            'progress': course['progress'] ?? 0, // Default progress to 0 if missing
-          };
-        }).toList();
-        
-        isLoading.value = false; // Loading complete
-        errorMessage.value = ''; // Clear any previous error
-      } else {
-        errorMessage.value = 'User document not found';
-        ongoingCourses.clear();
-        isLoading.value = false;
-      }
+      ongoingCourses.value = data.map((course) {
+        return {
+          'id': course['courseId'],
+          'title': course['title'],
+          'image': course['image'],
+          'progress': course['progress'] ?? 0,
+        };
+      }).toList();
+
+      isLoading.value = false;
+      errorMessage.value = '';
     }, onError: (e) {
       errorMessage.value = 'Error fetching ongoing courses: $e';
       isLoading.value = false;
