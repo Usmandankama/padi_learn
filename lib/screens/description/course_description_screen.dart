@@ -1,199 +1,118 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:padi_learn/controller/course_controller.dart';
+import 'package:padi_learn/controller/teacher_controllers/enrollment_controller';
+import 'package:padi_learn/screens/description/components/course_header.dart';
 import 'package:padi_learn/screens/videoplayer/vvideoPlayer.dart';
 import 'package:padi_learn/utils/colors.dart';
-import '../../controller/course_controller.dart';
 
+/// Screen that displays full course details with the option to enroll or continue learning.
 class CourseDescriptionScreen extends StatefulWidget {
   @override
-  State<CourseDescriptionScreen> createState() =>
-      _CourseDescriptionScreenState();
+  State<CourseDescriptionScreen> createState() => _CourseDescriptionScreenState();
 }
 
 class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
   final CoursesController coursesController = Get.find<CoursesController>();
+
+  // Track course status and UI state
   bool isFree = false;
-  bool isLoading = false; // Add a loading state variable
+  bool isLoading = false;
+  bool isAlreadyEnrolled = false;
+
+  // Enrollment logic controller
+  late final EnrollmentController enrollmentController;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Get current user
+    final currentUser = FirebaseAuth.instance.currentUser!;
+    enrollmentController = EnrollmentController(userId: currentUser.uid);
+
+    // Determine if the selected course is free
+    isFree = coursesController.selectedCoursePrice.value == 0;
+
+    // Check if the user is already enrolled in this course
+    final courseId = coursesController.selectedCourseId.value;
+    enrollmentController.isUserEnrolled(courseId).then((enrolled) {
+      setState(() {
+        isAlreadyEnrolled = enrolled;
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    var courseFee = coursesController.selectedCoursePrice.value;
-
-    // Check if the course is free and set state only if it has changed
-    if (isFree != (courseFee == 0)) {
-      setState(() {
-        isFree = courseFee == 0;
-      });
-    }
-
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(), // Basic app bar
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Obx(
-                () => Stack(
-                  children: [
-                    SizedBox(
-                      height: 350.h,
-                      width: double.infinity,
-                    ),
-                    Container(
-                      height: 300.h,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        image: DecorationImage(
-                            image: NetworkImage(
-                              coursesController.selectedCourseImage.value,
-                            ),
-                            fit: BoxFit.cover,
-                            filterQuality: FilterQuality.high),
-                        borderRadius: BorderRadius.circular(20.r),
-                      ),
-                    ),
-                    Positioned(
-                      top: 270.h,
-                      left: 0,
-                      right: 0,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Author Info
-                          Container(
-                            height: 40.h,
-                            // width: 100.w,
-                            decoration: BoxDecoration(
-                              color: AppColors.appWhite,
-                              boxShadow: [
-                                BoxShadow(
-                                  blurRadius: .5,
-                                  color: Colors.black.withOpacity(.4),
-                                  spreadRadius: .5,
-                                ),
-                              ],
-                              borderRadius: BorderRadius.circular(30.r),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 5),
-                                  child: CircleAvatar(
-                                    radius: 15.r,
-                                  ),
-                                ),
-                                SizedBox(width: 5.w),
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 10.0),
-                                  child: Text(
-                                    coursesController
-                                        .selectedCourseAuthor.value,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(width: 5.w),
-                          Container(
-                            height: 40.h,
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryColor,
-                              boxShadow: [
-                                BoxShadow(
-                                  blurRadius: .5,
-                                  color: Colors.black.withOpacity(.4),
-                                  spreadRadius: .5,
-                                ),
-                              ],
-                              borderRadius: BorderRadius.circular(30.r),
-                            ),
-                            child: Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: Text(
-                                  isFree
-                                      ? 'Free'
-                                      : 'NGN ${coursesController.selectedCoursePrice.value}',
-                                  style: const TextStyle(
-                                    color: AppColors.appWhite,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+
+              /// Course image, author, and price tag (modular component)
+              Obx(() => CourseHeader(
+                imageUrl: coursesController.selectedCourseImage.value,
+                author: coursesController.selectedCourseAuthor.value,
+                isFree: isFree,
+                price: coursesController.selectedCoursePrice.value,
+              )),
+
               SizedBox(height: 20.h),
-              Obx(
-                () => SizedBox(
-                  width: 300.w,
-                  child: Text(
-                    coursesController.selectedCourseTitle.value,
-                    style: TextStyle(
-                      fontSize: 28.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
+
+              /// Course Title
+              Obx(() => Text(
+                coursesController.selectedCourseTitle.value,
+                style: TextStyle(fontSize: 28.sp, fontWeight: FontWeight.bold),
+              )),
+
               SizedBox(height: 10.h),
-              Text(
-                'Description',
-                style: TextStyle(
-                  fontSize: 20.sp,
-                ),
-              ),
-              Obx(
-                () => Text(
-                  coursesController.selectedCourseDescription.value,
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    color: AppColors.fontGrey,
-                  ),
-                ),
-              ),
+
+              /// Static 'Description' label
+              Text('Description', style: TextStyle(fontSize: 20.sp)),
+
+              /// Course Description
+              Obx(() => Text(
+                coursesController.selectedCourseDescription.value,
+                style: TextStyle(fontSize: 16.sp, color: AppColors.fontGrey),
+              )),
+
               SizedBox(height: 70.h),
+
+              /// Enroll / Continue Button (dynamic based on course status)
               Center(
                 child: ElevatedButton(
+                  onPressed: isLoading
+                      ? null
+                      : isAlreadyEnrolled
+                          ? _continueCourse
+                          : _handleEnrollment,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryColor,
                     foregroundColor: AppColors.appWhite,
                   ),
-                  onPressed: () async {
-                    if (isFree) {
-                      await _addFreeCourseToStudent();
-                    } else {
-                      await _purchaseCourse();
-                    }
-                  },
                   child: Padding(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 100.w, vertical: 30.h),
+                    padding: EdgeInsets.symmetric(horizontal: 50.w, vertical: 30.h),
                     child: Text(
-                      isFree ? 'Get for free' : 'Buy course',
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                      ),
+                      isAlreadyEnrolled
+                          ? 'Continue Learning'
+                          : isFree
+                              ? 'Get for Free'
+                              : 'Buy Course',
+                      style: TextStyle(fontSize: 16.sp),
                     ),
                   ),
                 ),
               ),
-              // Circular Progress Indicator
-              if (isLoading)
-                const Center(
-                  child: CircularProgressIndicator(),
-                ), // Show loading indicator when in progress
+
+              /// Optional loading spinner (shown during enrollment)
+              if (isLoading) const Center(child: CircularProgressIndicator()),
             ],
           ),
         ),
@@ -201,101 +120,41 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
     );
   }
 
-  Future<void> _addFreeCourseToStudent() async {
-    setState(() {
-      isLoading = true; // Start loading
-    });
+  /// Handles course enrollment (free or paid)
+  Future<void> _handleEnrollment() async {
+    setState(() => isLoading = true);
 
-    final currentUser = coursesController.getCurrentUser();
+    final courseId = coursesController.selectedCourseId.value;
 
-    if (currentUser != null) {
-      final userRef =
-          FirebaseFirestore.instance.collection('users').doc(currentUser.uid);
-
-      // Prepare course data to be added
-      final courseData = {
-        'id':
-            coursesController.selectedCourseId.value, // Assuming you have this
-        'title': coursesController.selectedCourseTitle.value,
-        'image': coursesController.selectedCourseImage.value,
-        'description': coursesController.selectedCourseDescription.value,
-        'video_url': coursesController.selectedCourseVideoUrl.value,
-        'progress': 0, // Initial progress
-      };
-
-      await userRef.update({
-        'ongoingCourses': FieldValue.arrayUnion([courseData]),
-      }).then((_) {
-        Get.snackbar(
-          'Success',
-          'Course added to your ongoing courses.',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-        Navigator.pop(context); // Exit the page after success
-      }).catchError((error) {
-        Get.snackbar(
-          'Error',
-          'Failed to add course: $error',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-      }).whenComplete(() {
-        setState(() {
-          isLoading = false; // Stop loading
-        });
-      });
-    } else {
-      setState(() {
-        isLoading = false; // Stop loading if user is null
-      });
+    // Prevent duplicate enrollments
+    final alreadyEnrolled = await enrollmentController.isUserEnrolled(courseId);
+    if (alreadyEnrolled) {
+      Get.snackbar('Already Enrolled', 'You already have access to this course.');
+      setState(() => isLoading = false);
+      return;
     }
+
+    // Proceed to enroll the user
+    await enrollmentController.enrollUser(
+      courseId: courseId,
+      title: coursesController.selectedCourseTitle.value,
+      image: coursesController.selectedCourseImage.value,
+      videoUrl: coursesController.selectedCourseVideoUrl.value,
+      isFree: isFree,
+    );
+
+    // Show success message and pop the screen
+    Get.snackbar('Success', isFree ? 'Course added!' : 'Purchase complete!');
+    Navigator.pop(context);
+
+    setState(() {
+      isLoading = false;
+      isAlreadyEnrolled = true;
+    });
   }
 
-  Future<void> _purchaseCourse() async {
-    setState(() {
-      isLoading = true; // Start loading
-    });
-
-    final currentUser = coursesController.getCurrentUser();
-
-    if (currentUser != null) {
-      final userRef =
-          FirebaseFirestore.instance.collection('users').doc(currentUser.uid);
-
-      // Prepare course data to be added
-      final courseData = {
-        'id':
-            coursesController.selectedCourseId.value, // Assuming you have this
-        'title': coursesController.selectedCourseTitle.value,
-        'image': coursesController.selectedCourseImage.value,
-        'description': coursesController.selectedCourseDescription.value,
-        'video_url': coursesController.selectedCourseVideoUrl.value,
-        'progress': 0, // Initial progress
-      };
-
-      await userRef.update({
-        'ongoingCourses': FieldValue.arrayUnion([courseData]),
-      }).then((_) {
-        Get.snackbar(
-          'Success',
-          'Course purchased and added to your ongoing courses.',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-        Navigator.pop(context); // Exit the page after success
-      }).catchError((error) {
-        Get.snackbar(
-          'Error',
-          'Failed to purchase course: $error',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-      }).whenComplete(() {
-        setState(() {
-          isLoading = false; // Stop loading
-        });
-      });
-    } else {
-      setState(() {
-        isLoading = false; // Stop loading if user is null
-      });
-    }
+  /// Navigates the user to the course video player screen
+  void _continueCourse() {
+    Get.to(() => VideoPlayerPage(courseId: coursesController.selectedCourseId.value));
   }
 }
