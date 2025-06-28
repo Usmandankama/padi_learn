@@ -52,7 +52,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen>
         ],
       ),
       body: SingleChildScrollView(
-        child: Column(
+        child: Column( 
           children: <Widget>[
             _buildProfileHeader(),
             SizedBox(height: 20.h),

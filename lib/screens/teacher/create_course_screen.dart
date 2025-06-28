@@ -5,7 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:padi_learn/utils/colors.dart'; // Adjust this import based on your project structure
+import 'package:padi_learn/utils/colors.dart';
 
 class CreateCourseScreen extends StatefulWidget {
   const CreateCourseScreen({super.key});
@@ -22,7 +22,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   final TextEditingController _authorController = TextEditingController();
   String? _selectedCategory;
   File? _videoFile;
-  File? _thumbnailFile; // For custom thumbnail
+  File? _thumbnailFile;
   bool _isLoading = false;
 
   final List<String> _categories = [
@@ -36,7 +36,6 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   Future<void> _pickVideo() async {
     final pickedFile =
         await ImagePicker().pickVideo(source: ImageSource.gallery);
-
     if (pickedFile != null) {
       setState(() {
         _videoFile = File(pickedFile.path);
@@ -47,7 +46,6 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   Future<void> _pickThumbnail() async {
     final pickedFile =
         await ImagePicker().pickImage(source: ImageSource.gallery);
-
     if (pickedFile != null) {
       setState(() {
         _thumbnailFile = File(pickedFile.path);
@@ -56,15 +54,12 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   }
 
   Future<void> _uploadCourse() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     if (_videoFile == null || _thumbnailFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please select both a video and a thumbnail'),
-        ),
+            content: Text('Please select both a video and a thumbnail')),
       );
       return;
     }
@@ -74,50 +69,46 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     });
 
     try {
-      // Upload the video to Firebase Storage
-      final userId =
-          FirebaseAuth.instance.currentUser!.uid; // Get the current user's ID
+      final userId = FirebaseAuth.instance.currentUser!.uid;
 
-      // Upload the video
-      final videoStorageRef = FirebaseStorage.instance.ref().child(
+      // Upload video
+      final videoRef = FirebaseStorage.instance.ref(
           'courses_videos/$userId/${DateTime.now().millisecondsSinceEpoch}.mp4');
-      final videoUploadTask = videoStorageRef.putFile(_videoFile!);
-      final videoSnapshot = await videoUploadTask;
-      final videoUrl = await videoSnapshot.ref.getDownloadURL();
+      final videoSnap = await videoRef.putFile(_videoFile!);
+      final videoUrl = await videoSnap.ref.getDownloadURL();
 
-      // Upload the thumbnail
-      final thumbnailStorageRef = FirebaseStorage.instance.ref().child(
+      // Upload thumbnail
+      final thumbRef = FirebaseStorage.instance.ref(
           'courses_thumbnails/$userId/${DateTime.now().millisecondsSinceEpoch}.jpg');
-      final thumbnailUploadTask = thumbnailStorageRef.putFile(_thumbnailFile!);
-      final thumbnailSnapshot = await thumbnailUploadTask;
-      final thumbnailUrl = await thumbnailSnapshot.ref.getDownloadURL();
+      final thumbSnap = await thumbRef.putFile(_thumbnailFile!);
+      final thumbnailUrl = await thumbSnap.ref.getDownloadURL();
 
-      // Save the course information to Firestore
-      await FirebaseFirestore.instance.collection('courses').add({
+      // Create Firestore document with custom ID
+      final docRef = FirebaseFirestore.instance.collection('courses').doc();
+      await docRef.set({
+        'id': docRef.id,
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
         'price': _priceController.text.trim(),
         'category': _selectedCategory,
         'author': _authorController.text.trim(),
         'videoUrl': videoUrl,
-        'thumbnailUrl': thumbnailUrl, // Save the thumbnail URL
-        'userId': userId, // Associate this course with the current user
+        'thumbnailUrl': thumbnailUrl,
+        'userId': userId,
         'createdAt': Timestamp.now(),
       });
 
-      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Course created successfully!')),
       );
 
-      // Clear the form
       _formKey.currentState!.reset();
       setState(() {
         _videoFile = null;
         _thumbnailFile = null;
         _selectedCategory = null;
       });
-      // Navigate back to the CoursesScreen
+
       Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -134,13 +125,11 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Create Course',
-          style: TextStyle(
-              color: AppColors.primaryColor,
-              fontSize: 18.sp,
-              fontWeight: FontWeight.bold),
-        ),
+        title: Text('Create Course',
+            style: TextStyle(
+                color: AppColors.primaryColor,
+                fontSize: 18.sp,
+                fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         iconTheme: const IconThemeData(color: AppColors.primaryColor),
         elevation: 0,
@@ -151,50 +140,33 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
           key: _formKey,
           child: ListView(
             children: [
-              // Course Title Field
               TextFormField(
                 controller: _titleController,
                 decoration: InputDecoration(
                   labelText: 'Course Title',
-                  labelStyle: TextStyle(fontSize: 16.sp),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
                   ),
-                  contentPadding:
-                      EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a course title';
-                  }
-                  return null;
-                },
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please enter a course title'
+                    : null,
               ),
               SizedBox(height: 20.h),
-
-              // Course Description Field
               TextFormField(
                 controller: _descriptionController,
                 decoration: InputDecoration(
                   labelText: 'Course Description',
-                  labelStyle: TextStyle(fontSize: 16.sp),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
                   ),
-                  contentPadding:
-                      EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
                 ),
                 maxLines: 5,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a course description';
-                  }
-                  return null;
-                },
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please enter a course description'
+                    : null,
               ),
               SizedBox(height: 20.h),
-
-              // Course Category Dropdown
               DropdownButtonFormField<String>(
                 value: _selectedCategory,
                 decoration: InputDecoration(
@@ -202,8 +174,6 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
                   ),
-                  contentPadding:
-                      EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
                 ),
                 items: _categories.map((String category) {
                   return DropdownMenuItem<String>(
@@ -211,17 +181,10 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                     child: Text(category, style: TextStyle(fontSize: 16.sp)),
                   );
                 }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedCategory = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please select a category';
-                  }
-                  return null;
-                },
+                onChanged: (value) => setState(() => _selectedCategory = value),
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please select a category'
+                    : null,
               ),
               SizedBox(height: 20.h),
               TextFormField(
@@ -229,129 +192,73 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                 controller: _priceController,
                 decoration: InputDecoration(
                   labelText: 'Input Price',
-                  labelStyle: TextStyle(fontSize: 16.sp),
-                  
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
                   ),
-                  contentPadding:
-                      EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a course price';
-                  }
-                  return null;
-                },
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please enter a course price'
+                    : null,
               ),
               SizedBox(height: 20.h),
               TextFormField(
                 controller: _authorController,
                 decoration: InputDecoration(
                   labelText: 'Author Name',
-                  labelStyle: TextStyle(fontSize: 16.sp),
-                  
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
                   ),
-                  contentPadding:
-                      EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter author name';
-                  }
-                  return null;
-                },
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please enter author name'
+                    : null,
               ),
               SizedBox(height: 20.h),
-              // Upload Video Button
               ElevatedButton.icon(
                 onPressed: _pickVideo,
-                icon: Icon(Icons.video_library,
-                    size: 24.sp, color: AppColors.primaryColor),
-                label: Text(
-                  'Upload Video',
-                  style:
-                      TextStyle(fontSize: 16.sp, color: AppColors.primaryColor),
-                ),
+                icon: Icon(Icons.video_library, color: AppColors.primaryColor),
+                label: Text('Upload Video',
+                    style: TextStyle(color: AppColors.primaryColor)),
                 style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 14.h),
                   backgroundColor: AppColors.lightGrey,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                 ),
               ),
-
-              // Show selected video file if available
               if (_videoFile != null)
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: 10.h),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.check_circle,
-                          color: AppColors.primaryColor),
-                      SizedBox(width: 8.w),
-                      Expanded(
-                        child: Text(
-                          'Selected video: ${_videoFile!.path.split('/').last}',
-                          style: TextStyle(
-                              fontSize: 14.sp, color: AppColors.primaryColor),
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    'Selected video: ${_videoFile!.path.split('/').last}',
+                    style: TextStyle(color: AppColors.primaryColor),
                   ),
                 ),
-
               SizedBox(height: 20.h),
-
-              // Upload Thumbnail Button
               ElevatedButton.icon(
                 onPressed: _pickThumbnail,
-                icon: Icon(Icons.image,
-                    size: 24.sp, color: AppColors.primaryColor),
-                label: Text(
-                  'Upload Thumbnail',
-                  style:
-                      TextStyle(fontSize: 16.sp, color: AppColors.primaryColor),
-                ),
+                icon: Icon(Icons.image, color: AppColors.primaryColor),
+                label: Text('Upload Thumbnail',
+                    style: TextStyle(color: AppColors.primaryColor)),
                 style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 14.h),
                   backgroundColor: AppColors.lightGrey,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12.r),
                   ),
                 ),
               ),
-
-              // Show selected thumbnail file if available
               if (_thumbnailFile != null)
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: 10.h),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.check_circle,
-                          color: AppColors.primaryColor),
-                      SizedBox(width: 8.w),
-                      Expanded(
-                        child: Text(
-                          'Selected thumbnail: ${_thumbnailFile!.path.split('/').last}',
-                          style: TextStyle(
-                              fontSize: 14.sp, color: AppColors.primaryColor),
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    'Selected thumbnail: ${_thumbnailFile!.path.split('/').last}',
+                    style: TextStyle(color: AppColors.primaryColor),
                   ),
                 ),
-
               SizedBox(height: 20.h),
-
-              // Create Course Button with Loading Indicator
               ElevatedButton(
                 onPressed: _isLoading ? null : _uploadCourse,
                 style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 16.h),
                   backgroundColor: AppColors.primaryColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12.r),
@@ -359,14 +266,9 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                 ),
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                        'Create Course',
+                    : Text('Create Course',
                         style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.appWhite,
-                        ),
-                      ),
+                            color: AppColors.appWhite, fontSize: 16.sp)),
               ),
             ],
           ),

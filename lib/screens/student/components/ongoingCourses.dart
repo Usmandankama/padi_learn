@@ -30,10 +30,8 @@ class OngoingCoursesWidget extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             itemCount: controller.ongoingCourses.length,
             itemBuilder: (context, index) {
-              final courseData =
-                  controller.ongoingCourses[index]; // No need for data() here
-              final imageUrl =
-                  courseData['image'] ?? ''; // Match your data structure
+              final courseData = controller.ongoingCourses[index];
+              final imageUrl = courseData['image'] ?? '';
               final title = courseData['title'] ?? 'Course Title';
               final progress = courseData['progress'] ?? 0;
 
@@ -103,7 +101,7 @@ class OngoingCoursesWidget extends StatelessWidget {
                         ),
                         SizedBox(height: 5.h),
                         Text(
-                          'Progress: $progress%', // Assuming progress is a percentage
+                          'Progress: $progress%',
                           style: TextStyle(
                             color: AppColors.fontGrey,
                             fontSize: 14.sp,
