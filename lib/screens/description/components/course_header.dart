@@ -28,7 +28,7 @@ class CourseHeader extends StatelessWidget {
           decoration: BoxDecoration(
             image: DecorationImage(
               image: NetworkImage(imageUrl),
-              fit: BoxFit.cover,
+              fit: BoxFit.fill,
               filterQuality: FilterQuality.high,
             ),
             borderRadius: BorderRadius.circular(20.r),

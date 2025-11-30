@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:padi_learn/screens/components/custom_role_dropdown.dart';
 import 'package:padi_learn/screens/components/custom_textfield.dart';
 import 'package:padi_learn/screens/home/home_shell.dart';
@@ -18,10 +19,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
   String? selectedRole = 'Select role';
   final List<String> roles = ['Select role', 'Student', 'Teacher'];
-  
+
   // Error messages for each field
   String? nameError, emailError, passwordError, confirmPasswordError, roleError;
 
@@ -37,7 +39,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _submitForm() async {
     setState(() {
       // Reset errors
-      nameError = emailError = passwordError = confirmPasswordError = roleError = null;
+      nameError =
+          emailError = passwordError = confirmPasswordError = roleError = null;
     });
 
     // Validate fields
@@ -98,12 +101,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
+              SizedBox(height: 50.h),
+              // Title
               Text(
                 'Register',
-                style: TextStyle(
-                  fontSize: 28.sp,
-                  fontWeight: FontWeight.bold,
+                style: GoogleFonts.playfair(
                   color: AppColors.primaryColor,
+                  fontSize: 50.sp,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
               SizedBox(height: 40.h),
@@ -113,7 +118,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 controller: nameController,
                 borderColor: nameError != null ? Colors.red : null,
               ),
-              if (nameError != null) Text(nameError!, style: TextStyle(color: Colors.red, fontSize: 12.sp)),
+              if (nameError != null)
+                Text(nameError!,
+                    style: TextStyle(color: Colors.red, fontSize: 12.sp)),
               SizedBox(height: 20.h),
               CustomTextfield(
                 label: 'Email',
@@ -121,7 +128,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 controller: emailController,
                 borderColor: emailError != null ? Colors.red : null,
               ),
-              if (emailError != null) Text(emailError!, style: TextStyle(color: Colors.red, fontSize: 12.sp)),
+              if (emailError != null)
+                Text(emailError!,
+                    style: TextStyle(color: Colors.red, fontSize: 12.sp)),
               SizedBox(height: 20.h),
               CustomTextfield(
                 label: 'Password',
@@ -130,7 +139,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 controller: passwordController,
                 borderColor: passwordError != null ? Colors.red : null,
               ),
-              if (passwordError != null) Text(passwordError!, style: TextStyle(color: Colors.red, fontSize: 12.sp)),
+              if (passwordError != null)
+                Text(passwordError!,
+                    style: TextStyle(color: Colors.red, fontSize: 12.sp)),
               SizedBox(height: 20.h),
               CustomTextfield(
                 label: 'Confirm Password',
@@ -139,7 +150,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 controller: confirmPasswordController,
                 borderColor: confirmPasswordError != null ? Colors.red : null,
               ),
-              if (confirmPasswordError != null) Text(confirmPasswordError!, style: TextStyle(color: Colors.red, fontSize: 12.sp)),
+              if (confirmPasswordError != null)
+                Text(confirmPasswordError!,
+                    style: TextStyle(color: Colors.red, fontSize: 12.sp)),
               SizedBox(height: 20.h),
               CustomRoleDropdown(
                 value: selectedRole,
@@ -151,13 +164,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 },
                 borderColor: roleError != null ? Colors.red : null,
               ),
-              if (roleError != null) Text(roleError!, style: TextStyle(color: Colors.red, fontSize: 12.sp)),
+              if (roleError != null)
+                Text(roleError!,
+                    style: TextStyle(color: Colors.red, fontSize: 12.sp)),
               SizedBox(height: 40.h),
               ElevatedButton(
                 onPressed: _submitForm,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryColor,
-                  padding: EdgeInsets.symmetric(horizontal: 80.0.w, vertical: 20.0.h),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: 80.0.w, vertical: 20.0.h),
                 ),
                 child: Text(
                   'Register',

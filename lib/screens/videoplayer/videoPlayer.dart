@@ -94,7 +94,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     }
   }
 
-  @override
+  @override 
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(

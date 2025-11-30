@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:padi_learn/screens/components/custom_textfield.dart';
 import 'package:padi_learn/screens/register/register_screen.dart';
 import 'package:padi_learn/screens/forgot_password/forgot_password_screen.dart';
@@ -43,11 +44,11 @@ class _LoginScreenState extends State<LoginScreen> {
           children: <Widget>[
             Text(
               'Login',
-              style: TextStyle(
-                fontSize: 28.sp, // Use ScreenUtil for font size
-                fontWeight: FontWeight.bold,
+              style: GoogleFonts.playfair(
                 color: AppColors.primaryColor,
-              ),
+                fontSize: 50.sp,
+                fontWeight: FontWeight.bold,
+              ),  
             ),
             SizedBox(height: 40.h), // Use ScreenUtil for spacing
             CustomTextfield(

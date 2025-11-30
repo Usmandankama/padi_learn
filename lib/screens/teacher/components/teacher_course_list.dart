@@ -76,7 +76,7 @@ class TeacherCourseList extends StatelessWidget {
                           image: thumbnailUrl,
                           height: 120.h,
                           width: double.infinity,
-                          fit: BoxFit.cover,
+                          fit: BoxFit.fill,
                           imageErrorBuilder: (context, error, stackTrace) {
                             return Container(
                               height: 120.h,

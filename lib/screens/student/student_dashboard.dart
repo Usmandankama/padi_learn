@@ -9,7 +9,7 @@ import 'package:padi_learn/utils/colors.dart';
 import '../../controller/marketplace_controller.dart';
 import '../marketplace/components/courseGrid.dart';
 
-class StudentDashboard extends StatefulWidget {
+class StudentDashboard extends StatefulWidget { 
   const StudentDashboard({super.key});
 
   @override

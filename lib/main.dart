@@ -17,7 +17,7 @@ Future<void> main() async {
   Get.lazyPut(()=>CoursesController());  // Course Controller
   Get.lazyPut(()=>MarketplaceController());  // Marketplace Controller
   Get.lazyPut(()=>UserController());
-  Get.lazyPut(()=>TeacherController());  // Othe
+  Get.lazyPut(()=>TeacherController());  // Other
 
   runApp(const MyApp());
 }

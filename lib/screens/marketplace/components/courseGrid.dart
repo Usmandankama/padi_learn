@@ -22,7 +22,7 @@ class CoursesGridLimited extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: .65,
+        childAspectRatio: .60,
         crossAxisSpacing: 10.0,
         mainAxisSpacing: 15.0,
       ),
@@ -83,7 +83,7 @@ class CoursesGridLimited extends StatelessWidget {
                               thumbnailUrl,
                               height: 160.h,
                               width: double.infinity,
-                              fit: BoxFit.cover,
+                              fit: BoxFit.fill,
                             ),
                           ),
                         ),
@@ -123,11 +123,13 @@ class CoursesGridLimited extends StatelessWidget {
                       ),
                     ],
                   ),
+                  SizedBox(height: 8.h),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 12.w),
                     child: Text(
                       'By $author',
-                      style: TextStyle(fontSize: 12.sp, color: Colors.black54),
+                      style:
+                          TextStyle(fontSize: 12.sp, color: AppColors.fontGrey),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -138,11 +140,28 @@ class CoursesGridLimited extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 16.sp,
                         fontWeight: FontWeight.bold,
+                        color: AppColors.fontGrey,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 5.h),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12.w),
+                    child: Text(
+                      price == 0
+                          ? 'Free' // If price is 0, show "Free"
+                          :
+                      price is String
+                          ? price 
+                          : 'NGN ${price.toStringAsFixed(0)}',
+                         // Format price
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.bold,
                         color: AppColors.primaryColor,
                       ),
                     ),
                   ),
-                  SizedBox(height: 12.h),
                 ],
               ),
             ));
