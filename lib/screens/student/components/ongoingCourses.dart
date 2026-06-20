@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:padi_learn/screens/videoplayer/videoPlayer.dart';
 import 'package:padi_learn/utils/colors.dart';
 import '../../../controller/ongoing_courses_controller.dart';
@@ -8,8 +9,7 @@ import '../../../controller/ongoing_courses_controller.dart';
 class OngoingCoursesWidget extends StatelessWidget {
   final String userId;
 
-  const OngoingCoursesWidget({Key? key, required this.userId})
-      : super(key: key);
+  const OngoingCoursesWidget({super.key, required this.userId});
 
   @override
   Widget build(BuildContext context) {
@@ -18,104 +18,161 @@ class OngoingCoursesWidget extends StatelessWidget {
 
     return Obx(() {
       if (controller.isLoading.value) {
-        return const Center(child: CircularProgressIndicator());
-      } else if (controller.errorMessage.isNotEmpty) {
-        return Center(child: Text(controller.errorMessage.value));
-      } else if (controller.ongoingCourses.isEmpty) {
-        return const Center(child: Text('No ongoing courses found'));
-      } else {
         return SizedBox(
-          height: 210.h,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: controller.ongoingCourses.length,
-            itemBuilder: (context, index) {
-              final courseData = controller.ongoingCourses[index];
-              final imageUrl = courseData['image'] ?? '';
-              final title = courseData['title'] ?? 'Course Title';
-              final progress = courseData['progress'] ?? 0;
-
-              return GestureDetector(
-                onTap: () {
-                  Get.to(() => VideoPlayerPage(courseId: courseData['id']));
-                },
-                child: Container(
-                  width: 250.w,
-                  margin: EdgeInsets.only(right: 10.w),
-                  decoration: BoxDecoration(
-                    color: AppColors.appWhite,
-                    borderRadius: BorderRadius.circular(10.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.all(12.0.w),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Container(
-                          height: 100.h,
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8.r),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8.r),
-                            child: Image.network(
-                              imageUrl,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              height: double.infinity,
-                              loadingBuilder: (context, child, progress) {
-                                if (progress == null) return child;
-                                return Center(
-                                  child: CircularProgressIndicator(
-                                    value: progress.expectedTotalBytes != null
-                                        ? progress.cumulativeBytesLoaded /
-                                            progress.expectedTotalBytes!
-                                        : null,
-                                  ),
-                                );
-                              },
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Center(
-                                  child: Icon(Icons.broken_image,
-                                      color: AppColors.primaryColor),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 10.h),
-                        Text(
-                          title,
-                          style: TextStyle(
-                            color: AppColors.primaryColor,
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 5.h),
-                        Text(
-                          'Progress: $progress%',
-                          style: TextStyle(
-                            color: AppColors.fontGrey,
-                            fontSize: 14.sp,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
+          height: 150.h,
+          child: const Center(child: CircularProgressIndicator()),
         );
       }
+      if (controller.errorMessage.isNotEmpty) {
+        return _emptyHint(controller.errorMessage.value);
+      }
+      if (controller.ongoingCourses.isEmpty) {
+        return _emptyHint('You have no courses in progress yet.');
+      }
+
+      return SizedBox(
+        height: 150.h,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: controller.ongoingCourses.length,
+          separatorBuilder: (_, __) => SizedBox(width: 12.w),
+          itemBuilder: (context, index) {
+            final course = controller.ongoingCourses[index];
+            final imageUrl = (course['image'] ?? '').toString();
+            final title = (course['title'] ?? 'Course Title').toString();
+            final progress = ((course['progress'] as num?) ?? 0).toInt();
+
+            return _OngoingCard(
+              imageUrl: imageUrl,
+              title: title,
+              progress: progress,
+              onTap: () => Get.to(
+                () => VideoPlayerPage(courseId: (course['id'] ?? '').toString()),
+              ),
+            );
+          },
+        ),
+      );
     });
+  }
+
+  Widget _emptyHint(String message) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(vertical: 28.h, horizontal: 16.w),
+      decoration: BoxDecoration(
+        color: AppColors.appWhite,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: Colors.black.withOpacity(0.05)),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.menu_book_outlined,
+              size: 30.sp, color: AppColors.primaryColor),
+          SizedBox(height: 8.h),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontSize: 12.sp,
+              color: AppColors.fontGrey,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OngoingCard extends StatelessWidget {
+  final String imageUrl;
+  final String title;
+  final int progress;
+  final VoidCallback onTap;
+
+  const _OngoingCard({
+    required this.imageUrl,
+    required this.title,
+    required this.progress,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 230.w,
+        padding: EdgeInsets.all(10.w),
+        decoration: BoxDecoration(
+          color: AppColors.appWhite,
+          borderRadius: BorderRadius.circular(16.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12.r),
+              child: SizedBox(
+                width: 70.w,
+                height: 70.w,
+                child: imageUrl.isEmpty
+                    ? Container(color: AppColors.primaryAccent)
+                    : Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            Container(color: AppColors.primaryAccent),
+                      ),
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12.5.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.richBlack,
+                    ),
+                  ),
+                  SizedBox(height: 10.h),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4.r),
+                    child: LinearProgressIndicator(
+                      value: (progress.clamp(0, 100)) / 100,
+                      minHeight: 6.h,
+                      backgroundColor: AppColors.primaryAccent,
+                      valueColor: const AlwaysStoppedAnimation(
+                          AppColors.primaryColor),
+                    ),
+                  ),
+                  SizedBox(height: 6.h),
+                  Text(
+                    '$progress% complete',
+                    style: GoogleFonts.poppins(
+                      fontSize: 10.sp,
+                      color: AppColors.fontGrey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

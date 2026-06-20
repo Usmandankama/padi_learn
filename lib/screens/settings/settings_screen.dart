@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:padi_learn/screens/teacher/editprofile_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
-import 'package:padi_learn/utils/utils.dart'; // Import the utils file
+import 'package:padi_learn/services/auth_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});

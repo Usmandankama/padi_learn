@@ -6,7 +6,7 @@ import 'package:padi_learn/screens/components/custom_textfield.dart';
 import 'package:padi_learn/screens/home/home_shell.dart';
 import 'package:padi_learn/screens/login/login_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
-import 'package:padi_learn/utils/utils.dart';
+import 'package:padi_learn/services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -71,22 +71,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final name = nameController.text;
     final role = selectedRole;
 
-    try {
-      await signUp(context, email, password, role!, name);
-      Navigator.pushReplacement(
+    final success = await signUp(context, email, password, role!, name);
+    if (!mounted) return;
+
+    // Only enter the app if registration actually succeeded. Clear the whole
+    // navigation stack so the back button can't return to login/register.
+    if (success) {
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
           builder: (context) => const HomeShell(),
         ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error signing up: $e'),
-          backgroundColor: Colors.red,
-        ),
+        (route) => false,
       );
     }
+  }
+
+  Widget _fieldError(String? message) {
+    if (message == null) return const SizedBox.shrink();
+    return Padding(
+      padding: EdgeInsets.only(top: 6.h, left: 4.w),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          message,
+          style: TextStyle(color: Colors.red, fontSize: 12.sp),
+        ),
+      ),
+    );
   }
 
   @override
@@ -96,118 +108,149 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: Scaffold(
         resizeToAvoidBottomInset: true,
         backgroundColor: AppColors.appWhite,
-        body: SingleChildScrollView(
-          padding: EdgeInsets.all(16.0.w),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              SizedBox(height: 50.h),
-              // Title
-              Text(
-                'Register',
-                style: GoogleFonts.playfair(
-                  color: AppColors.primaryColor,
-                  fontSize: 50.sp,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 40.h),
-              CustomTextfield(
-                label: 'Name',
-                icon: Icons.person,
-                controller: nameController,
-                borderColor: nameError != null ? Colors.red : null,
-              ),
-              if (nameError != null)
-                Text(nameError!,
-                    style: TextStyle(color: Colors.red, fontSize: 12.sp)),
-              SizedBox(height: 20.h),
-              CustomTextfield(
-                label: 'Email',
-                icon: Icons.email,
-                controller: emailController,
-                borderColor: emailError != null ? Colors.red : null,
-              ),
-              if (emailError != null)
-                Text(emailError!,
-                    style: TextStyle(color: Colors.red, fontSize: 12.sp)),
-              SizedBox(height: 20.h),
-              CustomTextfield(
-                label: 'Password',
-                icon: Icons.lock,
-                obscureText: true,
-                controller: passwordController,
-                borderColor: passwordError != null ? Colors.red : null,
-              ),
-              if (passwordError != null)
-                Text(passwordError!,
-                    style: TextStyle(color: Colors.red, fontSize: 12.sp)),
-              SizedBox(height: 20.h),
-              CustomTextfield(
-                label: 'Confirm Password',
-                icon: Icons.lock,
-                obscureText: true,
-                controller: confirmPasswordController,
-                borderColor: confirmPasswordError != null ? Colors.red : null,
-              ),
-              if (confirmPasswordError != null)
-                Text(confirmPasswordError!,
-                    style: TextStyle(color: Colors.red, fontSize: 12.sp)),
-              SizedBox(height: 20.h),
-              CustomRoleDropdown(
-                value: selectedRole,
-                items: roles,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    selectedRole = newValue;
-                  });
-                },
-                borderColor: roleError != null ? Colors.red : null,
-              ),
-              if (roleError != null)
-                Text(roleError!,
-                    style: TextStyle(color: Colors.red, fontSize: 12.sp)),
-              SizedBox(height: 40.h),
-              ElevatedButton(
-                onPressed: _submitForm,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
-                  padding: EdgeInsets.symmetric(
-                      horizontal: 80.0.w, vertical: 20.0.h),
-                ),
-                child: Text(
-                  'Register',
-                  style: TextStyle(
-                    fontSize: 18.sp,
-                    color: AppColors.appWhite,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                // Brand mark
+                Center(
+                  child: Container(
+                    height: 64.r,
+                    width: 64.r,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor,
+                      borderRadius: BorderRadius.circular(18.r),
+                    ),
+                    child: Icon(
+                      Icons.school_rounded,
+                      color: AppColors.appWhite,
+                      size: 34.sp,
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(height: 20.h),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  const Text('Already have an account?'),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const LoginScreen(),
-                        ),
-                      );
-                    },
+                SizedBox(height: 24.h),
+                Text(
+                  'Create account',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.playfair(
+                    color: AppColors.primaryColor,
+                    fontSize: 32.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  'Join PadiLearn and start learning',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.fontGrey,
+                    fontSize: 14.sp,
+                  ),
+                ),
+                SizedBox(height: 32.h),
+                CustomTextfield(
+                  label: 'Name',
+                  icon: Icons.person_outline,
+                  controller: nameController,
+                  borderColor: nameError != null ? Colors.red : null,
+                ),
+                _fieldError(nameError),
+                SizedBox(height: 16.h),
+                CustomTextfield(
+                  label: 'Email',
+                  icon: Icons.email_outlined,
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  borderColor: emailError != null ? Colors.red : null,
+                ),
+                _fieldError(emailError),
+                SizedBox(height: 16.h),
+                CustomTextfield(
+                  label: 'Password',
+                  icon: Icons.lock_outline,
+                  obscureText: true,
+                  controller: passwordController,
+                  borderColor: passwordError != null ? Colors.red : null,
+                ),
+                _fieldError(passwordError),
+                SizedBox(height: 16.h),
+                CustomTextfield(
+                  label: 'Confirm Password',
+                  icon: Icons.lock_outline,
+                  obscureText: true,
+                  controller: confirmPasswordController,
+                  borderColor: confirmPasswordError != null ? Colors.red : null,
+                ),
+                _fieldError(confirmPasswordError),
+                SizedBox(height: 16.h),
+                CustomRoleDropdown(
+                  value: selectedRole,
+                  items: roles,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      selectedRole = newValue;
+                    });
+                  },
+                  borderColor: roleError != null ? Colors.red : null,
+                ),
+                _fieldError(roleError),
+                SizedBox(height: 28.h),
+                SizedBox(
+                  height: 54.h,
+                  child: ElevatedButton(
+                    onPressed: _submitForm,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      foregroundColor: AppColors.appWhite,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14.r),
+                      ),
+                    ),
                     child: Text(
-                      'Login',
+                      'Register',
                       style: TextStyle(
-                        color: AppColors.primaryColor,
-                        fontSize: 14.sp,
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                ],
-              ),
-            ],
+                ),
+                SizedBox(height: 20.h),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Text(
+                      'Already have an account?',
+                      style: TextStyle(
+                        color: AppColors.fontGrey,
+                        fontSize: 13.sp,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LoginScreen(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'Login',
+                        style: TextStyle(
+                          color: AppColors.primaryColor,
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
