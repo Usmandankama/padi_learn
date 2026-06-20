@@ -42,9 +42,10 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Add this line to exclude the secrets file
+# Local secrets / credentials (keep out of version control)
 lib/firebase_options.dart
 lib/config/secrets.dart
+lib/config/supabase_config.dart
 firebase.json
 android/app/google-services.json
 google-services.json
