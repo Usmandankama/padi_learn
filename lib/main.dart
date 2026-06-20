@@ -1,23 +1,28 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:padi_learn/config/supabase_config.dart';
 import 'package:padi_learn/controller/course_controller.dart';
-import 'package:padi_learn/controller/teacherController.dart';
+import 'package:padi_learn/controller/teacher_controller.dart';
 import 'controller/marketplace_controller.dart';
 import 'controller/user_controller.dart';
-import 'screens/onbooading/spalsh_screen.dart';
+import 'screens/onboarding/splash_screen.dart';
 import 'utils/colors.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
 
-// Initialize GetX controllers
-  Get.lazyPut(()=>CoursesController());  // Course Controller
-  Get.lazyPut(()=>MarketplaceController());  // Marketplace Controller
-  Get.lazyPut(()=>UserController());
-  Get.lazyPut(()=>TeacherController());  // Other
+  await Supabase.initialize(
+    url: SupabaseConfig.url,
+    publishableKey: SupabaseConfig.publishableKey,
+  );
+
+  Get.lazyPut(() => CoursesController(), fenix: true);
+  Get.lazyPut(() => MarketplaceController(), fenix: true);
+  Get.lazyPut(() => UserController(), fenix: true);
+  Get.lazyPut(() => TeacherController(), fenix: true);
 
   runApp(const MyApp());
 }

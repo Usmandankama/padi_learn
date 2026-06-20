@@ -1,6 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/screens/home/components/bottom_nav_bar.dart';
 import 'package:padi_learn/screens/marketplace/marketplace_screen.dart';
 import 'package:padi_learn/screens/student/student_dashboard.dart';
@@ -31,41 +30,61 @@ class _HomeShellState extends State<HomeShell> {
 
   Future<void> _initializeUserRole() async {
     try {
-      User? user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        DocumentSnapshot userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .get();
+      final user = supabase.auth.currentUser;
 
-        String role = userDoc['role'] ?? 'unknown';
-
-        setState(() {
-          isStudent = role == 'Student';
-          _screens = isStudent
-              ? [
-                  const StudentDashboard(),
-                  const MarketplaceScreen(
-                    userRole: 'Student',
-                  ),
-                  const StudentProfileScreen()
-                ]
-              : [
-                  const TeacherDashboardScreen(),
-                  const TeacherMyCoursesPage(),
-                  const TeacherProfileScreen()
-                ];
-        });
-      } else {
-        Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const LoginScreen(),
-            ));
+      // No authenticated user -> go to login.
+      if (user == null) {
+        _goToLogin();
+        return;
       }
+
+      final data = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .maybeSingle();
+
+      // The auth session exists but there is no matching profile row (e.g. an
+      // orphaned session or a signup whose profile row was never created).
+      // Don't hang on the spinner: clear the stale session and go to login.
+      if (data == null || data['role'] == null) {
+        await supabase.auth.signOut();
+        _goToLogin();
+        return;
+      }
+
+      final String role = data['role'] as String;
+
+      if (!mounted) return;
+      setState(() {
+        isStudent = role == 'Student';
+        _screens = isStudent
+            ? [
+                const StudentDashboard(),
+                const MarketplaceScreen(
+                  userRole: 'Student',
+                ),
+                const StudentProfileScreen()
+              ]
+            : [
+                const TeacherDashboardScreen(),
+                const TeacherMyCoursesPage(),
+                const TeacherProfileScreen()
+              ];
+      });
     } catch (e) {
-      print('Error fetching user role: $e');
+      debugPrint('Error fetching user role: $e');
+      _goToLogin();
     }
+  }
+
+  void _goToLogin() {
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (route) => false,
+    );
   }
 
   void _onItemTapped(int index) {

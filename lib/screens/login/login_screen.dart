@@ -5,7 +5,7 @@ import 'package:padi_learn/screens/components/custom_textfield.dart';
 import 'package:padi_learn/screens/register/register_screen.dart';
 import 'package:padi_learn/screens/forgot_password/forgot_password_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
-import 'package:padi_learn/utils/utils.dart'; // Import your utils.dart here
+import 'package:padi_learn/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -34,98 +34,143 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
       key: _scaffoldKey,
       backgroundColor: AppColors.appWhite,
-      body: Padding(
-        padding: EdgeInsets.all(16.0.w), // Use ScreenUtil for padding
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'Login',
-              style: GoogleFonts.playfair(
-                color: AppColors.primaryColor,
-                fontSize: 50.sp,
-                fontWeight: FontWeight.bold,
-              ),  
-            ),
-            SizedBox(height: 40.h), // Use ScreenUtil for spacing
-            CustomTextfield(
-              controller: emailController,
-              label: 'Email',
-              icon: Icons.email,
-              obscureText: false,
-            ),
-            SizedBox(height: 20.h),
-            CustomTextfield(
-              controller: passwordController,
-              label: 'Password',
-              icon: Icons.lock,
-              obscureText: true,
-            ),
-            SizedBox(height: 20.h),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ForgotPasswordScreen(),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                // Brand mark
+                Center(
+                  child: Container(
+                    height: 72.r,
+                    width: 72.r,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor,
+                      borderRadius: BorderRadius.circular(20.r),
                     ),
-                  );
-                },
-                child: Text(
-                  'Forgot Password?',
-                  style: TextStyle(
+                    child: Icon(
+                      Icons.school_rounded,
+                      color: AppColors.appWhite,
+                      size: 38.sp,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 28.h),
+                Text(
+                  'Welcome back',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.playfair(
                     color: AppColors.primaryColor,
+                    fontSize: 32.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  'Sign in to continue learning',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.fontGrey,
                     fontSize: 14.sp,
                   ),
                 ),
-              ),
-            ),
-            SizedBox(height: 40.h),
-            ElevatedButton(
-              onPressed: _handleLogin,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryColor, // Background color
-                padding: EdgeInsets.symmetric(
-                    horizontal: 80.0.w, vertical: 20.0.h), // Button padding
-              ),
-              child: Text(
-                'Login',
-                style: TextStyle(
-                  fontSize: 18.sp, // Font size for button text
-                  color: AppColors.appWhite,
+                SizedBox(height: 40.h),
+                CustomTextfield(
+                  controller: emailController,
+                  label: 'Email',
+                  icon: Icons.email_outlined,
+                  keyboardType: TextInputType.emailAddress,
                 ),
-              ),
-            ),
-            SizedBox(height: 20.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const Text('Don\'t have an account?'),
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const RegisterScreen(),
+                SizedBox(height: 16.h),
+                CustomTextfield(
+                  controller: passwordController,
+                  label: 'Password',
+                  icon: Icons.lock_outline,
+                  obscureText: true,
+                ),
+                SizedBox(height: 6.h),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ForgotPasswordScreen(),
+                        ),
+                      );
+                    },
+                    child: Text(
+                      'Forgot Password?',
+                      style: TextStyle(
+                        color: AppColors.primaryColor,
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w500,
                       ),
-                    );
-                  },
-                  child: Text(
-                    'Register',
-                    style: TextStyle(
-                      color: AppColors.primaryColor,
-                      fontSize: 14.sp,
                     ),
                   ),
                 ),
+                SizedBox(height: 18.h),
+                SizedBox(
+                  height: 54.h,
+                  child: ElevatedButton(
+                    onPressed: _handleLogin,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      foregroundColor: AppColors.appWhite,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14.r),
+                      ),
+                    ),
+                    child:  Text(
+                      'Login',
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 24.h),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Text(
+                      'Don\'t have an account?',
+                      style: TextStyle(
+                        color: AppColors.fontGrey,
+                        fontSize: 13.sp,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const RegisterScreen(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'Register',
+                        style: TextStyle(
+                          color: AppColors.primaryColor,
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

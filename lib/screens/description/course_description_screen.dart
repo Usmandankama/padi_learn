@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/controller/course_controller.dart';
-import 'package:padi_learn/controller/teacher_controllers/enrollment_controller';
+import 'package:padi_learn/controller/enrollment_controller.dart';
 import 'package:padi_learn/screens/description/components/course_header.dart';
 import 'package:padi_learn/screens/videoplayer/videoPlayer.dart';
 import 'package:padi_learn/utils/colors.dart';
@@ -30,8 +30,8 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
     super.initState();
 
     // Get current user
-    final currentUser = FirebaseAuth.instance.currentUser!;
-    enrollmentController = EnrollmentController(userId: currentUser.uid);
+    final currentUser = supabase.auth.currentUser!;
+    enrollmentController = EnrollmentController(userId: currentUser.id);
 
     // Determine if the selected course is free
     isFree = coursesController.selectedCoursePrice.value == 0;
@@ -61,7 +61,8 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                 imageUrl: coursesController.selectedCourseImage.value,
                 author: coursesController.selectedCourseAuthor.value,
                 isFree: isFree,
-                price: coursesController.selectedCoursePrice.value,
+                price: coursesController.selectedCoursePrice.value
+                    .toStringAsFixed(0),
               )),
 
               SizedBox(height: 20.h),
