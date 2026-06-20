@@ -1,47 +1,55 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
+
 import 'package:get/get.dart';
+import 'package:padi_learn/services/supabase.dart';
 
 class OngoingCoursesController extends GetxController {
   final String userId;
 
   OngoingCoursesController({required this.userId});
 
-  // Observable list of ongoing courses
   var ongoingCourses = <Map<String, dynamic>>[].obs;
   var isLoading = true.obs;
   var errorMessage = ''.obs;
 
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  StreamSubscription<List<Map<String, dynamic>>>? _sub;
 
   @override
   void onInit() {
     super.onInit();
-    fetchOngoingCourses();
+    _listen();
   }
 
-  void fetchOngoingCourses() {
-    _firestore
-        .collection('enrollments')
-        .where('userId', isEqualTo: userId)
-        .snapshots()
-        .listen((snapshot) {
-      final data = snapshot.docs.map((doc) => doc.data()).toList();
+  @override
+  void onClose() {
+    _sub?.cancel();
+    super.onClose();
+  }
 
-      ongoingCourses.value = data.map((course) {
-        return {
-          'id': course['courseId'],
-          'title': course['title'],
-          'image': course['image'],
-          'progress': course['progress'] ?? 0,
-        };
-      }).toList();
+  void _listen() {
+    if (userId.isEmpty) {
+      isLoading.value = false;
+      return;
+    }
 
+    _sub = supabase
+        .from('enrollments')
+        .stream(primaryKey: ['id'])
+        .eq('user_id', userId)
+        .listen((rows) {
+      ongoingCourses.value = rows
+          .map((course) => <String, dynamic>{
+                'id': course['course_id'],
+                'title': course['title'],
+                'image': course['image'],
+                'progress': course['progress'] ?? 0,
+              })
+          .toList();
       isLoading.value = false;
       errorMessage.value = '';
-    }, onError: (e) {
+    }, onError: (Object e) {
       errorMessage.value = 'Error fetching ongoing courses: $e';
       isLoading.value = false;
     });
   }
 }
-  

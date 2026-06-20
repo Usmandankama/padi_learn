@@ -1,54 +1,52 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
-import 'user_controller.dart'; // Import the UserController
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:padi_learn/services/supabase.dart';
+import 'user_controller.dart';
 
 class CoursesController extends GetxController {
-  var courses = <QueryDocumentSnapshot>[].obs; // Observable list of courses
-  var selectedCourseId = ''.obs; // Observable for selected course ID
+  var courses = <Map<String, dynamic>>[].obs; // Observable list of courses
+  var selectedCourseId = ''.obs;
   var selectedCourseTitle = ''.obs;
   var selectedCourseImage = ''.obs;
-  var selectedCoursePrice = ''.obs;
+  var selectedCoursePrice = 0.0.obs; // numeric price (0 == free)
   var selectedCourseDescription = ''.obs;
   var selectedCourseAuthor = ''.obs;
-  var selectedCourseVideoUrl = ''.obs; // New observable for course video URL
+  var selectedCourseVideoUrl = ''.obs;
 
-  // Get UserController instance
   final UserController userController = Get.find<UserController>();
 
   @override
   void onInit() {
     super.onInit();
-    fetchCourses(); // Fetch courses on initialization
+    fetchCourses();
   }
 
-  // Fetch courses from Firestore
   Future<void> fetchCourses() async {
     try {
-      final querySnapshot = await FirebaseFirestore.instance.collection('courses').get();
-      courses.value = querySnapshot.docs;
+      final rows = await supabase
+          .from('courses')
+          .select()
+          .order('created_at', ascending: false);
+      courses.value = List<Map<String, dynamic>>.from(rows);
     } catch (e) {
-      print('Error fetching courses: $e');
+      // Leave list empty on failure.
     }
   }
 
-  // Method to set the selected course details, now including video URL
-  void selectCourse(String id, String title, String image, String price, String description, String author, String videoUrl) {
-    selectedCourseId.value = id; // Set the selected course ID
+  /// Stores the tapped course's details for the description screen.
+  void selectCourse(String id, String title, String image, num price,
+      String description, String author, String videoUrl) {
+    selectedCourseId.value = id;
     selectedCourseTitle.value = title;
     selectedCourseImage.value = image;
-    selectedCoursePrice.value = price;
+    selectedCoursePrice.value = price.toDouble();
     selectedCourseAuthor.value = author;
     selectedCourseDescription.value = description;
-    selectedCourseVideoUrl.value = videoUrl; // Set the selected course video URL
+    selectedCourseVideoUrl.value = videoUrl;
   }
 
-  // Access current user's name from UserController
-  String getCurrentUserName() {
-    return userController.userName.value; // Use the userName from UserController
-  }
+  String getCurrentUserName() => userController.userName.value;
 
-  User? getCurrentUser() {
-    return FirebaseAuth.instance.currentUser;
-  }
+  User? getCurrentUser() => supabase.auth.currentUser;
 }
