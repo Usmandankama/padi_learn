@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:padi_learn/controller/teacherController.dart';
+import 'package:padi_learn/controller/teacher_controller.dart';
 import 'package:padi_learn/utils/colors.dart';
 import '../../../controller/course_controller.dart';
 import '../../description/course_description_screen.dart';
@@ -28,16 +28,15 @@ class CoursesGridLimited extends StatelessWidget {
       ),
       itemCount: courses.length > 8 ? 8 : courses.length, // Limit to 8 courses
       itemBuilder: (context, index) {
-        final courseData = courses[index].data() as Map<String, dynamic>;
-        final title = courseData['title'] ?? 'No Title'; // Get title
-        final thumbnailUrl =
-            courseData['thumbnailUrl'] ?? ''; // Fetch thumbnail URL
+        final courseData = courses[index] as Map<String, dynamic>;
+        final title = courseData['title'] ?? 'No Title';
+        final thumbnailUrl = courseData['thumbnail_url'] ?? '';
         final author = courseData['author'] ?? '';
-        final price = courseData['price'] ?? 'Free'; // Fetch price
-        final description = courseData['description'] ??
-            'No description available'; // Fetch description
-        final videoUrl = courseData['videoUrl'] ?? ''; // Fetch video URL
-        final courseId = courses[index].id; // Get the course ID
+        final price = courseData['price'] ?? 0; // numeric price (0 == free)
+        final description =
+            courseData['description'] ?? 'No description available';
+        final videoUrl = courseData['video_url'] ?? '';
+        final courseId = courses[index]['id'] as String;
 
         return GestureDetector(
             onTap: () {
@@ -46,7 +45,7 @@ class CoursesGridLimited extends StatelessWidget {
                 courseId,
                 title,
                 thumbnailUrl,
-                price.toString(),
+                price,
                 description,
                 author,
                 videoUrl,
@@ -112,9 +111,13 @@ class CoursesGridLimited extends StatelessWidget {
                               ),
                               borderRadius: BorderRadius.circular(50.r),
                               image: DecorationImage(
-                                image: NetworkImage(
-                                  teacherController.profileImageUrl.value,
-                                ),
+                                image: teacherController
+                                        .profileImageUrl.value.isNotEmpty
+                                    ? NetworkImage(
+                                        teacherController.profileImageUrl.value)
+                                    : const AssetImage(
+                                            'assets/logo/logo_icon_only.png')
+                                        as ImageProvider,
                                 fit: BoxFit.cover,
                               ),
                             ),

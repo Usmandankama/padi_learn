@@ -17,22 +17,21 @@ class CoursesList extends StatelessWidget {
       padding: const EdgeInsets.all(8.0),
       itemCount: courses.length, // Display all courses
       itemBuilder: (context, index) {
-        final courseData = courses[index].data() as Map<String, dynamic>;
-        final title = courseData['title'] ?? 'No Title'; // Get title
+        final courseData = courses[index] as Map<String, dynamic>;
+        final title = courseData['title'] ?? 'No Title';
         final author = courseData['author'] ?? '';
-        final thumbnailUrl =
-            courseData['thumbnailUrl'] ?? ''; // Fetch thumbnail URL
-        final price = courseData['price'] ?? 'Free'; // Fetch price
-        final videoUrl = courseData['videoUrl'] ?? ''; // Fetch video URL
-        final description = courseData['description'] ??
-            'No description available'; // Fetch description
-        final courseId = courses[index].id; // Get the course ID
+        final thumbnailUrl = courseData['thumbnail_url'] ?? '';
+        final price = courseData['price'] ?? 0;
+        final videoUrl = courseData['video_url'] ?? '';
+        final description =
+            courseData['description'] ?? 'No description available';
+        final courseId = courses[index]['id'] as String;
 
         return GestureDetector(
           onTap: () {
             // Set selected course details in the controller
-            controller.selectCourse(courseId, title, thumbnailUrl,
-                price.toString(), description, author, videoUrl);
+            controller.selectCourse(courseId, title, thumbnailUrl, price,
+                description, author, videoUrl);
 
             Get.to(() => CourseDescriptionScreen());
           },
