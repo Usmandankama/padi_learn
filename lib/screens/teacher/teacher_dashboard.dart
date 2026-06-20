@@ -1,8 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:padi_learn/controller/teacherController.dart';
+import 'package:padi_learn/controller/teacher_controller.dart';
 import 'package:padi_learn/screens/teacher/components/earning_widget.dart';
 import 'package:padi_learn/screens/teacher/components/teacher_course_list.dart';
 import 'package:padi_learn/screens/teacher/create_course_screen.dart';
@@ -86,8 +85,8 @@ class TeacherDashboardScreen extends StatelessWidget {
             SizedBox(height: 10.h),
           
             // StreamBuilder for Courses
-            StreamBuilder<QuerySnapshot>(
-              stream: controller.courseStream(), // Subscribe to the Firestore course stream
+            StreamBuilder<List<Map<String, dynamic>>>(
+              stream: controller.courseStream(), // Subscribe to the Supabase course stream
               builder: (context, snapshot) {
                 // Handling different states of the stream
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -96,11 +95,11 @@ class TeacherDashboardScreen extends StatelessWidget {
                 if (snapshot.hasError) {
                   return const Center(child: Text('Error loading courses')); // Error handling
                 }
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(child: Text('No courses found')); // Empty state
                 }
                 // Display the list of courses using the TeacherCourseList widget
-                return TeacherCourseList(courses: snapshot.data!.docs);
+                return TeacherCourseList(courses: snapshot.data!);
               },
             ),
             SizedBox(height: 20.h),

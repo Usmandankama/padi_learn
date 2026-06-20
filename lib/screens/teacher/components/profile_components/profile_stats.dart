@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../../../../controller/teacherController.dart';
+import '../../../../controller/teacher_controller.dart';
 import '../../../../utils/colors.dart';
 
 class ProfileStats extends StatelessWidget {

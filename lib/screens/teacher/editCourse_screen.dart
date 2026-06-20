@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/utils/colors.dart';
 
 class EditCourseScreen extends StatefulWidget {
@@ -52,15 +52,12 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
     });
 
     try {
-      await FirebaseFirestore.instance
-          .collection('courses')
-          .doc(widget.courseId)
-          .update({
+      await supabase.from('courses').update({
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
         'price': double.parse(_priceController.text.trim()),
         'category': _selectedCategory,
-      });
+      }).eq('id', widget.courseId);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Course updated successfully!')),

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/screens/teacher/editCourse_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
 
 class TeacherCourseList extends StatelessWidget {
-  final List<QueryDocumentSnapshot> courses;
+  final List<Map<String, dynamic>> courses;
 
   const TeacherCourseList({
     super.key,
@@ -32,12 +32,12 @@ class TeacherCourseList extends StatelessWidget {
           childAspectRatio: .6,
         ),
         itemBuilder: (context, index) {
-          final courseData = courses[index].data() as Map<String, dynamic>;
+          final courseData = courses[index];
 
           final title = courseData['title'] ?? 'No Title';
-          final thumbnailUrl = courseData['thumbnailUrl'] ?? '';
-          final price = courseData['price'] ?? 'Free';
-          final courseId = courses[index].id;
+          final thumbnailUrl = courseData['thumbnail_url'] ?? '';
+          final price = courseData['price'] ?? 0;
+          final courseId = courseData['id'] as String;
 
           return TweenAnimationBuilder<double>(
             tween: Tween<double>(begin: 0.95, end: 1.0),
@@ -187,11 +187,8 @@ class TeacherCourseList extends StatelessWidget {
             ),
             TextButton(
               onPressed: () async {
-                await FirebaseFirestore.instance
-                    .collection('courses')
-                    .doc(courseId)
-                    .delete();
-                Navigator.of(context).pop();
+                await supabase.from('courses').delete().eq('id', courseId);
+                if (context.mounted) Navigator.of(context).pop();
               },
               child: const Text('Delete'),
             ),

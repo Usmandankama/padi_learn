@@ -2,11 +2,11 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/utils/colors.dart';
 
 class VideoPlayerPage extends StatefulWidget {
@@ -23,7 +23,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
 
   var courseData = {}.obs;
   var isLoading = true.obs;
-  final _firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
@@ -41,10 +40,14 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
 
   Future<void> fetchCourseData() async {
     try {
-      final courseDoc = await _firestore.collection('courses').doc(widget.courseId).get();
-      if (courseDoc.exists) {
-        courseData.value = courseDoc.data()!;
-        final videoUrl = courseData['videoUrl'] ?? '';
+      final data = await supabase
+          .from('courses')
+          .select()
+          .eq('id', widget.courseId)
+          .maybeSingle();
+      if (data != null) {
+        courseData.value = data;
+        final videoUrl = (data['video_url'] ?? '') as String;
 
         if (videoUrl.isNotEmpty) {
           _videoController = VideoPlayerController.network(videoUrl);
@@ -87,10 +90,31 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   }
 
   Future<void> _saveProgress() async {
-    if (_videoController != null && _videoController!.value.isInitialized) {
-      final prefs = await SharedPreferences.getInstance();
-      final seconds = _videoController!.value.position.inSeconds;
-      await prefs.setInt('progress_${widget.courseId}', seconds);
+    if (_videoController == null || !_videoController!.value.isInitialized) {
+      return;
+    }
+
+    final position = _videoController!.value.position;
+    final duration = _videoController!.value.duration;
+
+    // Save exact position locally for instant resume.
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('progress_${widget.courseId}', position.inSeconds);
+
+    // Persist completion percentage to the enrollment so dashboards reflect it.
+    final userId = supabase.auth.currentUser?.id;
+    if (userId != null && duration.inSeconds > 0) {
+      final percent =
+          ((position.inSeconds / duration.inSeconds) * 100).clamp(0, 100).round();
+      try {
+        await supabase
+            .from('enrollments')
+            .update({'progress': percent})
+            .eq('user_id', userId)
+            .eq('course_id', widget.courseId);
+      } catch (_) {
+        // Non-critical — local progress is still saved.
+      }
     }
   }
 

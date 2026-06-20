@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:padi_learn/screens/settings/settings_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
 
-import '../../controller/teacherController.dart';
+import '../../controller/teacher_controller.dart';
 import 'components/profile_components/profile_actions.dart';
 import 'components/profile_components/profile_header.dart';
 import 'components/profile_components/profile_stats.dart';
