@@ -131,14 +131,6 @@ The Gradle JVM heap is set in `android/gradle.properties` (`org.gradle.jvmargs`)
 **App hangs on a loading spinner after login**
 This happens when an authenticated session has no matching `users/{uid}` document (e.g. a session from a different Firebase project). The home shell now clears the stale session and returns to login — sign up again to recreate the profile document, and ensure your `google-services.json` points to the project where the account lives.
 
----
-
-## Notes & roadmap
-- **Payments are not yet implemented** — "Buy Course" currently enrols the user without a payment gateway.
-- Add **Firestore security rules** before production; the client currently trusts the `role` field for teacher access.
-- Generate proper app icons/splash and review image error/loading states across the marketplace.
-
----
 
 ## License
 Private project — not currently licensed for redistribution.
