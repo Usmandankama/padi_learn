@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:padi_learn/services/supabase.dart';
+import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/screens/home/components/bottom_nav_bar.dart';
 import 'package:padi_learn/screens/marketplace/marketplace_screen.dart';
 import 'package:padi_learn/screens/student/student_dashboard.dart';
@@ -99,7 +100,7 @@ class _HomeShellState extends State<HomeShell> {
       backgroundColor: AppColors.appWhite,
       body: _screens.isNotEmpty
           ? _screens[_selectedIndex]
-          : const Center(child: CircularProgressIndicator()),
+          : const AppLoader(),
       bottomNavigationBar: CustomBottomNavBar(
         selectedIndex: _selectedIndex,
         onItemTapped: _onItemTapped,
