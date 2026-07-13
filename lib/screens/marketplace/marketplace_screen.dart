@@ -154,33 +154,37 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           _buildCategoryChips(),
           SizedBox(height: 8.h),
           Expanded(
-            child: Obx(() {
-              final all = _controller.courses.toList();
+            child: RefreshIndicator(
+              color: AppColors.primaryColor,
+              onRefresh: _controller.reload,
+              child: Obx(() {
+                final all = _controller.courses.toList();
 
-              if (all.isEmpty && _showShimmer) {
-                return _buildGrid(
-                  itemCount: 6,
-                  builder: (_, __) => const CourseCardShimmer(),
-                );
-              }
-
-              final filtered = _applyFilters(all);
-              if (filtered.isEmpty) {
-                return _buildEmptyState(hasCourses: all.isNotEmpty);
-              }
-
-              return _buildGrid(
-                itemCount: filtered.length,
-                builder: (_, i) {
-                  final course = filtered[i];
-                  return CourseCard(
-                    course: course,
-                    onTap: () => _openCourse(course),
-                    onLongPress: () => _showQuickPreview(course),
+                if (all.isEmpty && _showShimmer) {
+                  return _buildGrid(
+                    itemCount: 6,
+                    builder: (_, __) => const CourseCardShimmer(),
                   );
-                },
-              );
-            }),
+                }
+
+                final filtered = _applyFilters(all);
+                if (filtered.isEmpty) {
+                  return _buildEmptyState(hasCourses: all.isNotEmpty);
+                }
+
+                return _buildGrid(
+                  itemCount: filtered.length,
+                  builder: (_, i) {
+                    final course = filtered[i];
+                    return CourseCard(
+                      course: course,
+                      onTap: () => _openCourse(course),
+                      onLongPress: () => _showQuickPreview(course),
+                    );
+                  },
+                );
+              }),
+            ),
           ),
         ],
       ),
@@ -347,6 +351,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
         final width = constraints.maxWidth;
         final crossAxisCount = width >= 1100 ? 4 : (width >= 720 ? 3 : 2);
         return GridView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.fromLTRB(_kGap16.w, 12.h, _kGap16.w, _kGap24.h),
           itemCount: itemCount,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -362,7 +367,14 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   }
 
   Widget _buildEmptyState({required bool hasCourses}) {
-    return Center(
+    // Wrapped in an always-scrollable view so pull-to-refresh still works when
+    // the grid is empty.
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: Center(
       child: Padding(
         padding: EdgeInsets.all(_kGap24.w),
         child: Column(
@@ -418,6 +430,9 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
               ),
             ],
           ],
+        ),
+      ),
+          ),
         ),
       ),
     );
