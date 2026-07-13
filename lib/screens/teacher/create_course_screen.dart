@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/services/supabase_storage_service.dart';
 import 'package:padi_learn/utils/colors.dart';
@@ -259,19 +260,10 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                   ),
                 ),
               SizedBox(height: 20.h),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _uploadCourse,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                ),
-                child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text('Create Course',
-                        style: TextStyle(
-                            color: AppColors.appWhite, fontSize: 16.sp)),
+              PrimaryButton(
+                label: 'Create Course',
+                isLoading: _isLoading,
+                onPressed: _uploadCourse,
               ),
             ],
           ),
