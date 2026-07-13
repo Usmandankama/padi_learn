@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:padi_learn/controller/course_controller.dart';
 import 'package:padi_learn/controller/marketplace_controller.dart';
+import 'package:padi_learn/controller/ongoing_courses_controller.dart';
 import 'package:padi_learn/controller/user_controller.dart';
 import 'package:padi_learn/screens/description/course_description_screen.dart';
 import 'package:padi_learn/screens/marketplace/components/course_card.dart';
@@ -51,14 +52,27 @@ class _StudentDashboardState extends State<StudentDashboard> {
     Get.to(() => const MarketplaceScreen(userRole: 'Student'));
   }
 
+  Future<void> _onRefresh() async {
+    await Future.wait([
+      _marketController.reload(),
+      _userController.fetchUserInfo(),
+      if (Get.isRegistered<OngoingCoursesController>())
+        Get.find<OngoingCoursesController>().reload(),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.only(bottom: _kGap24.h),
-          child: Column(
+        child: RefreshIndicator(
+          color: AppColors.primaryColor,
+          onRefresh: _onRefresh,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.only(bottom: _kGap24.h),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(),
@@ -80,6 +94,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
               SizedBox(height: 12.h),
               _buildPopularGrid(),
             ],
+            ),
           ),
         ),
       ),
