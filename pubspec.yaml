@@ -44,6 +44,7 @@ dependencies:
   google_fonts: ^6.2.1
   shared_preferences: ^2.5.3
   chewie: ^1.11.3
+  webview_flutter: ^4.7.0
 
 dev_dependencies:
   flutter_test:
