@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:padi_learn/controller/teacher_controller.dart';
+import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/screens/teacher/components/teacher_course_list.dart';
 
 class TeacherMyCoursesPage extends StatefulWidget {
@@ -19,8 +20,11 @@ class _TeacherMyCoursesPageState extends State<TeacherMyCoursesPage> {
       appBar: AppBar(
         title: const Text('My Courses'),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
+      body: RefreshIndicator(
+        onRefresh: controller.reload,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: Column(
             children: [
@@ -43,8 +47,7 @@ class _TeacherMyCoursesPageState extends State<TeacherMyCoursesPage> {
                 builder: (context, snapshot) {
                   // Handling different states of the stream
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                        child: CircularProgressIndicator()); // Loading state
+                    return const AppLoader(); // Loading state
                   }
                   if (snapshot.hasError) {
                     return const Center(
@@ -60,6 +63,7 @@ class _TeacherMyCoursesPageState extends State<TeacherMyCoursesPage> {
               ),
             ],
           ),
+        ),
         ),
       ),
     );
