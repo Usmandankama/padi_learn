@@ -85,6 +85,18 @@ class TeacherController extends GetxController {
     }
   }
 
+  /// Re-fetches everything shown on the teacher screens. Used for
+  /// pull-to-refresh; the realtime course stream stays the source of truth for
+  /// the list itself. Named `reload` to avoid overriding GetxController's own
+  /// `refresh()`.
+  Future<void> reload() async {
+    await Future.wait([
+      fetchTeacherInfo(),
+      fetchTeacherEarningsAndCourses(),
+      fetchUserCourses(),
+    ]);
+  }
+
   /// Live stream of the signed-in teacher's courses (newest first).
   Stream<List<Map<String, dynamic>>> courseStream() {
     final userId = _userId;

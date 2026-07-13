@@ -35,6 +35,23 @@ class MarketplaceController extends GetxController {
     });
   }
 
+  /// One-shot re-fetch for pull-to-refresh. The realtime stream already keeps
+  /// the list live, but this lets the user force a reload (and recover if the
+  /// stream silently dropped). Failures are swallowed so the last good list
+  /// stays on screen when offline. Named `reload` to avoid overriding
+  /// GetxController's own `refresh()`.
+  Future<void> reload() async {
+    try {
+      final rows = await supabase
+          .from('courses')
+          .select()
+          .order('created_at', ascending: false);
+      courses.assignAll(List<Map<String, dynamic>>.from(rows));
+    } catch (_) {
+      // Keep the last good list.
+    }
+  }
+
   /// Filter by search text AND the selected category.
   List<Map<String, dynamic>> filterCourses() {
     return courses.where((course) {
