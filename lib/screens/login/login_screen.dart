@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:padi_learn/screens/components/custom_textfield.dart';
+import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/screens/register/register_screen.dart';
 import 'package:padi_learn/screens/forgot_password/forgot_password_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
@@ -19,6 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController passwordController = TextEditingController();
   final GlobalKey<ScaffoldMessengerState> _scaffoldKey =
       GlobalKey<ScaffoldMessengerState>();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -28,7 +30,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    await login(context, emailController.text, passwordController.text);
+    setState(() => _isLoading = true);
+    await login(context, emailController.text.trim(), passwordController.text);
+    if (mounted) setState(() => _isLoading = false);
   }
 
   @override
@@ -116,26 +120,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 SizedBox(height: 18.h),
-                SizedBox(
-                  height: 54.h,
-                  child: ElevatedButton(
-                    onPressed: _handleLogin,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryColor,
-                      foregroundColor: AppColors.appWhite,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14.r),
-                      ),
-                    ),
-                    child:  Text(
-                      'Login',
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+                PrimaryButton(
+                  label: 'Login',
+                  isLoading: _isLoading,
+                  onPressed: _handleLogin,
                 ),
                 SizedBox(height: 24.h),
                 Row(
