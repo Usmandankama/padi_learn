@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:padi_learn/screens/components/custom_role_dropdown.dart';
 import 'package:padi_learn/screens/components/custom_textfield.dart';
+import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/screens/home/home_shell.dart';
 import 'package:padi_learn/screens/login/login_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
@@ -26,6 +27,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   // Error messages for each field
   String? nameError, emailError, passwordError, confirmPasswordError, roleError;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -71,8 +73,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final name = nameController.text;
     final role = selectedRole;
 
+    setState(() => _isLoading = true);
     final success = await signUp(context, email, password, role!, name);
     if (!mounted) return;
+    setState(() => _isLoading = false);
 
     // Only enter the app if registration actually succeeded. Clear the whole
     // navigation stack so the back button can't return to login/register.
@@ -197,26 +201,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 _fieldError(roleError),
                 SizedBox(height: 28.h),
-                SizedBox(
-                  height: 54.h,
-                  child: ElevatedButton(
-                    onPressed: _submitForm,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryColor,
-                      foregroundColor: AppColors.appWhite,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14.r),
-                      ),
-                    ),
-                    child: Text(
-                      'Register',
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+                PrimaryButton(
+                  label: 'Register',
+                  isLoading: _isLoading,
+                  onPressed: _submitForm,
                 ),
                 SizedBox(height: 20.h),
                 Row(
