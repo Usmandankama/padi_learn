@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/screens/videoplayer/videoPlayer.dart';
 import 'package:padi_learn/utils/colors.dart';
 import '../../../controller/ongoing_courses_controller.dart';
@@ -18,10 +19,7 @@ class OngoingCoursesWidget extends StatelessWidget {
 
     return Obx(() {
       if (controller.isLoading.value) {
-        return SizedBox(
-          height: 150.h,
-          child: const Center(child: CircularProgressIndicator()),
-        );
+        return SizedBox(height: 150.h, child: const AppLoader());
       }
       if (controller.errorMessage.isNotEmpty) {
         return _emptyHint(controller.errorMessage.value);
