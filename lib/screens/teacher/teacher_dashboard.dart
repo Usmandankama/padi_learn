@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:padi_learn/controller/teacher_controller.dart';
+import 'package:padi_learn/screens/components/primary_button.dart';
+import 'package:padi_learn/screens/notifications/notification_bell.dart';
 import 'package:padi_learn/screens/teacher/components/earning_widget.dart';
 import 'package:padi_learn/screens/teacher/components/teacher_course_list.dart';
 import 'package:padi_learn/screens/teacher/create_course_screen.dart';
@@ -26,18 +28,18 @@ class TeacherDashboardScreen extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        actions: [
-          // Notification button placeholder
-          IconButton(
-            onPressed: () {}, 
-            icon: const Icon(Icons.notifications),
-          )
+        actions: const [
+          NotificationBell(),
         ],
         backgroundColor: AppColors.appWhite,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.primaryColor),
       ),
-      body: SingleChildScrollView(
+      body: RefreshIndicator(
+        color: AppColors.primaryColor,
+        onRefresh: controller.reload,
+        child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.symmetric(horizontal: 10.w),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,7 +92,7 @@ class TeacherDashboardScreen extends StatelessWidget {
               builder: (context, snapshot) {
                 // Handling different states of the stream
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator()); // Loading state
+                  return const AppLoader(); // Loading state
                 }
                 if (snapshot.hasError) {
                   return const Center(child: Text('Error loading courses')); // Error handling
@@ -104,6 +106,7 @@ class TeacherDashboardScreen extends StatelessWidget {
             ),
             SizedBox(height: 20.h),
           ],
+        ),
         ),
       ),
     );
