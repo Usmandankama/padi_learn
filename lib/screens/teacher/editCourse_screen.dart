@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/utils/colors.dart';
 
@@ -185,25 +186,10 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
                 },
               ),
               SizedBox(height: 20.h),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _updateCourse,
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 16.h),
-                  backgroundColor: AppColors.primaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                ),
-                child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                        'Update Course',
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.appWhite,
-                        ),
-                      ),
+              PrimaryButton(
+                label: 'Update Course',
+                isLoading: _isLoading,
+                onPressed: _updateCourse,
               ),
             ],
           ),
