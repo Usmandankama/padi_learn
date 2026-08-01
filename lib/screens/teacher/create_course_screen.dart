@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:padi_learn/screens/components/primary_button.dart';
+import 'package:padi_learn/screens/teacher/components/upload_progress_card.dart';
 import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/services/supabase_storage_service.dart';
 import 'package:padi_learn/utils/colors.dart';
@@ -23,7 +24,12 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   String? _selectedCategory;
   File? _videoFile;
   File? _thumbnailFile;
+  int _videoBytes = 0;
+  int _thumbnailBytes = 0;
   bool _isLoading = false;
+
+  /// Live upload progress; null when no upload is running.
+  UploadProgress? _progress;
 
   final List<String> _categories = [
     'Programming',
@@ -33,95 +39,155 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     'Data Science',
   ];
 
+  void _showMessage(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red : null,
+        duration: Duration(seconds: isError ? 5 : 3),
+      ),
+    );
+  }
+
   Future<void> _pickVideo() async {
     final pickedFile =
         await ImagePicker().pickVideo(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _videoFile = File(pickedFile.path);
-      });
+    if (pickedFile == null) return;
+
+    // Check the size now rather than after a long upload the server would
+    // refuse anyway.
+    final file = File(pickedFile.path);
+    final bytes = await file.length();
+    if (bytes > kMaxVideoBytes) {
+      _showMessage(
+        'That video is ${formatBytes(bytes)}. The limit is '
+        '${formatBytes(kMaxVideoBytes)} — please trim or compress it.',
+        isError: true,
+      );
+      return;
     }
+
+    if (!mounted) return;
+    setState(() {
+      _videoFile = file;
+      _videoBytes = bytes;
+    });
   }
 
   Future<void> _pickThumbnail() async {
     final pickedFile =
         await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _thumbnailFile = File(pickedFile.path);
-      });
+    if (pickedFile == null) return;
+
+    final file = File(pickedFile.path);
+    final bytes = await file.length();
+    if (bytes > kMaxThumbnailBytes) {
+      _showMessage(
+        'That thumbnail is ${formatBytes(bytes)}. The limit is '
+        '${formatBytes(kMaxThumbnailBytes)}.',
+        isError: true,
+      );
+      return;
     }
+
+    if (!mounted) return;
+    setState(() {
+      _thumbnailFile = file;
+      _thumbnailBytes = bytes;
+    });
+  }
+
+  /// Throttled so a 50 MB upload repaints ~100 times (once per percent) rather
+  /// than once per 64 KB chunk.
+  void _onUploadProgress(UploadProgress progress) {
+    if (!mounted) return;
+    final previous = _progress;
+    final changed = previous == null ||
+        previous.stage != progress.stage ||
+        previous.percent != progress.percent;
+    if (!changed) return;
+    setState(() => _progress = progress);
   }
 
   Future<void> _uploadCourse() async {
     if (!_formKey.currentState!.validate()) return;
 
     if (_videoFile == null || _thumbnailFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Please select both a video and a thumbnail')),
-      );
+      _showMessage('Please select both a video and a thumbnail');
       return;
     }
 
     setState(() {
       _isLoading = true;
+      _progress = null;
     });
 
     try {
-      final userId = supabase.auth.currentUser!.id;
-
-      // Upload video + thumbnail to Supabase Storage concurrently, with
-      // explicit content types and unique per-user object paths.
-      final uploadResult = await uploadVideoAndThumbnail(
-        _videoFile!,
-        _thumbnailFile!,
-        userId,
-      );
-
-      if (!uploadResult.success) {
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(uploadResult.error ?? 'Media upload failed'),
+          const SnackBar(
+            content: Text('Your session expired. Please sign in again.'),
             backgroundColor: Colors.red,
           ),
         );
+        return;
+      }
+
+      // Upload video + thumbnail to Supabase Storage concurrently, with
+      // explicit content types and unique per-user object paths.
+      final uploadResult = await uploadCourseMedia(
+        userId: userId,
+        videoFile: _videoFile!,
+        thumbnailFile: _thumbnailFile!,
+        onProgress: _onUploadProgress,
+      );
+
+      if (!uploadResult.success) {
+        _showMessage(uploadResult.error ?? 'Media upload failed', isError: true);
         return; // `finally` still clears the loading state.
       }
 
       // Insert the course row (id + created_at are generated by the database).
+      // `video_url` holds the private object key, not a public link — playback
+      // URLs are signed per request by the `get-course-video` function.
       await supabase.from('courses').insert({
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
         'price': double.tryParse(_priceController.text.trim()) ?? 0,
         'category': _selectedCategory,
         'author': _authorController.text.trim(),
-        'video_url': uploadResult.videoUrl,
+        'video_url': uploadResult.videoPath,
         'thumbnail_url': uploadResult.thumbnailUrl,
         'user_id': userId,
       });
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Course created successfully!')),
       );
 
       _formKey.currentState!.reset();
-      setState(() {
-        _videoFile = null;
-        _thumbnailFile = null;
-        _selectedCategory = null;
-      });
+      _videoFile = null;
+      _thumbnailFile = null;
+      _videoBytes = 0;
+      _thumbnailBytes = 0;
+      _selectedCategory = null;
 
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to create course: $e')),
-      );
+      _showMessage('Failed to create course: $e', isError: true);
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      // Guarded: every path above can leave this widget unmounted, and an
+      // unguarded setState here throws out of `finally`.
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _progress = null;
+        });
+      }
     }
   }
 
@@ -234,7 +300,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: 10.h),
                   child: Text(
-                    'Selected video: ${_videoFile!.path.split('/').last}',
+                    'Selected video: ${_videoFile!.path.split('/').last} '
+                    '(${formatBytes(_videoBytes)})',
                     style: TextStyle(color: AppColors.primaryColor),
                   ),
                 ),
@@ -255,20 +322,25 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: 10.h),
                   child: Text(
-                    'Selected thumbnail: ${_thumbnailFile!.path.split('/').last}',
+                    'Selected thumbnail: ${_thumbnailFile!.path.split('/').last} '
+                    '(${formatBytes(_thumbnailBytes)})',
                     style: TextStyle(color: AppColors.primaryColor),
                   ),
                 ),
               SizedBox(height: 20.h),
-              PrimaryButton(
-                label: 'Create Course',
-                isLoading: _isLoading,
-                onPressed: _uploadCourse,
-              ),
+              if (_isLoading)
+                UploadProgressCard(progress: _progress)
+              else
+                PrimaryButton(
+                  label: 'Create Course',
+                  isLoading: false,
+                  onPressed: _uploadCourse,
+                ),
             ],
           ),
         ),
       ),
     );
   }
+
 }

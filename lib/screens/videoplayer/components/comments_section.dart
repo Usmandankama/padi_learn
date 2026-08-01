@@ -73,6 +73,7 @@ class _CommentsSectionState extends State<CommentsSection> {
         courseId: widget.courseId,
         body: text,
       );
+      if (!mounted) return;
       _input.clear();
       _focus.unfocus();
       setState(() => _comments = [..._comments, created]);

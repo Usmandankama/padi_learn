@@ -47,22 +47,29 @@ class _EditTeacherProfileScreenState extends State<EditTeacherProfileScreen> {
 
   Future<void> _loadUserData() async {
     final user = supabase.auth.currentUser;
-    if (user == null) return;
 
-    final data = await supabase
-        .from('profiles')
-        .select('name, profile_image_url')
-        .eq('id', user.id)
-        .maybeSingle();
+    // Every path below must clear `_loading` — an early return or a thrown
+    // request used to leave the screen on a spinner with no way out.
+    try {
+      if (user == null) return;
 
-    _nameController.text = (data?['name'] as String?) ?? '';
-    _emailController.text = user.email ?? '';
-    _initialEmail = user.email ?? '';
-    if (mounted) {
-      setState(() {
-        _profileImageUrl = data?['profile_image_url'] as String?;
-        _loading = false;
-      });
+      final data = await supabase
+          .from('profiles')
+          .select('name, profile_image_url')
+          .eq('id', user.id)
+          .maybeSingle();
+
+      _nameController.text = (data?['name'] as String?) ?? '';
+      _emailController.text = user.email ?? '';
+      _initialEmail = user.email ?? '';
+      _profileImageUrl = data?['profile_image_url'] as String?;
+    } catch (e) {
+      if (mounted) {
+        Get.snackbar('Error', 'Could not load your profile.',
+            snackPosition: SnackPosition.BOTTOM);
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 

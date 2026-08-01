@@ -46,11 +46,19 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // White logo (includes the wordmark) so it stays visible on green.
+            // Light stacked mark (same asset the native splash uses), so it
+            // stays visible on the green background. `assets/logo/` was removed
+            // and is not declared in pubspec.yaml — loading from there threw on
+            // every cold start.
             Image.asset(
-              'assets/logo/logo_white.png',
+              'assets/branding/icon_light_stacked.png',
               width: 220.w,
               fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => Icon(
+                Icons.school_rounded,
+                size: 96.sp,
+                color: AppColors.appWhite,
+              ),
             ),
             SizedBox(height: 12.h),
             Text(

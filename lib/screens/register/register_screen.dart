@@ -58,6 +58,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => passwordError = 'Password is required');
       return;
     }
+    // Matches Supabase's minimum, so a weak password fails here with a clear
+    // message instead of coming back as a generic auth error.
+    if (passwordController.text.length < 6) {
+      setState(() => passwordError = 'Use at least 6 characters');
+      return;
+    }
     if (passwordController.text != confirmPasswordController.text) {
       setState(() => confirmPasswordError = 'Passwords do not match');
       return;

@@ -1,114 +1,320 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import 'package:padi_learn/controller/teacher_controller.dart';
-import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/screens/notifications/notification_bell.dart';
 import 'package:padi_learn/screens/teacher/components/earning_widget.dart';
-import 'package:padi_learn/screens/teacher/components/teacher_course_list.dart';
+import 'package:padi_learn/screens/teacher/course_detail_screen.dart';
 import 'package:padi_learn/screens/teacher/create_course_screen.dart';
+import 'package:padi_learn/services/notification_service.dart';
 import 'package:padi_learn/utils/colors.dart';
 
-class TeacherDashboardScreen extends StatelessWidget {
-  const TeacherDashboardScreen({super.key});
+/// The teacher's home: how the business is doing, and what needs attention.
+///
+/// It deliberately does not list courses — that is the Courses tab's job. This
+/// screen links there instead of rendering the same grid a second time.
+class TeacherDashboardScreen extends StatefulWidget {
+  /// Switches the shell to the Courses tab. Null when the dashboard is opened
+  /// outside the bottom-nav shell.
+  final VoidCallback? onOpenCourses;
 
-  // Instantiate the TeacherDashboardController for managing course data and state
+  const TeacherDashboardScreen({super.key, this.onOpenCourses});
+
+  @override
+  State<TeacherDashboardScreen> createState() => _TeacherDashboardScreenState();
+}
+
+class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
+  final TeacherController controller = Get.put(TeacherController());
+
+  /// Built once — creating it in `build` resubscribed on every rebuild.
+  late final Stream<List<Map<String, dynamic>>> _activity =
+      NotificationService.stream();
+
+  Future<void> _createCourse() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CreateCourseScreen()),
+    );
+    await controller.reload();
+  }
+
+  void _openCourse(String courseId) {
+    if (courseId.isEmpty) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => CourseDetailScreen(courseId: courseId)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final TeacherController controller = Get.put(TeacherController());
     return Scaffold(
-      backgroundColor: AppColors.appWhite,
+      backgroundColor: const Color(0xFFF7F8FA),
       appBar: AppBar(
         centerTitle: true,
         title: Text(
           'Dashboard',
-          style: TextStyle(
+          style: GoogleFonts.poppins(
             color: AppColors.primaryColor,
-            fontSize: 22.sp,
-            fontWeight: FontWeight.bold,
+            fontSize: 20.sp,
+            fontWeight: FontWeight.w700,
           ),
         ),
-        actions: const [
-          NotificationBell(),
-        ],
-        backgroundColor: AppColors.appWhite,
+        actions: const [NotificationBell()],
+        backgroundColor: const Color(0xFFF7F8FA),
         elevation: 0,
+        scrolledUnderElevation: 0,
         iconTheme: const IconThemeData(color: AppColors.primaryColor),
       ),
       body: RefreshIndicator(
         color: AppColors.primaryColor,
         onRefresh: controller.reload,
-        child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.symmetric(horizontal: 10.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            // Earnings Widget Section
-            SizedBox(
-              height: 360.h,
-              child: const EarningsWidget(), // Displays financial metrics for the teacher
-            ),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 32.h),
+          children: [
+            const EarningsWidget(),
+            SizedBox(height: 20.h),
+            _buildCoursesCard(),
+            SizedBox(height: 20.h),
+            _sectionHeader('Recent activity'),
             SizedBox(height: 10.h),
-            
-            // Course Management Header
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Manage Courses',
-                    style: TextStyle(
-                      fontSize: 20.sp,
-                      fontWeight: FontWeight.bold,
+            _buildActivity(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionHeader(String title) {
+    return Text(
+      title,
+      style: GoogleFonts.poppins(
+        fontSize: 16.sp,
+        fontWeight: FontWeight.w700,
+        color: AppColors.richBlack,
+      ),
+    );
+  }
+
+  Widget _buildCoursesCard() {
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: AppColors.appWhite,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Icon(Icons.video_library_outlined,
+                  size: 22.sp, color: AppColors.primaryColor),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Obx(
+                  () => Text(
+                    controller.totalCoursesUploaded.value == 1
+                        ? '1 course published'
+                        : '${controller.totalCoursesUploaded.value} courses published',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.richBlack,
+                    ),
+                  ),
+                ),
+              ),
+              if (widget.onOpenCourses != null)
+                TextButton(
+                  onPressed: widget.onOpenCourses,
+                  child: Text(
+                    'Manage',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w600,
                       color: AppColors.primaryColor,
                     ),
                   ),
-                  // Button to navigate to Create Course Screen
-                  IconButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CreateCourseScreen(),
-                        ),
-                      );
-                    },
-                    icon: Icon(
-                      Icons.add,
-                      color: AppColors.primaryColor,
-                      size: 25.sp,
+                ),
+            ],
+          ),
+          SizedBox(height: 8.h),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _createCourse,
+              icon: Icon(Icons.add, size: 18.sp),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primaryColor,
+                side: const BorderSide(color: AppColors.primaryColor),
+                padding: EdgeInsets.symmetric(vertical: 12.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+              ),
+              label: Text(
+                'New course',
+                style: GoogleFonts.poppins(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Enrollments and comments both arrive as notification rows written by
+  /// database triggers, so one stream covers the whole feed. (A teacher cannot
+  /// read the `enrollments` table directly — RLS limits that to the student who
+  /// owns the row — which is exactly why the triggers denormalise into
+  /// `notifications`.)
+  Widget _buildActivity() {
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: _activity,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Padding(
+            padding: EdgeInsets.symmetric(vertical: 24.h),
+            child: const Center(
+              child: CircularProgressIndicator(
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(AppColors.primaryColor),
+              ),
+            ),
+          );
+        }
+
+        final items = (snapshot.data ?? const []).take(8).toList();
+        if (items.isEmpty) return _emptyActivity();
+
+        return Column(
+          children: [
+            for (final item in items) ...[
+              _activityTile(item),
+              SizedBox(height: 8.h),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _emptyActivity() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(vertical: 28.h, horizontal: 16.w),
+      decoration: BoxDecoration(
+        color: AppColors.appWhite,
+        borderRadius: BorderRadius.circular(16.r),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.notifications_none_rounded,
+              size: 30.sp, color: AppColors.lightGrey),
+          SizedBox(height: 8.h),
+          Text(
+            'No activity yet. Enrollments and student questions will show up here.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontSize: 12.sp,
+              color: AppColors.fontGrey,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _activityTile(Map<String, dynamic> item) {
+    final isComment = item['type'] == 'comment';
+    final unread = item['is_read'] != true;
+    final courseId = (item['course_id'] ?? '').toString();
+
+    return GestureDetector(
+      onTap: () => _openCourse(courseId),
+      child: Container(
+        padding: EdgeInsets.all(12.w),
+        decoration: BoxDecoration(
+          color: AppColors.appWhite,
+          borderRadius: BorderRadius.circular(14.r),
+          border: Border.all(
+            color: unread ? AppColors.primaryAccent : Colors.transparent,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36.w,
+              height: 36.w,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: AppColors.primaryAccent,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isComment
+                    ? Icons.chat_bubble_outline
+                    : Icons.person_add_alt_1_outlined,
+                size: 17.sp,
+                color: AppColors.primaryColor,
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    (item['message'] ?? '').toString(),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12.5.sp,
+                      fontWeight: unread ? FontWeight.w600 : FontWeight.w400,
+                      color: AppColors.richBlack,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    _timeAgo(item['created_at']),
+                    style: GoogleFonts.poppins(
+                      fontSize: 10.5.sp,
+                      color: AppColors.fontGrey,
                     ),
                   ),
                 ],
               ),
             ),
-            SizedBox(height: 10.h),
-          
-            // StreamBuilder for Courses
-            StreamBuilder<List<Map<String, dynamic>>>(
-              stream: controller.courseStream(), // Subscribe to the Supabase course stream
-              builder: (context, snapshot) {
-                // Handling different states of the stream
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const AppLoader(); // Loading state
-                }
-                if (snapshot.hasError) {
-                  return const Center(child: Text('Error loading courses')); // Error handling
-                }
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No courses found')); // Empty state
-                }
-                // Display the list of courses using the TeacherCourseList widget
-                return TeacherCourseList(courses: snapshot.data!);
-              },
-            ),
-            SizedBox(height: 20.h),
+            Icon(Icons.chevron_right_rounded,
+                size: 20.sp, color: AppColors.fontGrey),
           ],
-        ),
         ),
       ),
     );
+  }
+
+  String _timeAgo(dynamic iso) {
+    final date = DateTime.tryParse(iso?.toString() ?? '')?.toLocal();
+    if (date == null) return '';
+    final diff = DateTime.now().difference(date);
+    if (diff.inMinutes < 1) return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    return '${date.day}/${date.month}/${date.year}';
   }
 }

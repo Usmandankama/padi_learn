@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/screens/videoplayer/components/comments_section.dart';
 import 'package:padi_learn/services/supabase.dart';
+import 'package:padi_learn/services/video_service.dart';
 import 'package:padi_learn/utils/colors.dart';
 
 class VideoPlayerPage extends StatefulWidget {
@@ -26,6 +27,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
 
   Map<String, dynamic> _course = {};
   bool _loading = true;
+  String? _videoError;
 
   int _userRating = 0;
   double _avgRating = 0;
@@ -68,8 +70,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       if (data == null) return;
       _course = data;
 
-      final videoUrl = (data['video_url'] ?? '').toString();
-      if (videoUrl.isEmpty) return;
+      // The bucket is private: ask the server for a signed URL, which it only
+      // issues after confirming ownership or an enrollment.
+      final videoUrl = await VideoService.playbackUrl(widget.courseId);
 
       final controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
       _videoController = controller;
@@ -101,6 +104,10 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       controller.addListener(_onTick);
     } catch (e) {
       debugPrint('Error loading course video: $e');
+      // Surface it instead of leaving a black box spinning forever.
+      _videoError = e is Exception
+          ? e.toString().replaceFirst('Exception: ', '')
+          : 'Could not load this video.';
     }
   }
 
@@ -321,7 +328,28 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
           ? Chewie(controller: _chewieController!)
           : Container(
               color: Colors.black,
-              child: const AppLoader(),
+              alignment: Alignment.center,
+              child: _videoError == null
+                  ? const AppLoader()
+                  : Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24.w),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.lock_outline,
+                              color: Colors.white70, size: 30.sp),
+                          SizedBox(height: 10.h),
+                          Text(
+                            _videoError!,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12.sp,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
             ),
     );
   }

@@ -14,13 +14,18 @@ class EarningsWidget extends StatelessWidget {
     final TeacherController controller = Get.find<TeacherController>();
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      // `stretch` lets the card take the width it is given instead of a fixed
+      // one. It used to be `width: 500.w`, ~1.3x the screen on the 393pt design
+      // size, so it overflowed on every device.
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisAlignment: MainAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        const SizedBox(height: 25),
+        SizedBox(height: 25.h),
         Container(
-          height: 150.h,
-          width: 500.w,
+          // minHeight rather than a fixed height, so a large system font size
+          // grows the card instead of overflowing it.
+          constraints: BoxConstraints(minHeight: 150.h),
           padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
           decoration: const BoxDecoration(
             color: AppColors.primaryColor,
@@ -61,23 +66,28 @@ class EarningsWidget extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20.h),
+        // Expanded so the two tiles split whatever width is available rather
+        // than claiming a fixed 180.w each and overflowing on narrow screens.
         Row(
           children: [
-            Obx(
-              () => AnalyticItem(
-                title: 'Courses',
-                statsData: controller.totalCoursesUploaded.value,
+            Expanded(
+              child: Obx(
+                () => AnalyticItem(
+                  title: 'Courses',
+                  statsData: controller.totalCoursesUploaded.value,
+                ),
               ),
             ),
-            SizedBox(width: 5.w),
-            Obx(
-              () => AnalyticItem(
-                title: 'Earnings',
-                statsData: controller.totalEarnings.value.toInt(),
+            SizedBox(width: 10.w),
+            Expanded(
+              child: Obx(
+                () => AnalyticItem(
+                  title: 'Earnings',
+                  statsData: controller.totalEarnings.value.toInt(),
+                ),
               ),
             ),
-            SizedBox(width: 5.w),
           ],
         ),
       ],

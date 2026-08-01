@@ -14,7 +14,8 @@ class MarketPlaceList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final CoursesController controller = Get.put(CoursesController());
+    // Registered in main(); `put` here rebuilt a throwaway instance per frame.
+    final CoursesController controller = Get.find<CoursesController>();
 
     return ListView.builder(
       physics: const NeverScrollableScrollPhysics(),

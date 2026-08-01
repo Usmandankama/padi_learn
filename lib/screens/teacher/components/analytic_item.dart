@@ -16,8 +16,10 @@ class _AnalyticItemState extends State<AnalyticItem> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 150.h,
-      width: 180.w,
+      // Width comes from the parent (an Expanded); a fixed 180.w meant two
+      // tiles plus padding could exceed the screen. minHeight lets the tile
+      // grow with the system font size instead of overflowing.
+      constraints: BoxConstraints(minHeight: 130.h),
       decoration: BoxDecoration(
         boxShadow: const [
           BoxShadow(
@@ -30,28 +32,32 @@ class _AnalyticItemState extends State<AnalyticItem> {
         color: AppColors.beige,
         borderRadius: BorderRadius.circular(15),
       ),
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 24.h),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Column(
-            children: [
-              SizedBox(height: 30.h),
-              Text(
-                widget.title,
-                style: TextStyle(
-                  color: AppColors.appWhite,
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              SizedBox(height: 10.h),
-              Text(
-                '${widget.statsData}',
-                style: TextStyle(
-                  color: AppColors.appWhite,
-                  fontSize: 18.sp,
-                ),
-              ),
-            ],
+          Text(
+            widget.title,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: AppColors.appWhite,
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          SizedBox(height: 10.h),
+          Text(
+            '${widget.statsData}',
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: AppColors.appWhite,
+              fontSize: 18.sp,
+            ),
           ),
         ],
       ),

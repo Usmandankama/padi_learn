@@ -14,8 +14,17 @@ class OngoingCoursesWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final OngoingCoursesController controller =
-        Get.put(OngoingCoursesController(userId: userId));
+    if (userId.isEmpty) {
+      return _emptyHint('Sign in to see the courses you are taking.');
+    }
+
+    // Tagged by user id. An untagged `Get.put` returns the *first* instance
+    // ever registered, so a controller built during the first frame — before
+    // the profile had loaded — would keep serving an empty user id forever.
+    final OngoingCoursesController controller = Get.put(
+      OngoingCoursesController(userId: userId),
+      tag: userId,
+    );
 
     return Obx(() {
       if (controller.isLoading.value) {

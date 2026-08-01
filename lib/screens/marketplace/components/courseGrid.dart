@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:padi_learn/controller/teacher_controller.dart';
 import 'package:padi_learn/utils/colors.dart';
 import '../../../controller/course_controller.dart';
 import '../../description/course_description_screen.dart';
@@ -13,8 +12,7 @@ class CoursesGridLimited extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final CoursesController controller = Get.put(CoursesController());
-    final TeacherController teacherController = Get.find();
+    final CoursesController controller = Get.find<CoursesController>();
 
     return GridView.builder(
       shrinkWrap: true,
@@ -78,12 +76,22 @@ class CoursesGridLimited extends StatelessWidget {
                           ),
                           child: AspectRatio(
                             aspectRatio: 1 / 1,
-                            child: Image.network(
-                              thumbnailUrl,
-                              height: 160.h,
-                              width: double.infinity,
-                              fit: BoxFit.fill,
-                            ),
+                            child: thumbnailUrl.isEmpty
+                                ? Container(color: AppColors.primaryAccent)
+                                : Image.network(
+                                    thumbnailUrl,
+                                    height: 160.h,
+                                    width: double.infinity,
+                                    fit: BoxFit.fill,
+                                    // An empty/stale URL used to throw and
+                                    // paint Flutter's error box in the grid.
+                                    errorBuilder: (_, __, ___) => Container(
+                                      color: AppColors.primaryAccent,
+                                      child: Icon(Icons.image_not_supported,
+                                          color: AppColors.fontGrey,
+                                          size: 28.sp),
+                                    ),
+                                  ),
                           ),
                         ),
                       ),
@@ -95,35 +103,11 @@ class CoursesGridLimited extends StatelessWidget {
                           color: Colors.white,
                         ),
                       ),
-                      Positioned(
-                        top: 120.h,
-                        left: -7.w,
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 12.w, vertical: 3.h),
-                          child: Container(
-                            height: 50.h,
-                            width: 50.h,
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: AppColors.appWhite,
-                                width: 3.w,
-                              ),
-                              borderRadius: BorderRadius.circular(50.r),
-                              image: DecorationImage(
-                                image: teacherController
-                                        .profileImageUrl.value.isNotEmpty
-                                    ? NetworkImage(
-                                        teacherController.profileImageUrl.value)
-                                    : const AssetImage(
-                                            'assets/logo/logo_icon_only.png')
-                                        as ImageProvider,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                      // The avatar overlay that used to sit here showed the
+                      // *signed-in* teacher's photo on every card regardless of
+                      // author (read non-reactively, from a deleted asset).
+                      // `courses` carries no author avatar, so it's dropped
+                      // rather than shown wrong.
                     ],
                   ),
                   SizedBox(height: 8.h),

@@ -32,20 +32,27 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
   void initState() {
     super.initState();
 
-    // Get current user
-    final currentUser = supabase.auth.currentUser!;
-    enrollmentController = EnrollmentController(userId: currentUser.id);
+    enrollmentController =
+        EnrollmentController(userId: supabase.auth.currentUser?.id ?? '');
 
     // Determine if the selected course is free
     isFree = coursesController.selectedCoursePrice.value == 0;
 
-    // Check if the user is already enrolled in this course
-    final courseId = coursesController.selectedCourseId.value;
-    enrollmentController.isUserEnrolled(courseId).then((enrolled) {
-      setState(() {
-        isAlreadyEnrolled = enrolled;
-      });
-    });
+    _checkEnrollment();
+  }
+
+  /// Looks up the existing enrolment, if any. Failures are non-fatal: the
+  /// button simply stays on "Buy"/"Get for Free", and the duplicate check in
+  /// [_handleEnrollment] catches the rest.
+  Future<void> _checkEnrollment() async {
+    if (enrollmentController.userId.isEmpty) return;
+    try {
+      final enrolled = await enrollmentController
+          .isUserEnrolled(coursesController.selectedCourseId.value);
+      if (mounted) setState(() => isAlreadyEnrolled = enrolled);
+    } catch (_) {
+      // Offline or transient — leave the default state.
+    }
   }
 
   @override
@@ -131,7 +138,6 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
           courseId: courseId,
           title: coursesController.selectedCourseTitle.value,
           image: coursesController.selectedCourseImage.value,
-          videoUrl: coursesController.selectedCourseVideoUrl.value,
           isFree: true,
         );
         Get.snackbar('Success', 'Course added!');

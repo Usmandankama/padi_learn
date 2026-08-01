@@ -8,14 +8,24 @@ import 'package:padi_learn/utils/colors.dart';
 
 /// App-bar bell that opens the notifications inbox and shows a live unread
 /// count badge driven by the realtime notifications stream.
-class NotificationBell extends StatelessWidget {
+class NotificationBell extends StatefulWidget {
   final Color? iconColor;
   const NotificationBell({super.key, this.iconColor});
 
   @override
+  State<NotificationBell> createState() => _NotificationBellState();
+}
+
+class _NotificationBellState extends State<NotificationBell> {
+  /// Built once. Creating the stream inside `build` opened a new realtime
+  /// subscription every time the surrounding app bar rebuilt.
+  late final Stream<List<Map<String, dynamic>>> _notifications =
+      NotificationService.stream();
+
+  @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: NotificationService.stream(),
+      stream: _notifications,
       builder: (context, snapshot) {
         final unread =
             (snapshot.data ?? const []).where((n) => n['is_read'] != true).length;
@@ -25,7 +35,7 @@ class NotificationBell extends StatelessWidget {
           children: [
             IconButton(
               icon: Icon(Icons.notifications_none_rounded,
-                  color: iconColor ?? AppColors.primaryColor),
+                  color: widget.iconColor ?? AppColors.primaryColor),
               onPressed: () {
                 Navigator.push(
                   context,

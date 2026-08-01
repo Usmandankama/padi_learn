@@ -7,8 +7,17 @@ import 'package:padi_learn/services/notification_service.dart';
 import 'package:padi_learn/utils/colors.dart';
 
 /// Lecturer notification inbox: new comments and new enrollments, live.
-class NotificationsScreen extends StatelessWidget {
+class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
+
+  @override
+  State<NotificationsScreen> createState() => _NotificationsScreenState();
+}
+
+class _NotificationsScreenState extends State<NotificationsScreen> {
+  /// Built once, so a rebuild doesn't resubscribe and flash the spinner.
+  late final Stream<List<Map<String, dynamic>>> _notifications =
+      NotificationService.stream();
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +51,7 @@ class NotificationsScreen extends StatelessWidget {
         ],
       ),
       body: StreamBuilder<List<Map<String, dynamic>>>(
-        stream: NotificationService.stream(),
+        stream: _notifications,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(

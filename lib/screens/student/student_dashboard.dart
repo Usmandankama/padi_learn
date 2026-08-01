@@ -10,6 +10,7 @@ import 'package:padi_learn/controller/user_controller.dart';
 import 'package:padi_learn/screens/description/course_description_screen.dart';
 import 'package:padi_learn/screens/marketplace/components/course_card.dart';
 import 'package:padi_learn/screens/marketplace/marketplace_screen.dart';
+import 'package:padi_learn/screens/notifications/notification_bell.dart';
 import 'package:padi_learn/screens/student/components/ongoingCourses.dart';
 import 'package:padi_learn/utils/colors.dart';
 
@@ -53,11 +54,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   Future<void> _onRefresh() async {
+    final uid = _userController.userId.value;
     await Future.wait([
       _marketController.reload(),
       _userController.fetchUserInfo(),
-      if (Get.isRegistered<OngoingCoursesController>())
-        Get.find<OngoingCoursesController>().reload(),
+      // Matches the tag OngoingCoursesWidget registers under.
+      if (uid.isNotEmpty && Get.isRegistered<OngoingCoursesController>(tag: uid))
+        Get.find<OngoingCoursesController>(tag: uid).reload(),
     ]);
   }
 
@@ -85,8 +88,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
               SizedBox(height: 12.h),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: _kGap16.w),
-                child: OngoingCoursesWidget(
-                  userId: _userController.userId.value,
+                // Obx so the widget picks the id up when the profile resolves,
+                // rather than being built once with an empty one.
+                child: Obx(
+                  () => OngoingCoursesWidget(
+                    userId: _userController.userId.value,
+                  ),
                 ),
               ),
               SizedBox(height: _kGap24.h),
@@ -147,6 +154,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     return Container(
       width: 44.w,
       height: 44.w,
+      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: AppColors.appWhite,
         borderRadius: BorderRadius.circular(14.r),
@@ -158,25 +166,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
           ),
         ],
       ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          const Icon(Icons.notifications_none_rounded,
-              color: AppColors.richBlack),
-          Positioned(
-            top: 12.h,
-            right: 13.w,
-            child: Container(
-              width: 7.w,
-              height: 7.w,
-              decoration: const BoxDecoration(
-                color: Colors.redAccent,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-        ],
-      ),
+      // The real bell: opens the inbox and shows a live unread count. This was
+      // a static icon with a permanently-lit red dot.
+      child: const NotificationBell(iconColor: AppColors.richBlack),
     );
   }
 
