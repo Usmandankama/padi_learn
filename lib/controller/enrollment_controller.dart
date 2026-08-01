@@ -19,11 +19,14 @@ class EnrollmentController {
 
   /// Enrols the user in a course. Idempotent — a duplicate (user, course)
   /// enrolment is ignored, so the course's enrolment count isn't double-counted.
+  ///
+  /// Only free courses can be self-enrolled; RLS rejects anything priced above
+  /// zero, which is why paid enrolments are created server-side by
+  /// `verify-payment` instead.
   Future<void> enrollUser({
     required String courseId,
     required String title,
     required String image,
-    required String videoUrl,
     bool isFree = false,
   }) async {
     await supabase.from('enrollments').upsert(
@@ -32,7 +35,6 @@ class EnrollmentController {
         'course_id': courseId,
         'title': title,
         'image': image,
-        'video_url': videoUrl,
         'progress': 0,
         'is_free': isFree,
       },

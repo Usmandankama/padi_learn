@@ -22,22 +22,34 @@ Future<void> main() async {
   );
 
   // Load persisted settings before the first build so the theme is correct.
+  // Marked permanent so signing out (which disposes every other controller)
+  // can't take the app's theme with it.
   final prefs = await SharedPreferences.getInstance();
-  Get.put(SettingsController()).hydrate(prefs);
+  Get.put(SettingsController(), permanent: true).hydrate(prefs);
 
-  // Initialize GetX controllers
-  Get.lazyPut(() => CoursesController()); 
-  Get.lazyPut(() => MarketplaceController());
-  Get.lazyPut(() => UserController());
-  Get.lazyPut(() => TeacherController());
+  registerAppControllers();
 
   runApp(const MyApp());
+}
+
+/// Registers the user-scoped GetX controllers.
+///
+/// `fenix: true` is what makes sign-out safe: `Get.deleteAll()` disposes the
+/// live instances (so the next user never sees the previous one's data) but
+/// keeps these registrations, and each controller is rebuilt — re-running
+/// `onInit` against the new session — on the next `Get.find`. Without it the
+/// registrations are erased and every `Get.find` after a sign-out throws.
+void registerAppControllers() {
+  Get.lazyPut(() => CoursesController(), fenix: true);
+  Get.lazyPut(() => MarketplaceController(), fenix: true);
+  Get.lazyPut(() => UserController(), fenix: true);
+  Get.lazyPut(() => TeacherController(), fenix: true);
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  ThemeData _theme(Brightness brightness) {
+  ThemeData _theme(Brightness brightness) { 
     return ThemeData(
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primaryColor,

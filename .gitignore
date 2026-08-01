@@ -49,3 +49,5 @@ lib/config/supabase_config.dart
 firebase.json
 android/app/google-services.json
 google-services.json
+supabase/migrations/20260801000004_course_archiving.sql
+/supabase
