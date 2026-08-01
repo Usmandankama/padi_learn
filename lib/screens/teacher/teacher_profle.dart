@@ -8,7 +8,6 @@ import 'package:padi_learn/screens/components/settings_tile.dart';
 import 'package:padi_learn/screens/notifications/notification_bell.dart';
 import 'package:padi_learn/screens/settings/settings_screen.dart';
 import 'package:padi_learn/screens/teacher/editprofile_screen.dart';
-import 'package:padi_learn/screens/teacher/my_courses.dart';
 import 'package:padi_learn/services/auth_service.dart';
 import 'package:padi_learn/utils/colors.dart';
 
@@ -68,14 +67,8 @@ class TeacherProfileScreen extends StatelessWidget {
                 title: 'Edit Profile',
                 onTap: () => _editProfile(context),
               ),
-              SettingsTile(
-                icon: Icons.video_library_outlined,
-                title: 'My Courses',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const TeacherMyCoursesPage()),
-                ),
-              ),
+              // "My Courses" used to be duplicated here; it is the Courses tab
+              // in the bottom bar, which is a shorter route to the same screen.
               SettingsTile(
                 icon: Icons.settings_outlined,
                 title: 'Settings',

@@ -68,7 +68,11 @@ class _HomeShellState extends State<HomeShell> {
                 const StudentProfileScreen()
               ]
             : [
-                const TeacherDashboardScreen(),
+                // The dashboard links to the Courses tab rather than
+                // duplicating the list.
+                TeacherDashboardScreen(
+                  onOpenCourses: () => _onItemTapped(1),
+                ),
                 const TeacherMyCoursesPage(),
                 const TeacherProfileScreen()
               ];

@@ -60,12 +60,16 @@ Future<void> signOut(BuildContext context) async {
   if (confirm != true) return;
 
   try {
+    final uid = supabase.auth.currentUser?.id;
     await supabase.auth.signOut();
 
-    // Clear GetX controllers and local storage.
-    Get.deleteAll(force: true);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    // Dispose the user-scoped controllers so the next account starts clean.
+    // They are registered with `fenix: true` (see `registerAppControllers`),
+    // so the registrations survive and each is rebuilt on the next `Get.find`.
+    // Passing `force: false` also spares the permanent SettingsController,
+    // keeping the device's theme choice across sign-outs.
+    Get.deleteAll();
+    await _clearUserCache(uid);
 
     if (!context.mounted) return;
     Navigator.pushAndRemoveUntil(
@@ -78,6 +82,22 @@ Future<void> signOut(BuildContext context) async {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Error signing out: $e')),
     );
+  }
+}
+
+/// Drops the cached data belonging to the signed-out user.
+///
+/// Deliberately not `prefs.clear()`: that also wiped the device's theme and
+/// notification preferences, and every *other* account's cached course list.
+Future<void> _clearUserCache(String? uid) async {
+  final prefs = await SharedPreferences.getInstance();
+  final stale = prefs.getKeys().where((key) {
+    if (key.startsWith('progress_')) return true; // Video resume positions.
+    return uid != null && key == 'ongoing_courses_$uid';
+  }).toList();
+
+  for (final key in stale) {
+    await prefs.remove(key);
   }
 }
 
