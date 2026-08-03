@@ -59,30 +59,50 @@ Future<void> signOut(BuildContext context) async {
 
   if (confirm != true) return;
 
+  final uid = supabase.auth.currentUser?.id;
+
   try {
-    final uid = supabase.auth.currentUser?.id;
     await supabase.auth.signOut();
-
-    // Dispose the user-scoped controllers so the next account starts clean.
-    // They are registered with `fenix: true` (see `registerAppControllers`),
-    // so the registrations survive and each is rebuilt on the next `Get.find`.
-    // Passing `force: false` also spares the permanent SettingsController,
-    // keeping the device's theme choice across sign-outs.
-    Get.deleteAll();
-    await _clearUserCache(uid);
-
-    if (!context.mounted) return;
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-      (route) => false,
-    );
   } catch (e) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error signing out: $e')),
-    );
+    // gotrue clears the local session *before* it notifies the server, so the
+    // user is signed out on this device whether or not that request lands.
+    // Failing the whole teardown here (as this used to) left them signed out
+    // but still sitting on the previous screen — worst of both.
+    debugPrint('Sign-out request failed, continuing locally: $e');
   }
+
+  // Dispose the user-scoped controllers so the next account starts clean.
+  // They are registered with `fenix: true` (see `registerAppControllers`),
+  // so the registrations survive and each is rebuilt on the next `Get.find`.
+  // Passing `force: false` also spares the permanent SettingsController,
+  // keeping the device's theme choice across sign-outs.
+  Get.deleteAll();
+  await _clearUserCache(uid);
+
+  if (!context.mounted) return;
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(builder: (context) => const LoginScreen()),
+    (route) => false,
+  );
+}
+
+const String _kRoleKeyPrefix = 'user_role_';
+
+/// Remembers a user's role locally.
+///
+/// The role decides which shell the app builds, so without a cached copy an
+/// offline launch has nothing to go on and can only bounce the user to a login
+/// screen that also needs the network.
+Future<void> cacheUserRole(String uid, String role) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString('$_kRoleKeyPrefix$uid', role);
+}
+
+/// The last role we successfully read for [uid], if any.
+Future<String?> cachedUserRole(String uid) async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('$_kRoleKeyPrefix$uid');
 }
 
 /// Drops the cached data belonging to the signed-out user.
@@ -93,7 +113,8 @@ Future<void> _clearUserCache(String? uid) async {
   final prefs = await SharedPreferences.getInstance();
   final stale = prefs.getKeys().where((key) {
     if (key.startsWith('progress_')) return true; // Video resume positions.
-    return uid != null && key == 'ongoing_courses_$uid';
+    if (uid == null) return false;
+    return key == 'ongoing_courses_$uid' || key == '$_kRoleKeyPrefix$uid';
   }).toList();
 
   for (final key in stale) {
