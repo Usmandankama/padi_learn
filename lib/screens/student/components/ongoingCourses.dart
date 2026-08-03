@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:padi_learn/screens/components/course_thumbnail.dart';
 import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/screens/videoplayer/videoPlayer.dart';
 import 'package:padi_learn/utils/colors.dart';
@@ -129,14 +130,7 @@ class _OngoingCard extends StatelessWidget {
               child: SizedBox(
                 width: 70.w,
                 height: 70.w,
-                child: imageUrl.isEmpty
-                    ? Container(color: AppColors.primaryAccent)
-                    : Image.network(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
-                            Container(color: AppColors.primaryAccent),
-                      ),
+                child: CourseThumbnail(url: imageUrl, iconSize: 22),
               ),
             ),
             SizedBox(width: 12.w),

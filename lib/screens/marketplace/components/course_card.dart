@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:padi_learn/screens/components/course_thumbnail.dart';
 import 'package:padi_learn/utils/colors.dart';
 
 /// Compact count formatter (e.g. 1200 -> "1.2k").
@@ -185,7 +186,9 @@ class _Thumbnail extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        url.isEmpty
+        // Covers uploaded before the storage split point into the now-private
+        // course-media bucket, so the request can only 400 — skip it.
+        url.isEmpty || CourseThumbnail.isDeadLegacyUrl(url)
             ? _placeholder()
             : Image.network(
                 url,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:padi_learn/screens/components/course_thumbnail.dart';
 import 'package:padi_learn/utils/colors.dart';
 
 /// A row in the teacher's course list.
@@ -113,21 +114,7 @@ class TeacherCourseCard extends StatelessWidget {
       child: SizedBox(
         width: 84.w,
         height: 84.w,
-        child: url.isEmpty
-            ? Container(
-                color: AppColors.primaryAccent,
-                child: Icon(Icons.play_circle_outline,
-                    color: AppColors.primaryColor, size: 26.sp),
-              )
-            : Image.network(
-                url,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  color: AppColors.primaryAccent,
-                  child: Icon(Icons.image_not_supported,
-                      color: AppColors.fontGrey, size: 22.sp),
-                ),
-              ),
+        child: CourseThumbnail(url: url, iconSize: 24),
       ),
     );
   }
