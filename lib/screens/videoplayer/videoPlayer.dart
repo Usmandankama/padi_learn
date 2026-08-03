@@ -4,17 +4,26 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/screens/videoplayer/components/comments_section.dart';
+import 'package:padi_learn/services/lesson_service.dart';
 import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/services/video_service.dart';
 import 'package:padi_learn/utils/colors.dart';
 
+/// Plays a course: one lesson at a time, with the curriculum underneath.
 class VideoPlayerPage extends StatefulWidget {
   final String courseId;
-  const VideoPlayerPage({super.key, required this.courseId});
+
+  /// Optional lesson to open on. Defaults to the first unfinished one.
+  final String? initialLessonId;
+
+  const VideoPlayerPage({
+    super.key,
+    required this.courseId,
+    this.initialLessonId,
+  });
 
   @override
   State<VideoPlayerPage> createState() => _VideoPlayerPageState();
@@ -23,20 +32,29 @@ class VideoPlayerPage extends StatefulWidget {
 class _VideoPlayerPageState extends State<VideoPlayerPage> {
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
-  SharedPreferences? _prefs;
 
   Map<String, dynamic> _course = {};
+  List<Lesson> _lessons = const [];
+  Map<String, LessonProgress> _progress = const {};
+  Lesson? _current;
+
   bool _loading = true;
+  bool _switching = false;
   String? _videoError;
+
+  /// Bumped on every lesson switch so a slow load for a previous lesson can't
+  /// overwrite the one the user has since chosen.
+  int _loadToken = 0;
+
+  /// Throttle: progress is written to the server at most once every 15s while
+  /// playing, plus once when leaving the lesson.
+  int _lastSyncedSecond = -1;
+  static const int _syncEverySeconds = 15;
 
   int _userRating = 0;
   double _avgRating = 0;
   int _ratingCount = 0;
   bool _savingRating = false;
-
-  // Throttle: only persist progress when the whole-second value changes and is
-  // a multiple of 5 — avoids the per-frame disk writes that caused stutter.
-  int _lastSavedSeconds = -1;
 
   @override
   void initState() {
@@ -47,46 +65,94 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   @override
   void dispose() {
     _videoController?.removeListener(_onTick);
-    _saveProgress();
+    _syncProgress(force: true);
     _chewieController?.dispose();
     _videoController?.dispose();
     super.dispose();
   }
 
   Future<void> _init() async {
-    _prefs = await SharedPreferences.getInstance();
     await _loadCourse();
     await _loadRatings();
+
+    if (_lessons.isNotEmpty) {
+      final initial = _pickInitialLesson();
+      await _openLesson(initial);
+    }
+
     if (mounted) setState(() => _loading = false);
   }
 
   Future<void> _loadCourse() async {
     try {
-      final data = await supabase
+      final course = await supabase
           .from('courses')
           .select()
           .eq('id', widget.courseId)
           .maybeSingle();
-      if (data == null) return;
-      _course = data;
+      if (course != null) _course = Map<String, dynamic>.from(course);
 
-      // The bucket is private: ask the server for a signed URL, which it only
-      // issues after confirming ownership or an enrollment.
-      final videoUrl = await VideoService.playbackUrl(widget.courseId);
+      _lessons = await LessonService.forCourse(widget.courseId);
+      _progress = await LessonService.progressForCourse(widget.courseId);
+    } catch (e) {
+      debugPrint('Error loading course: $e');
+    }
+  }
 
-      final controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
-      _videoController = controller;
+  /// Resume where they left off: the first lesson they have not finished.
+  Lesson _pickInitialLesson() {
+    if (widget.initialLessonId != null) {
+      for (final lesson in _lessons) {
+        if (lesson.id == widget.initialLessonId) return lesson;
+      }
+    }
+    for (final lesson in _lessons) {
+      if (_progress[lesson.id]?.completed != true) return lesson;
+    }
+    return _lessons.first;
+  }
+
+  Future<void> _openLesson(Lesson lesson) async {
+    // Persist where we got to in the outgoing lesson first.
+    _syncProgress(force: true);
+
+    final token = ++_loadToken;
+    setState(() {
+      _switching = true;
+      _videoError = null;
+      _current = lesson;
+      _lastSyncedSecond = -1;
+    });
+
+    // Tear the old player down before building the new one.
+    _videoController?.removeListener(_onTick);
+    final oldChewie = _chewieController;
+    final oldVideo = _videoController;
+    _chewieController = null;
+    _videoController = null;
+    oldChewie?.dispose();
+    await oldVideo?.dispose();
+
+    try {
+      final url = await VideoService.playbackUrl(lesson.id);
+      if (!mounted || token != _loadToken) return;
+
+      final controller = VideoPlayerController.networkUrl(Uri.parse(url));
       await controller.initialize();
+      if (!mounted || token != _loadToken) {
+        await controller.dispose();
+        return;
+      }
 
-      // Resume from the last saved position.
-      final saved = _prefs?.getInt('progress_${widget.courseId}') ?? 0;
-      if (saved > 0 && saved < controller.value.duration.inSeconds) {
+      // Resume from the saved position, unless we are at the very end.
+      final saved = _progress[lesson.id]?.positionSeconds ?? 0;
+      if (saved > 0 && saved < controller.value.duration.inSeconds - 5) {
         await controller.seekTo(Duration(seconds: saved));
       }
 
-      _chewieController = ChewieController(
+      final chewie = ChewieController(
         videoPlayerController: controller,
-        autoPlay: false,
+        autoPlay: true,
         looping: false,
         showControlsOnInitialize: true,
         allowPlaybackSpeedChanging: true,
@@ -102,13 +168,81 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       );
 
       controller.addListener(_onTick);
+
+      if (!mounted || token != _loadToken) {
+        chewie.dispose();
+        await controller.dispose();
+        return;
+      }
+
+      setState(() {
+        _videoController = controller;
+        _chewieController = chewie;
+        _switching = false;
+      });
     } catch (e) {
-      debugPrint('Error loading course video: $e');
-      // Surface it instead of leaving a black box spinning forever.
-      _videoError = e is Exception
-          ? e.toString().replaceFirst('Exception: ', '')
-          : 'Could not load this video.';
+      debugPrint('Error opening lesson: $e');
+      if (!mounted || token != _loadToken) return;
+      setState(() {
+        _videoError =
+            e is Exception ? e.toString().replaceFirst('Exception: ', '') : '$e';
+        _switching = false;
+      });
     }
+  }
+
+  void _onTick() {
+    final controller = _videoController;
+    if (controller == null || !controller.value.isInitialized) return;
+
+    final seconds = controller.value.position.inSeconds;
+    if (seconds == _lastSyncedSecond) return;
+    if (seconds % _syncEverySeconds != 0) return;
+
+    _lastSyncedSecond = seconds;
+    _syncProgress();
+  }
+
+  /// Writes the current position for the current lesson. Fire-and-forget:
+  /// playback must not stall because the network is slow, and a lost update is
+  /// recovered by the next tick.
+  void _syncProgress({bool force = false}) {
+    final lesson = _current;
+    final controller = _videoController;
+    if (lesson == null || controller == null || !controller.value.isInitialized) {
+      return;
+    }
+
+    final position = controller.value.position.inSeconds;
+    final duration = controller.value.duration.inSeconds;
+    if (!force && position <= 0) return;
+
+    // Treat the last 5% as finished — few people watch the credits.
+    final completed = duration > 0 && position >= (duration * 0.95);
+
+    LessonService.saveProgress(
+      lessonId: lesson.id,
+      courseId: widget.courseId,
+      positionSeconds: position,
+      completed: completed,
+    ).then((_) {
+      if (!mounted) return;
+      final previous = _progress[lesson.id];
+      if (completed && previous?.completed != true) {
+        setState(() {
+          _progress = {
+            ..._progress,
+            lesson.id: LessonProgress(
+              lessonId: lesson.id,
+              positionSeconds: position,
+              completed: true,
+            ),
+          };
+        });
+      }
+    }).catchError((Object e) {
+      debugPrint('Could not sync progress: $e');
+    });
   }
 
   Future<void> _loadRatings() async {
@@ -130,40 +264,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     }
   }
 
-  void _onTick() {
-    final c = _videoController;
-    if (c == null || !c.value.isInitialized) return;
-    final seconds = c.value.position.inSeconds;
-    if (seconds != _lastSavedSeconds && seconds % 5 == 0) {
-      _lastSavedSeconds = seconds;
-      _prefs?.setInt('progress_${widget.courseId}', seconds);
-    }
-  }
-
-  Future<void> _saveProgress() async {
-    final c = _videoController;
-    if (c == null || !c.value.isInitialized) return;
-
-    final position = c.value.position;
-    final duration = c.value.duration;
-    _prefs?.setInt('progress_${widget.courseId}', position.inSeconds);
-
-    final uid = supabase.auth.currentUser?.id;
-    if (uid != null && duration.inSeconds > 0) {
-      final percent =
-          ((position.inSeconds / duration.inSeconds) * 100).clamp(0, 100).round();
-      try {
-        await supabase
-            .from('enrollments')
-            .update({'progress': percent})
-            .eq('user_id', uid)
-            .eq('course_id', widget.courseId);
-      } catch (_) {
-        // Local progress is still saved.
-      }
-    }
-  }
-
   Future<void> _submitRating(int value) async {
     final uid = supabase.auth.currentUser?.id;
     if (uid == null) return;
@@ -181,7 +281,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         'updated_at': DateTime.now().toIso8601String(),
       }, onConflict: 'user_id,course_id');
 
-      // Re-read the freshly recomputed aggregate.
       final updated = await supabase
           .from('courses')
           .select('rating_avg, rating_count')
@@ -210,8 +309,13 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     }
   }
 
+  // ---------------------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
+    final completed =
+        _progress.values.where((progress) => progress.completed).length;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
       appBar: AppBar(
@@ -243,42 +347,18 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          (_course['title'] ?? 'Course').toString(),
+                          _current?.title ??
+                              (_course['title'] ?? 'Course').toString(),
                           style: GoogleFonts.poppins(
-                            fontSize: 19.sp,
+                            fontSize: 18.sp,
                             fontWeight: FontWeight.w700,
                             color: AppColors.richBlack,
                           ),
                         ),
                         SizedBox(height: 6.h),
-                        Row(
-                          children: [
-                            Icon(Icons.person_outline,
-                                size: 16.sp, color: AppColors.fontGrey),
-                            SizedBox(width: 4.w),
-                            Text(
-                              'By ${(_course['author'] ?? 'Unknown')}',
-                              style: GoogleFonts.poppins(
-                                fontSize: 12.sp,
-                                color: AppColors.fontGrey,
-                              ),
-                            ),
-                            const Spacer(),
-                            Icon(Icons.star_rounded,
-                                size: 16.sp, color: const Color(0xFFFFC107)),
-                            SizedBox(width: 3.w),
-                            Text(
-                              _ratingCount == 0
-                                  ? 'No ratings'
-                                  : '${_avgRating.toStringAsFixed(1)} ($_ratingCount)',
-                              style: GoogleFonts.poppins(
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.richBlack,
-                              ),
-                            ),
-                          ],
-                        ),
+                        _buildMetaRow(),
+                        SizedBox(height: 20.h),
+                        _buildCurriculum(completed),
                         SizedBox(height: 20.h),
                         _buildRatingCard(),
                         SizedBox(height: 20.h),
@@ -319,9 +399,41 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     );
   }
 
+  Widget _buildMetaRow() {
+    return Row(
+      children: [
+        Icon(Icons.person_outline, size: 16.sp, color: AppColors.fontGrey),
+        SizedBox(width: 4.w),
+        Expanded(
+          child: Text(
+            'By ${(_course['author'] ?? 'Unknown')}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(
+                fontSize: 12.sp, color: AppColors.fontGrey),
+          ),
+        ),
+        Icon(Icons.star_rounded, size: 16.sp, color: const Color(0xFFFFC107)),
+        SizedBox(width: 3.w),
+        Text(
+          _ratingCount == 0
+              ? 'No ratings'
+              : '${_avgRating.toStringAsFixed(1)} ($_ratingCount)',
+          style: GoogleFonts.poppins(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w600,
+            color: AppColors.richBlack,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildVideo() {
-    final ready = _chewieController != null &&
+    final ready = !_switching &&
+        _chewieController != null &&
         _chewieController!.videoPlayerController.value.isInitialized;
+
     return AspectRatio(
       aspectRatio: ready ? _videoController!.value.aspectRatio : 16 / 9,
       child: ready
@@ -351,6 +463,152 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                       ),
                     ),
             ),
+    );
+  }
+
+  Widget _buildCurriculum(int completedCount) {
+    if (_lessons.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 16.w),
+        decoration: BoxDecoration(
+          color: AppColors.appWhite,
+          borderRadius: BorderRadius.circular(14.r),
+        ),
+        child: Text(
+          'This course has no lessons yet.',
+          textAlign: TextAlign.center,
+          style:
+              GoogleFonts.poppins(fontSize: 12.5.sp, color: AppColors.fontGrey),
+        ),
+      );
+    }
+
+    final total = LessonService.totalDurationLabel(_lessons);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'Lessons',
+              style: GoogleFonts.poppins(
+                fontSize: 15.sp,
+                fontWeight: FontWeight.w600,
+                color: AppColors.richBlack,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              [
+                '$completedCount of ${_lessons.length} done',
+                if (total != null) total,
+              ].join(' · '),
+              style: GoogleFonts.poppins(
+                  fontSize: 11.5.sp, color: AppColors.fontGrey),
+            ),
+          ],
+        ),
+        SizedBox(height: 10.h),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.appWhite,
+            borderRadius: BorderRadius.circular(14.r),
+          ),
+          child: Column(
+            children: [
+              for (var i = 0; i < _lessons.length; i++) ...[
+                if (i > 0)
+                  Divider(height: 1, indent: 56.w, color: AppColors.lightGrey),
+                _buildLessonRow(_lessons[i], i + 1),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLessonRow(Lesson lesson, int number) {
+    final isCurrent = _current?.id == lesson.id;
+    final done = _progress[lesson.id]?.completed == true;
+
+    return InkWell(
+      onTap: isCurrent ? null : () => _openLesson(lesson),
+      borderRadius: BorderRadius.circular(14.r),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+        child: Row(
+          children: [
+            Container(
+              width: 32.w,
+              height: 32.w,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: isCurrent
+                    ? AppColors.primaryColor
+                    : done
+                        ? AppColors.primaryAccent
+                        : const Color(0xFFF1F2F4),
+                shape: BoxShape.circle,
+              ),
+              child: done && !isCurrent
+                  ? Icon(Icons.check,
+                      size: 16.sp, color: AppColors.primaryColor)
+                  : Icon(
+                      isCurrent ? Icons.play_arrow_rounded : Icons.play_arrow,
+                      size: 16.sp,
+                      color: isCurrent
+                          ? AppColors.appWhite
+                          : AppColors.fontGrey,
+                    ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$number. ${lesson.title}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12.5.sp,
+                      fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
+                      color: AppColors.richBlack,
+                    ),
+                  ),
+                  if (lesson.durationLabel != null || lesson.isPreview) ...[
+                    SizedBox(height: 2.h),
+                    Row(
+                      children: [
+                        if (lesson.durationLabel != null)
+                          Text(
+                            lesson.durationLabel!,
+                            style: GoogleFonts.poppins(
+                                fontSize: 10.5.sp, color: AppColors.fontGrey),
+                          ),
+                        if (lesson.isPreview) ...[
+                          if (lesson.durationLabel != null) SizedBox(width: 6.w),
+                          Text(
+                            'Preview',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10.5.sp,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primaryColor,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
