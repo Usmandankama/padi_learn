@@ -4,11 +4,16 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:padi_learn/controller/teacher_controller.dart';
+import 'package:padi_learn/screens/components/course_thumbnail.dart';
 import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/screens/teacher/components/teacher_course_card.dart';
 import 'package:padi_learn/screens/teacher/editCourse_screen.dart';
+import 'package:padi_learn/screens/teacher/lesson_editor_screen.dart';
 import 'package:padi_learn/screens/videoplayer/components/comments_section.dart';
 import 'package:padi_learn/services/course_service.dart';
+import 'package:padi_learn/services/lesson_service.dart';
+import 'package:padi_learn/services/supabase_storage_service.dart';
+import 'package:padi_learn/services/transaction_service.dart';
 import 'package:padi_learn/utils/colors.dart';
 
 /// Everything a teacher does with one course: see how it is performing, read
@@ -30,6 +35,13 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   bool _loading = true;
   bool _busy = false;
 
+  /// Real revenue for this course, summed from the payment ledger. Null while
+  /// loading or if the query failed — never guessed from price × students.
+  double? _revenue;
+  int _salesCount = 0;
+
+  List<Lesson> _lessons = const [];
+
   @override
   void initState() {
     super.initState();
@@ -42,8 +54,31 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
       if (mounted) setState(() => _course = course);
     } catch (_) {
       // Leave _course null; the body renders a "couldn't load" state.
-    } finally {
-      if (mounted) setState(() => _loading = false);
+    }
+
+    try {
+      final sales = await TransactionService.salesForCourse(widget.courseId);
+      if (mounted) {
+        setState(() {
+          _revenue = TransactionService.totalEarnings(sales);
+          _salesCount = sales.length;
+        });
+      }
+    } catch (_) {
+      // Non-fatal: the tile shows a dash rather than a made-up number.
+    }
+
+    await _loadLessons();
+
+    if (mounted) setState(() => _loading = false);
+  }
+
+  Future<void> _loadLessons() async {
+    try {
+      final lessons = await LessonService.forCourse(widget.courseId);
+      if (mounted) setState(() => _lessons = lessons);
+    } catch (_) {
+      // Leave the previous list.
     }
   }
 
@@ -177,7 +212,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     final students = (course?['enrollments'] as num?)?.toInt() ?? 0;
 
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         backgroundColor: const Color(0xFFF7F8FA),
         appBar: AppBar(
@@ -237,9 +272,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
               fontSize: 13.sp,
               fontWeight: FontWeight.w600,
             ),
-            tabs: const [
-              Tab(text: 'Overview'),
-              Tab(text: 'Q&A'),
+            tabs: [
+              const Tab(text: 'Overview'),
+              Tab(text: _lessons.isEmpty ? 'Lessons' : 'Lessons (${_lessons.length})'),
+              const Tab(text: 'Q&A'),
             ],
           ),
         ),
@@ -250,6 +286,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                 : TabBarView(
                     children: [
                       _buildOverview(course),
+                      _buildLessons(),
                       _buildComments(course),
                     ],
                   ),
@@ -312,8 +349,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
               Expanded(
                 child: _statTile(
                   Icons.payments_outlined,
-                  'Revenue',
-                  'NGN ${(price * students).toStringAsFixed(0)}',
+                  _salesCount == 1 ? 'Earned · 1 sale' : 'Earned · $_salesCount sales',
+                  _revenue == null
+                      ? '—'
+                      : 'NGN ${_revenue!.toStringAsFixed(0)}',
                 ),
               ),
             ],
@@ -359,6 +398,14 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
               children: [
                 _detailRow('Category',
                     (course['category'] ?? 'Uncategorised').toString()),
+                _detailRow(
+                  'Lessons',
+                  [
+                    '${_lessons.length}',
+                    if (LessonService.totalDurationLabel(_lessons) != null)
+                      LessonService.totalDurationLabel(_lessons)!,
+                  ].join(' · '),
+                ),
                 _detailRow('Status', archived ? 'Archived' : 'Live'),
                 _detailRow('Created', _formatDate(course['created_at'])),
               ],
@@ -412,17 +459,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
         children: [
           AspectRatio(
             aspectRatio: 16 / 9,
-            child: thumbnail.isEmpty
-                ? Container(color: AppColors.primaryAccent)
-                : Image.network(
-                    thumbnail,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: AppColors.primaryAccent,
-                      child: Icon(Icons.image_not_supported,
-                          color: AppColors.fontGrey, size: 28.sp),
-                    ),
-                  ),
+            child: CourseThumbnail(url: thumbnail, iconSize: 34),
           ),
           Positioned(
             top: 10.h,
@@ -543,6 +580,263 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     final date = DateTime.tryParse(iso?.toString() ?? '')?.toLocal();
     if (date == null) return '—';
     return '${date.day}/${date.month}/${date.year}';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Lessons
+  // ---------------------------------------------------------------------------
+
+  Future<void> _addLesson() async {
+    final added = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LessonEditorScreen(courseId: widget.courseId),
+      ),
+    );
+    if (added == true) await _loadLessons();
+  }
+
+  Future<void> _editLesson(Lesson lesson) async {
+    final saved = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LessonEditorScreen(
+          courseId: widget.courseId,
+          lesson: lesson,
+        ),
+      ),
+    );
+    if (saved == true) await _loadLessons();
+  }
+
+  Future<void> _deleteLesson(Lesson lesson) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete lesson'),
+        content: Text(
+          '"${lesson.title}" and its video will be removed permanently. '
+          'Students who bought this course will no longer see it.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await LessonService.delete(lesson.id);
+      await removeStoredObject(lesson.videoPath,
+          fallbackBucket: kCourseMediaBucket);
+      await _loadLessons();
+      _notify('Lesson deleted.');
+    } catch (e) {
+      _notify('Could not delete the lesson: $e', isError: true);
+    }
+  }
+
+  /// Persists a drag-and-drop reorder. The list is updated optimistically and
+  /// reloaded from the server if the write fails.
+  Future<void> _onReorder(int oldIndex, int newIndex) async {
+    if (newIndex > oldIndex) newIndex -= 1;
+
+    final reordered = [..._lessons];
+    final moved = reordered.removeAt(oldIndex);
+    reordered.insert(newIndex, moved);
+    setState(() => _lessons = reordered);
+
+    try {
+      await LessonService.reorder(reordered);
+    } catch (e) {
+      _notify('Could not save the new order: $e', isError: true);
+      await _loadLessons();
+    }
+  }
+
+  Widget _buildLessons() {
+    if (_lessons.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 32.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.playlist_add,
+                  size: 48.sp, color: AppColors.lightGrey),
+              SizedBox(height: 14.h),
+              Text(
+                'No lessons yet',
+                style: GoogleFonts.poppins(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.richBlack,
+                ),
+              ),
+              SizedBox(height: 6.h),
+              Text(
+                'A course needs at least one lesson before students can get '
+                'anything out of it.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                    fontSize: 12.5.sp, color: AppColors.fontGrey),
+              ),
+              SizedBox(height: 20.h),
+              PrimaryButton(
+                label: 'Add the first lesson',
+                isLoading: false,
+                onPressed: _addLesson,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ReorderableListView.builder(
+      padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 32.h),
+      itemCount: _lessons.length,
+      onReorder: _onReorder,
+      header: Padding(
+        padding: EdgeInsets.only(bottom: 12.h),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Drag to reorder',
+                style: GoogleFonts.poppins(
+                    fontSize: 11.5.sp, color: AppColors.fontGrey),
+              ),
+            ),
+            TextButton.icon(
+              onPressed: _addLesson,
+              icon: Icon(Icons.add, size: 18.sp, color: AppColors.primaryColor),
+              label: Text(
+                'Add lesson',
+                style: GoogleFonts.poppins(
+                  fontSize: 12.5.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      itemBuilder: (context, index) {
+        final lesson = _lessons[index];
+        return Padding(
+          key: ValueKey(lesson.id),
+          padding: EdgeInsets.only(bottom: 10.h),
+          child: _lessonTile(lesson, index + 1),
+        );
+      },
+    );
+  }
+
+  Widget _lessonTile(Lesson lesson, int number) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        color: AppColors.appWhite,
+        borderRadius: BorderRadius.circular(14.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 30.w,
+            height: 30.w,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: AppColors.primaryAccent,
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              '$number',
+              style: GoogleFonts.poppins(
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primaryColor,
+              ),
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  lesson.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12.5.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.richBlack,
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Row(
+                  children: [
+                    if (!lesson.hasVideo)
+                      Text(
+                        'No video',
+                        style: GoogleFonts.poppins(
+                            fontSize: 10.5.sp, color: Colors.redAccent),
+                      )
+                    else
+                      Text(
+                        lesson.durationLabel ?? 'Video ready',
+                        style: GoogleFonts.poppins(
+                            fontSize: 10.5.sp, color: AppColors.fontGrey),
+                      ),
+                    if (lesson.isPreview) ...[
+                      SizedBox(width: 8.w),
+                      Text(
+                        'Preview',
+                        style: GoogleFonts.poppins(
+                          fontSize: 10.5.sp,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primaryColor,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+          PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert, size: 18.sp, color: AppColors.fontGrey),
+            onSelected: (value) {
+              if (value == 'edit') _editLesson(lesson);
+              if (value == 'delete') _deleteLesson(lesson);
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(value: 'edit', child: Text('Edit')),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Text('Delete', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   // ---------------------------------------------------------------------------

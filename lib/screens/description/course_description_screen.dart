@@ -8,6 +8,7 @@ import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/screens/description/components/course_header.dart';
 import 'package:padi_learn/screens/payment/paystack_checkout_screen.dart';
 import 'package:padi_learn/screens/videoplayer/videoPlayer.dart';
+import 'package:padi_learn/services/lesson_service.dart';
 import 'package:padi_learn/services/payment_service.dart';
 import 'package:padi_learn/utils/colors.dart';
 
@@ -28,6 +29,9 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
   // Enrollment logic controller
   late final EnrollmentController enrollmentController;
 
+  List<Lesson> _lessons = const [];
+  bool _loadingLessons = true;
+
   @override
   void initState() {
     super.initState();
@@ -39,6 +43,28 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
     isFree = coursesController.selectedCoursePrice.value == 0;
 
     _checkEnrollment();
+    _loadLessons();
+  }
+
+  /// The curriculum doubles as the sales pitch, so it loads for everyone —
+  /// enrolled or not. RLS exposes lesson titles freely; the videos stay locked.
+  Future<void> _loadLessons() async {
+    try {
+      final lessons = await LessonService.forCourse(
+          coursesController.selectedCourseId.value);
+      if (mounted) setState(() => _lessons = lessons);
+    } catch (_) {
+      // Leave the section empty rather than blocking the buy button.
+    } finally {
+      if (mounted) setState(() => _loadingLessons = false);
+    }
+  }
+
+  void _openLesson(Lesson lesson) {
+    Get.to(() => VideoPlayerPage(
+          courseId: coursesController.selectedCourseId.value,
+          initialLessonId: lesson.id,
+        ));
   }
 
   /// Looks up the existing enrolment, if any. Failures are non-fatal: the
@@ -94,7 +120,12 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                 style: TextStyle(fontSize: 16.sp, color: AppColors.fontGrey),
               )),
 
-              SizedBox(height: 70.h),
+              SizedBox(height: 24.h),
+
+              /// What they actually get — the strongest thing on this screen.
+              _buildCurriculum(),
+
+              SizedBox(height: 40.h),
 
               /// Enroll / Continue button — spinner shows inside the button.
               PrimaryButton(
@@ -182,6 +213,104 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
       Get.snackbar('Error', e.toString());
       if (mounted) setState(() => isLoading = false);
     }
+  }
+
+  Widget _buildCurriculum() {
+    if (_loadingLessons) {
+      return Padding(
+        padding: EdgeInsets.symmetric(vertical: 16.h),
+        child: const Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+    if (_lessons.isEmpty) return const SizedBox.shrink();
+
+    final total = LessonService.totalDurationLabel(_lessons);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              "What you'll learn",
+              style: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w600),
+            ),
+            const Spacer(),
+            Text(
+              [
+                '${_lessons.length} lesson${_lessons.length == 1 ? '' : 's'}',
+                if (total != null) total,
+              ].join(' · '),
+              style: TextStyle(fontSize: 12.sp, color: AppColors.fontGrey),
+            ),
+          ],
+        ),
+        SizedBox(height: 12.h),
+        for (var i = 0; i < _lessons.length; i++)
+          _curriculumRow(_lessons[i], i + 1),
+      ],
+    );
+  }
+
+  Widget _curriculumRow(Lesson lesson, int number) {
+    // Preview lessons are playable before buying; the rest show a lock. The
+    // edge function enforces this regardless of what the UI offers.
+    final unlocked = lesson.isPreview || isAlreadyEnrolled;
+
+    return InkWell(
+      onTap: unlocked ? () => _openLesson(lesson) : null,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 10.h),
+        child: Row(
+          children: [
+            Icon(
+              unlocked ? Icons.play_circle_outline : Icons.lock_outline,
+              size: 20.sp,
+              color: unlocked ? AppColors.primaryColor : AppColors.fontGrey,
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Text(
+                '$number. ${lesson.title}',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: AppColors.richBlack,
+                ),
+              ),
+            ),
+            if (lesson.isPreview)
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryAccent,
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+                child: Text(
+                  'Preview',
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primaryColor,
+                  ),
+                ),
+              )
+            else if (lesson.durationLabel != null)
+              Text(
+                lesson.durationLabel!,
+                style: TextStyle(fontSize: 12.sp, color: AppColors.fontGrey),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   /// Navigates the user to the course video player screen

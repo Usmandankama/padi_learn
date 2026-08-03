@@ -83,8 +83,8 @@ class EarningsWidget extends StatelessWidget {
             Expanded(
               child: Obx(
                 () => AnalyticItem(
-                  title: 'Earnings',
-                  statsData: controller.totalEarnings.value.toInt(),
+                  title: 'Sales',
+                  statsData: controller.totalSales.value,
                 ),
               ),
             ),

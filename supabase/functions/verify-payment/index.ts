@@ -69,12 +69,12 @@ Deno.serve(async (req) => {
 
     const { data: course } = await admin
       .from("courses")
-      .select("id, title, thumbnail_url, video_url, price")
+      .select("id, title, thumbnail_url, price, user_id")
       .eq("id", courseId)
       .maybeSingle();
     if (!course) return json({ success: false, message: "Course not found." }, 404);
 
-    // Guard against amount tampering.
+    // Guard against amount/currency tampering.
     const expectedKobo = Math.round(Number(course.price ?? 0) * 100);
     if (Number(vData.data.amount) < expectedKobo) {
       return json({
@@ -82,15 +82,61 @@ Deno.serve(async (req) => {
         message: "Amount paid is less than the course price.",
       });
     }
+    if (vData.data.currency && vData.data.currency !== "NGN") {
+      return json({ success: false, message: "Unexpected payment currency." });
+    }
+
+    // --- Ledger ------------------------------------------------------------
+    // Recorded before the entitlement, so a retry can never grant access
+    // without leaving a financial record. Both writes are idempotent, keyed on
+    // the Paystack reference and (user, course) respectively.
+    const amountKobo = Number(vData.data.amount);
+
+    // Paystack deducts its fee before settlement, so this is recorded to keep
+    // the real economics reconstructable. NOTE: the platform split below is
+    // still taken on gross — whether it should be taken on net is an open
+    // business decision, and changing it later must not rewrite past rows.
+    const paystackFeeKobo = Number(vData.data.fees ?? 0) || 0;
+
+    const feePercent = Math.min(
+      100,
+      Math.max(0, Number(Deno.env.get("PLATFORM_FEE_PERCENT") ?? "0") || 0),
+    );
+    const platformFeeKobo = Math.round((amountKobo * feePercent) / 100);
+
+    const { error: ledgerErr } = await admin.from("transactions").upsert(
+      {
+        reference,
+        buyer_id: payerId,
+        teacher_id: course.user_id,
+        course_id: course.id,
+        // Denormalised so the record still reads correctly if the course is
+        // later deleted.
+        course_title: course.title,
+        amount_kobo: amountKobo,
+        currency: vData.data.currency ?? "NGN",
+        paystack_fee_kobo: paystackFeeKobo,
+        platform_fee_kobo: platformFeeKobo,
+        teacher_earning_kobo: amountKobo - platformFeeKobo,
+        status: "success",
+        channel: vData.data.channel ?? null,
+        paid_at: vData.data.paid_at ?? null,
+      },
+      { onConflict: "reference", ignoreDuplicates: true },
+    );
+    if (ledgerErr) {
+      return json({ success: false, message: ledgerErr.message }, 500);
+    }
 
     // Idempotent enrollment (the DB trigger bumps the course's enrollment count).
+    // The enrollment row itself is the entitlement: `get-course-video` checks
+    // for it before signing a playback URL, so no media link is stored here.
     const { error: enrollErr } = await admin.from("enrollments").upsert(
       {
         user_id: payerId,
         course_id: courseId,
         title: course.title,
         image: course.thumbnail_url,
-        video_url: course.video_url,
         progress: 0,
         is_free: false,
       },

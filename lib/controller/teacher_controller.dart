@@ -1,12 +1,18 @@
 import 'package:get/get.dart';
 import 'package:padi_learn/services/supabase.dart';
+import 'package:padi_learn/services/transaction_service.dart';
 
 class TeacherController extends GetxController {
   // Observable variables
   var teacherName = 'Loading...'.obs;
   var profileImageUrl = ''.obs;
   var totalCoursesUploaded = 0.obs;
+
+  /// Naira actually owed to this teacher, summed from the payment ledger.
   var totalEarnings = 0.0.obs;
+
+  /// Number of paid sales behind [totalEarnings].
+  var totalSales = 0.obs;
   var userCourses = <Map<String, dynamic>>[].obs;
 
   @override
@@ -44,27 +50,30 @@ class TeacherController extends GetxController {
     }
   }
 
+  /// Course count, plus real earnings read from the payment ledger.
+  ///
+  /// This used to estimate earnings as `price × enrollments`, which counted
+  /// free enrolments as revenue, ignored the platform fee, and moved whenever a
+  /// teacher edited their price. `transactions` records what was actually
+  /// charged, so the figure is now money that genuinely changed hands.
   Future<void> fetchTeacherEarningsAndCourses() async {
+    final userId = _userId;
+    if (userId == null) return;
+
     try {
-      final userId = _userId;
-      if (userId == null) return;
-
-      final rows = await supabase
-          .from('courses')
-          .select('price, enrollments')
-          .eq('user_id', userId);
-
-      double earnings = 0.0;
-      for (final row in rows) {
-        final price = (row['price'] as num?)?.toDouble() ?? 0.0;
-        final enrollments = (row['enrollments'] as num?)?.toInt() ?? 0;
-        earnings += price * enrollments;
-      }
-
+      final rows =
+          await supabase.from('courses').select('id').eq('user_id', userId);
       totalCoursesUploaded.value = rows.length;
-      totalEarnings.value = earnings;
     } catch (e) {
-      // Leave defaults on failure.
+      // Leave the previous count on failure.
+    }
+
+    try {
+      final sales = await TransactionService.salesForTeacher();
+      totalEarnings.value = TransactionService.totalEarnings(sales);
+      totalSales.value = sales.length;
+    } catch (e) {
+      // Leave the previous totals on failure.
     }
   }
 

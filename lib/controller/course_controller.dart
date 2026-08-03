@@ -12,7 +12,6 @@ class CoursesController extends GetxController {
   var selectedCoursePrice = 0.0.obs; // numeric price (0 == free)
   var selectedCourseDescription = ''.obs;
   var selectedCourseAuthor = ''.obs;
-  var selectedCourseVideoUrl = ''.obs;
 
   final UserController userController = Get.find<UserController>();
 
@@ -35,15 +34,17 @@ class CoursesController extends GetxController {
   }
 
   /// Stores the tapped course's details for the description screen.
+  ///
+  /// No video here: a course is a list of lessons now, and the description
+  /// screen loads those itself.
   void selectCourse(String id, String title, String image, num price,
-      String description, String author, String videoUrl) {
+      String description, String author) {
     selectedCourseId.value = id;
     selectedCourseTitle.value = title;
     selectedCourseImage.value = image;
     selectedCoursePrice.value = price.toDouble();
     selectedCourseAuthor.value = author;
     selectedCourseDescription.value = description;
-    selectedCourseVideoUrl.value = videoUrl;
   }
 
   String getCurrentUserName() => userController.userName.value;

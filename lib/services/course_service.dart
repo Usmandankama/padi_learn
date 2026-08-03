@@ -1,3 +1,4 @@
+import 'package:padi_learn/services/lesson_service.dart';
 import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/services/supabase_storage_service.dart';
 
@@ -27,7 +28,6 @@ class CourseService {
     required double price,
     required String? category,
     required String author,
-    String? videoPath,
     String? thumbnailUrl,
   }) async {
     await supabase.from('courses').update({
@@ -36,7 +36,6 @@ class CourseService {
       'price': price,
       'category': category,
       'author': author,
-      if (videoPath != null) 'video_url': videoPath,
       if (thumbnailUrl != null) 'thumbnail_url': thumbnailUrl,
     }).eq('id', courseId);
   }
@@ -79,14 +78,25 @@ class CourseService {
       );
     }
 
+    // Collect the lesson videos before the row goes: deleting the course
+    // cascades the lessons away, and with them any record of what to clean up.
+    List<Lesson> lessons = const [];
+    try {
+      lessons = await LessonService.forCourse(courseId);
+    } catch (_) {
+      // Worst case a few objects are orphaned; the delete still proceeds.
+    }
+
     await supabase.from('courses').delete().eq('id', courseId);
 
     // Row is gone; clean the media up afterwards so a storage hiccup can't
     // leave a course the teacher believes they deleted.
-    await removeStoredObject(
-      course['video_url'] as String?,
-      fallbackBucket: kCourseMediaBucket,
-    );
+    for (final lesson in lessons) {
+      await removeStoredObject(
+        lesson.videoPath,
+        fallbackBucket: kCourseMediaBucket,
+      );
+    }
     await removeStoredObject(
       course['thumbnail_url'] as String?,
       fallbackBucket: kCourseThumbnailBucket,

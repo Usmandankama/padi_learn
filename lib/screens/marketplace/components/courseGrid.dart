@@ -33,12 +33,10 @@ class CoursesGridLimited extends StatelessWidget {
         final price = courseData['price'] ?? 0; // numeric price (0 == free)
         final description =
             courseData['description'] ?? 'No description available';
-        final videoUrl = courseData['video_url'] ?? '';
         final courseId = courses[index]['id'] as String;
 
         return GestureDetector(
             onTap: () {
-              // Set selected course details in the controller, including video URL
               controller.selectCourse(
                 courseId,
                 title,
@@ -46,7 +44,6 @@ class CoursesGridLimited extends StatelessWidget {
                 price,
                 description,
                 author,
-                videoUrl,
               );
               Get.to(() => CourseDescriptionScreen());
             },

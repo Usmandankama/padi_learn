@@ -23,7 +23,6 @@ class CoursesList extends StatelessWidget {
         final author = courseData['author'] ?? '';
         final thumbnailUrl = courseData['thumbnail_url'] ?? '';
         final price = courseData['price'] ?? 0;
-        final videoUrl = courseData['video_url'] ?? '';
         final description =
             courseData['description'] ?? 'No description available';
         final courseId = courses[index]['id'] as String;
@@ -31,8 +30,8 @@ class CoursesList extends StatelessWidget {
         return GestureDetector(
           onTap: () {
             // Set selected course details in the controller
-            controller.selectCourse(courseId, title, thumbnailUrl, price,
-                description, author, videoUrl);
+            controller.selectCourse(
+                courseId, title, thumbnailUrl, price, description, author);
 
             Get.to(() => CourseDescriptionScreen());
           },

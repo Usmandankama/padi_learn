@@ -124,7 +124,6 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       (course['price'] as num?) ?? 0,
       (course['description'] ?? '').toString(),
       (course['author'] ?? '').toString(),
-      (course['video_url'] ?? '').toString(),
     );
     Get.to(() => CourseDescriptionScreen());
   }

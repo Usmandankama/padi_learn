@@ -1,37 +1,54 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+
 import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/screens/teacher/components/upload_progress_card.dart';
+import 'package:padi_learn/screens/teacher/course_detail_screen.dart';
+import 'package:padi_learn/services/lesson_service.dart';
 import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/services/supabase_storage_service.dart';
 import 'package:padi_learn/utils/colors.dart';
+import 'package:padi_learn/utils/video_metadata.dart';
 
+/// Creates a course and its first lesson.
+///
+/// A course is a series of lessons, so this screen deliberately frames the
+/// video as *lesson one* rather than "the course video" — and says so — then
+/// drops the teacher on the course's Lessons tab to add the rest.
 class CreateCourseScreen extends StatefulWidget {
   const CreateCourseScreen({super.key});
 
   @override
-  _CreateCourseScreenState createState() => _CreateCourseScreenState();
+  State<CreateCourseScreen> createState() => _CreateCourseScreenState();
 }
 
 class _CreateCourseScreenState extends State<CreateCourseScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _priceController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _authorController = TextEditingController();
-  String? _selectedCategory;
-  File? _videoFile;
-  File? _thumbnailFile;
+
+  final _title = TextEditingController();
+  final _description = TextEditingController();
+  final _price = TextEditingController();
+  final _author = TextEditingController();
+  final _lessonTitle = TextEditingController(text: 'Lesson 1');
+  String? _category;
+
+  File? _video;
+  File? _thumbnail;
   int _videoBytes = 0;
   int _thumbnailBytes = 0;
-  bool _isLoading = false;
+  int? _videoDuration;
+  bool _readingVideo = false;
+  bool _firstLessonIsPreview = false;
 
-  /// Live upload progress; null when no upload is running.
+  bool _saving = false;
   UploadProgress? _progress;
 
-  final List<String> _categories = [
+  static const List<String> _categories = [
     'Programming',
     'Design',
     'Marketing',
@@ -39,7 +56,43 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     'Data Science',
   ];
 
-  void _showMessage(String message, {bool isError = false}) {
+  @override
+  void initState() {
+    super.initState();
+    _prefillAuthor();
+  }
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _description.dispose();
+    _price.dispose();
+    _author.dispose();
+    _lessonTitle.dispose();
+    super.dispose();
+  }
+
+  /// Nobody should have to type their own name. Still editable — a teacher may
+  /// publish under a brand rather than their profile name.
+  Future<void> _prefillAuthor() async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) return;
+    try {
+      final profile = await supabase
+          .from('profiles')
+          .select('name')
+          .eq('id', uid)
+          .maybeSingle();
+      final name = (profile?['name'] as String?)?.trim() ?? '';
+      if (mounted && name.isNotEmpty && _author.text.trim().isEmpty) {
+        _author.text = name;
+      }
+    } catch (_) {
+      // Not important enough to surface — they can type it.
+    }
+  }
+
+  void _notify(String message, {bool isError = false}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -50,17 +103,18 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     );
   }
 
-  Future<void> _pickVideo() async {
-    final pickedFile =
-        await ImagePicker().pickVideo(source: ImageSource.gallery);
-    if (pickedFile == null) return;
+  // ---------------------------------------------------------------------------
+  // Media
+  // ---------------------------------------------------------------------------
 
-    // Check the size now rather than after a long upload the server would
-    // refuse anyway.
-    final file = File(pickedFile.path);
+  Future<void> _pickVideo() async {
+    final picked = await ImagePicker().pickVideo(source: ImageSource.gallery);
+    if (picked == null) return;
+
+    final file = File(picked.path);
     final bytes = await file.length();
     if (bytes > kMaxVideoBytes) {
-      _showMessage(
+      _notify(
         'That video is ${formatBytes(bytes)}. The limit is '
         '${formatBytes(kMaxVideoBytes)} — please trim or compress it.',
         isError: true,
@@ -70,21 +124,30 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
     if (!mounted) return;
     setState(() {
-      _videoFile = file;
+      _video = file;
       _videoBytes = bytes;
+      _readingVideo = true;
+    });
+
+    // Captured before upload so the curriculum can show a runtime.
+    final duration = await readVideoDurationSeconds(file);
+    if (!mounted) return;
+    setState(() {
+      _videoDuration = duration;
+      _readingVideo = false;
     });
   }
 
   Future<void> _pickThumbnail() async {
-    final pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedFile == null) return;
+    final picked = await ImagePicker()
+        .pickImage(source: ImageSource.gallery, imageQuality: 85);
+    if (picked == null) return;
 
-    final file = File(pickedFile.path);
+    final file = File(picked.path);
     final bytes = await file.length();
     if (bytes > kMaxThumbnailBytes) {
-      _showMessage(
-        'That thumbnail is ${formatBytes(bytes)}. The limit is '
+      _notify(
+        'That image is ${formatBytes(bytes)}. The limit is '
         '${formatBytes(kMaxThumbnailBytes)}.',
         isError: true,
       );
@@ -93,14 +156,13 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
     if (!mounted) return;
     setState(() {
-      _thumbnailFile = file;
+      _thumbnail = file;
       _thumbnailBytes = bytes;
     });
   }
 
-  /// Throttled so a 50 MB upload repaints ~100 times (once per percent) rather
-  /// than once per 64 KB chunk.
-  void _onUploadProgress(UploadProgress progress) {
+  /// Throttled so a large upload repaints once per percent.
+  void _onProgress(UploadProgress progress) {
     if (!mounted) return;
     final previous = _progress;
     final changed = previous == null ||
@@ -110,237 +172,466 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     setState(() => _progress = progress);
   }
 
-  Future<void> _uploadCourse() async {
+  // ---------------------------------------------------------------------------
+  // Save
+  // ---------------------------------------------------------------------------
+
+  Future<void> _create() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_videoFile == null || _thumbnailFile == null) {
-      _showMessage('Please select both a video and a thumbnail');
+    if (_video == null || _thumbnail == null) {
+      _notify('Please add a cover image and a video for the first lesson.',
+          isError: true);
+      return;
+    }
+
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null) {
+      _notify('Your session expired. Please sign in again.', isError: true);
       return;
     }
 
     setState(() {
-      _isLoading = true;
+      _saving = true;
       _progress = null;
     });
 
     try {
-      final userId = supabase.auth.currentUser?.id;
-      if (userId == null) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Your session expired. Please sign in again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
+      final upload = await uploadCourseMedia(
+        userId: userId,
+        videoFile: _video,
+        thumbnailFile: _thumbnail,
+        onProgress: _onProgress,
+      );
+      if (!upload.success) {
+        _notify(upload.error ?? 'Media upload failed', isError: true);
         return;
       }
 
-      // Upload video + thumbnail to Supabase Storage concurrently, with
-      // explicit content types and unique per-user object paths.
-      final uploadResult = await uploadCourseMedia(
-        userId: userId,
-        videoFile: _videoFile!,
-        thumbnailFile: _thumbnailFile!,
-        onProgress: _onUploadProgress,
+      final course = await supabase
+          .from('courses')
+          .insert({
+            'title': _title.text.trim(),
+            'description': _description.text.trim(),
+            'price': double.tryParse(_price.text.trim()) ?? 0,
+            'category': _category,
+            'author': _author.text.trim(),
+            'thumbnail_url': upload.thumbnailUrl,
+            'user_id': userId,
+          })
+          .select('id')
+          .single();
+
+      final courseId = (course['id'] ?? '').toString();
+
+      await LessonService.add(
+        courseId: courseId,
+        title: _lessonTitle.text.trim().isEmpty
+            ? 'Lesson 1'
+            : _lessonTitle.text.trim(),
+        videoPath: upload.videoPath!,
+        durationSeconds: _videoDuration,
+        isPreview: _firstLessonIsPreview,
       );
-
-      if (!uploadResult.success) {
-        _showMessage(uploadResult.error ?? 'Media upload failed', isError: true);
-        return; // `finally` still clears the loading state.
-      }
-
-      // Insert the course row (id + created_at are generated by the database).
-      // `video_url` holds the private object key, not a public link — playback
-      // URLs are signed per request by the `get-course-video` function.
-      await supabase.from('courses').insert({
-        'title': _titleController.text.trim(),
-        'description': _descriptionController.text.trim(),
-        'price': double.tryParse(_priceController.text.trim()) ?? 0,
-        'category': _selectedCategory,
-        'author': _authorController.text.trim(),
-        'video_url': uploadResult.videoPath,
-        'thumbnail_url': uploadResult.thumbnailUrl,
-        'user_id': userId,
-      });
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Course created successfully!')),
+      // Land on the course itself, where lesson two is one tap away — rather
+      // than dropping them back on a list with no obvious next step.
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => CourseDetailScreen(courseId: courseId),
+        ),
       );
-
-      _formKey.currentState!.reset();
-      _videoFile = null;
-      _thumbnailFile = null;
-      _videoBytes = 0;
-      _thumbnailBytes = 0;
-      _selectedCategory = null;
-
-      Navigator.pop(context);
+      _notify('Course created. Add more lessons whenever you are ready.');
     } catch (e) {
-      _showMessage('Failed to create course: $e', isError: true);
+      _notify('Failed to create course: $e', isError: true);
     } finally {
-      // Guarded: every path above can leave this widget unmounted, and an
-      // unguarded setState here throws out of `finally`.
       if (mounted) {
         setState(() {
-          _isLoading = false;
+          _saving = false;
           _progress = null;
         });
       }
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // UI
+  // ---------------------------------------------------------------------------
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF7F8FA),
       appBar: AppBar(
-        title: Text('Create Course',
-            style: TextStyle(
-                color: AppColors.primaryColor,
-                fontSize: 18.sp,
-                fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: AppColors.primaryColor),
+        backgroundColor: const Color(0xFFF7F8FA),
         elevation: 0,
-      ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24.0.w, vertical: 16.0.h),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: _titleController,
-                decoration: InputDecoration(
-                  labelText: 'Course Title',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                ),
-                validator: (value) => value == null || value.isEmpty
-                    ? 'Please enter a course title'
-                    : null,
-              ),
-              SizedBox(height: 20.h),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: InputDecoration(
-                  labelText: 'Course Description',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                ),
-                maxLines: 5,
-                validator: (value) => value == null || value.isEmpty
-                    ? 'Please enter a course description'
-                    : null,
-              ),
-              SizedBox(height: 20.h),
-              DropdownButtonFormField<String>(
-                value: _selectedCategory,
-                decoration: InputDecoration(
-                  labelText: 'Category',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                ),
-                items: _categories.map((String category) {
-                  return DropdownMenuItem<String>(
-                    value: category,
-                    child: Text(category, style: TextStyle(fontSize: 16.sp)),
-                  );
-                }).toList(),
-                onChanged: (value) => setState(() => _selectedCategory = value),
-                validator: (value) => value == null || value.isEmpty
-                    ? 'Please select a category'
-                    : null,
-              ),
-              SizedBox(height: 20.h),
-              TextFormField(
-                keyboardType: TextInputType.number,
-                controller: _priceController,
-                decoration: InputDecoration(
-                  labelText: 'Input Price',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                ),
-                validator: (value) => value == null || value.isEmpty
-                    ? 'Please enter a course price'
-                    : null,
-              ),
-              SizedBox(height: 20.h),
-              TextFormField(
-                controller: _authorController,
-                decoration: InputDecoration(
-                  labelText: 'Author Name',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                ),
-                validator: (value) => value == null || value.isEmpty
-                    ? 'Please enter author name'
-                    : null,
-              ),
-              SizedBox(height: 20.h),
-              ElevatedButton.icon(
-                onPressed: _pickVideo,
-                icon: Icon(Icons.video_library, color: AppColors.primaryColor),
-                label: Text('Upload Video',
-                    style: TextStyle(color: AppColors.primaryColor)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.lightGrey,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                ),
-              ),
-              if (_videoFile != null)
-                Padding(
-                  padding: EdgeInsets.symmetric(vertical: 10.h),
-                  child: Text(
-                    'Selected video: ${_videoFile!.path.split('/').last} '
-                    '(${formatBytes(_videoBytes)})',
-                    style: TextStyle(color: AppColors.primaryColor),
-                  ),
-                ),
-              SizedBox(height: 20.h),
-              ElevatedButton.icon(
-                onPressed: _pickThumbnail,
-                icon: Icon(Icons.image, color: AppColors.primaryColor),
-                label: Text('Upload Thumbnail',
-                    style: TextStyle(color: AppColors.primaryColor)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.lightGrey,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                ),
-              ),
-              if (_thumbnailFile != null)
-                Padding(
-                  padding: EdgeInsets.symmetric(vertical: 10.h),
-                  child: Text(
-                    'Selected thumbnail: ${_thumbnailFile!.path.split('/').last} '
-                    '(${formatBytes(_thumbnailBytes)})',
-                    style: TextStyle(color: AppColors.primaryColor),
-                  ),
-                ),
-              SizedBox(height: 20.h),
-              if (_isLoading)
-                UploadProgressCard(progress: _progress)
-              else
-                PrimaryButton(
-                  label: 'Create Course',
-                  isLoading: false,
-                  onPressed: _uploadCourse,
-                ),
-            ],
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: AppColors.richBlack),
+        title: Text(
+          'New Course',
+          style: GoogleFonts.poppins(
+            color: AppColors.primaryColor,
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w700,
           ),
+        ),
+      ),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 32.h),
+          children: [
+            _section(
+              title: 'Course details',
+              children: [
+                _field(
+                  controller: _title,
+                  label: 'Course title',
+                  icon: Icons.title,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Please enter a course title'
+                      : null,
+                ),
+                SizedBox(height: 14.h),
+                _field(
+                  controller: _description,
+                  label: 'What will students learn?',
+                  icon: Icons.notes,
+                  maxLines: 5,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Please enter a description'
+                      : null,
+                ),
+                SizedBox(height: 14.h),
+                _field(
+                  controller: _author,
+                  label: 'Author name',
+                  icon: Icons.person_outline,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Please enter the author name'
+                      : null,
+                ),
+              ],
+            ),
+            SizedBox(height: 14.h),
+            _section(
+              title: 'Category & price',
+              children: [
+                DropdownButtonFormField<String>(
+                  initialValue: _category,
+                  isExpanded: true,
+                  decoration: _decoration('Category', Icons.category_outlined),
+                  items: _categories
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                      .toList(),
+                  onChanged:
+                      _saving ? null : (v) => setState(() => _category = v),
+                  validator: (v) =>
+                      (v == null || v.isEmpty) ? 'Please pick a category' : null,
+                ),
+                SizedBox(height: 14.h),
+                _field(
+                  controller: _price,
+                  label: 'Price (NGN) — 0 makes it free',
+                  icon: Icons.sell_outlined,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Enter a price';
+                    if (double.tryParse(v.trim()) == null) {
+                      return 'Enter a valid number';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+            SizedBox(height: 14.h),
+            _section(
+              title: 'Cover image',
+              children: [_thumbnailPicker()],
+            ),
+            SizedBox(height: 14.h),
+            _section(
+              title: 'First lesson',
+              subtitle:
+                  'Courses are made of lessons. Add one to get started — you '
+                  'can add the rest right after.',
+              children: [
+                _field(
+                  controller: _lessonTitle,
+                  label: 'Lesson title',
+                  icon: Icons.play_lesson_outlined,
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Give the first lesson a title'
+                      : null,
+                ),
+                SizedBox(height: 14.h),
+                _videoPicker(),
+                SizedBox(height: 6.h),
+                _previewToggle(),
+              ],
+            ),
+            SizedBox(height: 24.h),
+            if (_saving)
+              UploadProgressCard(progress: _progress)
+            else
+              PrimaryButton(
+                label: 'Create course',
+                isLoading: false,
+                // Null (not an empty callback) so the button actually greys
+                // out while the duration probe runs.
+                onPressed: _readingVideo ? null : _create,
+              ),
+          ],
         ),
       ),
     );
   }
 
+  Widget _thumbnailPicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12.r),
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: _thumbnail != null
+                ? Image.file(_thumbnail!, fit: BoxFit.cover)
+                : Container(
+                    color: AppColors.primaryAccent,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.image_outlined,
+                            size: 30.sp, color: AppColors.primaryColor),
+                        SizedBox(height: 6.h),
+                        Text(
+                          'No cover chosen',
+                          style: GoogleFonts.poppins(
+                              fontSize: 11.5.sp, color: AppColors.fontGrey),
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+        ),
+        SizedBox(height: 8.h),
+        Row(
+          children: [
+            TextButton.icon(
+              onPressed: _saving ? null : _pickThumbnail,
+              icon: Icon(Icons.image_outlined,
+                  size: 18.sp, color: AppColors.primaryColor),
+              label: Text(
+                _thumbnail == null ? 'Choose image' : 'Choose another',
+                style: GoogleFonts.poppins(
+                    fontSize: 12.5.sp, color: AppColors.primaryColor),
+              ),
+            ),
+            const Spacer(),
+            if (_thumbnail != null)
+              Text(
+                formatBytes(_thumbnailBytes),
+                style: GoogleFonts.poppins(
+                    fontSize: 11.sp, color: AppColors.fontGrey),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _videoPicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: EdgeInsets.all(12.w),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF7F8FA),
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.movie_outlined,
+                  size: 22.sp, color: AppColors.primaryColor),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Text(
+                  _video == null
+                      ? 'No video chosen yet'
+                      : '${_video!.path.split(RegExp(r"[\\/]")).last} '
+                          '(${formatBytes(_videoBytes)})',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12.sp,
+                    color: _video == null
+                        ? AppColors.fontGrey
+                        : AppColors.richBlack,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: 8.h),
+        Row(
+          children: [
+            TextButton.icon(
+              onPressed: _saving ? null : _pickVideo,
+              icon: Icon(Icons.upload_outlined,
+                  size: 18.sp, color: AppColors.primaryColor),
+              label: Text(
+                _video == null ? 'Choose video' : 'Choose another',
+                style: GoogleFonts.poppins(
+                    fontSize: 12.5.sp, color: AppColors.primaryColor),
+              ),
+            ),
+            const Spacer(),
+            if (_readingVideo)
+              SizedBox(
+                width: 14.w,
+                height: 14.w,
+                child: const CircularProgressIndicator(strokeWidth: 2),
+              )
+            else if (_videoDuration != null)
+              Text(
+                Lesson(
+                  id: '',
+                  courseId: '',
+                  title: '',
+                  position: 1,
+                  videoPath: null,
+                  durationSeconds: _videoDuration,
+                  isPreview: false,
+                ).durationLabel!,
+                style: GoogleFonts.poppins(
+                    fontSize: 11.5.sp, color: AppColors.fontGrey),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _previewToggle() {
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Free preview',
+                style: GoogleFonts.poppins(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.richBlack,
+                ),
+              ),
+              SizedBox(height: 2.h),
+              Text(
+                'Let anyone watch this lesson before buying. The most reliable '
+                'way to sell a paid course.',
+                style: GoogleFonts.poppins(
+                    fontSize: 11.sp, color: AppColors.fontGrey),
+              ),
+            ],
+          ),
+        ),
+        Switch.adaptive(
+          value: _firstLessonIsPreview,
+          activeThumbColor: AppColors.primaryColor,
+          onChanged:
+              _saving ? null : (v) => setState(() => _firstLessonIsPreview = v),
+        ),
+      ],
+    );
+  }
+
+  Widget _section({
+    required String title,
+    String? subtitle,
+    required List<Widget> children,
+  }) {
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: AppColors.appWhite,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.richBlack,
+            ),
+          ),
+          if (subtitle != null) ...[
+            SizedBox(height: 4.h),
+            Text(
+              subtitle,
+              style: GoogleFonts.poppins(
+                  fontSize: 11.5.sp, color: AppColors.fontGrey),
+            ),
+          ],
+          SizedBox(height: 14.h),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _decoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle:
+          GoogleFonts.poppins(fontSize: 13.sp, color: AppColors.fontGrey),
+      prefixIcon: Icon(icon, size: 20.sp, color: AppColors.primaryColor),
+      filled: true,
+      fillColor: const Color(0xFFF7F8FA),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12.r),
+        borderSide: BorderSide.none,
+      ),
+    );
+  }
+
+  Widget _field({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    int maxLines = 1,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      enabled: !_saving,
+      style: GoogleFonts.poppins(fontSize: 13.sp),
+      decoration: _decoration(label, icon),
+      validator: validator,
+    );
+  }
 }

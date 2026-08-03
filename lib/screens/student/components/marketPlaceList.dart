@@ -28,7 +28,6 @@ class MarketPlaceList extends StatelessWidget {
         final author = courseData['author'] ?? '';
         final thumbnailUrl = courseData['thumbnail_url'] ?? '';
         final price = courseData['price'] ?? 0;
-        final videoUrl = courseData['video_url'] ?? '';
 
         final description =
             courseData['description'] ?? 'No description available';
@@ -44,7 +43,6 @@ class MarketPlaceList extends StatelessWidget {
               price,
               description,
               author,
-              videoUrl,
             );
             if (userRole == 'Student' || userRole == 'student') {
               Get.to(

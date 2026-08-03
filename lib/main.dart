@@ -45,7 +45,7 @@ void registerAppControllers() {
   Get.lazyPut(() => UserController(), fenix: true);
   Get.lazyPut(() => TeacherController(), fenix: true);
 }
-
+ 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 

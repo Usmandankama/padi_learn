@@ -124,9 +124,11 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               Expanded(
                 child: Obx(
                   () => Text(
+                    // Counts archived courses too, so "published" would be
+                    // inaccurate here.
                     controller.totalCoursesUploaded.value == 1
-                        ? '1 course published'
-                        : '${controller.totalCoursesUploaded.value} courses published',
+                        ? '1 course'
+                        : '${controller.totalCoursesUploaded.value} courses',
                     style: GoogleFonts.poppins(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,

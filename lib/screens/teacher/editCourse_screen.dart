@@ -43,10 +43,8 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
   late final TextEditingController _author;
   String? _category;
 
-  /// Newly picked replacements. Null means "keep what is already there".
-  File? _newVideo;
+  /// Newly picked replacement. Null means "keep the existing cover".
   File? _newThumbnail;
-  int _newVideoBytes = 0;
   int _newThumbnailBytes = 0;
 
   bool _saving = false;
@@ -98,28 +96,6 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
   // ---------------------------------------------------------------------------
   // Media
   // ---------------------------------------------------------------------------
-
-  Future<void> _pickVideo() async {
-    final picked = await ImagePicker().pickVideo(source: ImageSource.gallery);
-    if (picked == null) return;
-
-    final file = File(picked.path);
-    final bytes = await file.length();
-    if (bytes > kMaxVideoBytes) {
-      _notify(
-        'That video is ${formatBytes(bytes)}. The limit is '
-        '${formatBytes(kMaxVideoBytes)} — please trim or compress it.',
-        isError: true,
-      );
-      return;
-    }
-
-    if (!mounted) return;
-    setState(() {
-      _newVideo = file;
-      _newVideoBytes = bytes;
-    });
-  }
 
   Future<void> _pickThumbnail() async {
     final picked = await ImagePicker()
@@ -173,14 +149,12 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
       _progress = null;
     });
 
-    final previousVideo = widget.courseData['video_url'] as String?;
     final previousThumbnail = widget.courseData['thumbnail_url'] as String?;
 
     try {
-      // Uploads only run for files the teacher actually replaced.
+      // Only runs when the teacher actually picked a new cover.
       final upload = await uploadCourseMedia(
         userId: userId,
-        videoFile: _newVideo,
         thumbnailFile: _newThumbnail,
         onProgress: _onProgress,
       );
@@ -196,15 +170,10 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
         price: double.tryParse(_price.text.trim()) ?? 0,
         category: _category,
         author: _author.text.trim(),
-        videoPath: upload.videoPath,
         thumbnailUrl: upload.thumbnailUrl,
       );
 
-      // The row now points at the new files, so the old ones are safe to drop.
-      if (upload.videoPath != null) {
-        await removeStoredObject(previousVideo,
-            fallbackBucket: kCourseMediaBucket);
-      }
+      // The row now points at the new file, so the old one is safe to drop.
       if (upload.thumbnailUrl != null) {
         await removeStoredObject(previousThumbnail,
             fallbackBucket: kCourseThumbnailBucket);
@@ -319,11 +288,26 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
             ),
             SizedBox(height: 14.h),
             _section(
-              title: 'Media',
+              title: 'Cover image',
               children: [
                 _thumbnailPicker(),
-                SizedBox(height: 16.h),
-                _videoPicker(),
+                SizedBox(height: 12.h),
+                // Videos belong to lessons now, so they are edited there
+                // rather than here.
+                Row(
+                  children: [
+                    Icon(Icons.info_outline,
+                        size: 15.sp, color: AppColors.fontGrey),
+                    SizedBox(width: 6.w),
+                    Expanded(
+                      child: Text(
+                        'Lesson videos are managed in the Lessons tab.',
+                        style: GoogleFonts.poppins(
+                            fontSize: 11.sp, color: AppColors.fontGrey),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
             SizedBox(height: 24.h),
@@ -399,70 +383,6 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
               ),
           ],
         ),
-      ],
-    );
-  }
-
-  Widget _videoPicker() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Lesson video',
-          style: GoogleFonts.poppins(
-            fontSize: 12.5.sp,
-            fontWeight: FontWeight.w600,
-            color: AppColors.richBlack,
-          ),
-        ),
-        SizedBox(height: 8.h),
-        Container(
-          padding: EdgeInsets.all(12.w),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF7F8FA),
-            borderRadius: BorderRadius.circular(12.r),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.movie_outlined,
-                  size: 22.sp, color: AppColors.primaryColor),
-              SizedBox(width: 10.w),
-              Expanded(
-                child: Text(
-                  _newVideo == null
-                      ? 'Current video will be kept'
-                      : '${_newVideo!.path.split(RegExp(r"[\\/]")).last} '
-                          '(${formatBytes(_newVideoBytes)})',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.poppins(
-                    fontSize: 12.sp,
-                    color: _newVideo == null
-                        ? AppColors.fontGrey
-                        : AppColors.richBlack,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: 8.h),
-        TextButton.icon(
-          onPressed: _saving ? null : _pickVideo,
-          icon: Icon(Icons.upload_outlined,
-              size: 18.sp, color: AppColors.primaryColor),
-          label: Text(
-            _newVideo == null ? 'Replace video' : 'Choose another',
-            style: GoogleFonts.poppins(
-                fontSize: 12.5.sp, color: AppColors.primaryColor),
-          ),
-        ),
-        if (_newVideo != null)
-          Text(
-            'Students who already bought this course will see the new video.',
-            style: GoogleFonts.poppins(
-                fontSize: 11.sp, color: AppColors.fontGrey),
-          ),
       ],
     );
   }
