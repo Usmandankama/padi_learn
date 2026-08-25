@@ -7,6 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:padi_learn/screens/components/primary_button.dart';
+import 'package:padi_learn/screens/teacher/components/category_picker.dart';
+import 'package:padi_learn/screens/teacher/components/earnings_hint.dart';
 import 'package:padi_learn/screens/teacher/components/upload_progress_card.dart';
 import 'package:padi_learn/screens/teacher/course_detail_screen.dart';
 import 'package:padi_learn/services/lesson_service.dart';
@@ -47,14 +49,6 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
   bool _saving = false;
   UploadProgress? _progress;
-
-  static const List<String> _categories = [
-    'Programming',
-    'Design',
-    'Marketing',
-    'Business',
-    'Data Science',
-  ];
 
   @override
   void initState() {
@@ -320,17 +314,11 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
             _section(
               title: 'Category & price',
               children: [
-                DropdownButtonFormField<String>(
-                  initialValue: _category,
-                  isExpanded: true,
+                CategoryPicker(
+                  value: _category,
+                  enabled: !_saving,
                   decoration: _decoration('Category', Icons.category_outlined),
-                  items: _categories
-                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                      .toList(),
-                  onChanged:
-                      _saving ? null : (v) => setState(() => _category = v),
-                  validator: (v) =>
-                      (v == null || v.isEmpty) ? 'Please pick a category' : null,
+                  onChanged: (v) => setState(() => _category = v),
                 ),
                 SizedBox(height: 14.h),
                 _field(
@@ -339,6 +327,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                   icon: Icons.sell_outlined,
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  // Rebuild so the earnings estimate tracks what they type.
+                  onChanged: (_) => setState(() {}),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return 'Enter a price';
                     if (double.tryParse(v.trim()) == null) {
@@ -347,6 +337,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                     return null;
                   },
                 ),
+                SizedBox(height: 10.h),
+                EarningsHint(priceText: _price.text),
               ],
             ),
             SizedBox(height: 14.h),
@@ -621,6 +613,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     int maxLines = 1,
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
+    ValueChanged<String>? onChanged,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
@@ -629,6 +622,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
       enabled: !_saving,
+      onChanged: onChanged,
       style: GoogleFonts.poppins(fontSize: 13.sp),
       decoration: _decoration(label, icon),
       validator: validator,

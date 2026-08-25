@@ -7,6 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:padi_learn/screens/components/primary_button.dart';
+import 'package:padi_learn/screens/teacher/components/category_picker.dart';
+import 'package:padi_learn/screens/teacher/components/earnings_hint.dart';
 import 'package:padi_learn/screens/teacher/components/upload_progress_card.dart';
 import 'package:padi_learn/services/course_service.dart';
 import 'package:padi_learn/services/supabase.dart';
@@ -50,14 +52,6 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
   bool _saving = false;
   UploadProgress? _progress;
 
-  static const List<String> _categories = [
-    'Programming',
-    'Design',
-    'Marketing',
-    'Business',
-    'Data Science',
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -69,8 +63,11 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
         text: ((data['price'] as num?)?.toDouble() ?? 0).toStringAsFixed(0));
     _author = TextEditingController(text: (data['author'] ?? '').toString());
 
+    // Kept as-is even if it is no longer an approved category — the picker
+    // folds an unrecognised current value into its list rather than dropping
+    // it, so editing a course can't silently clear its category.
     final category = (data['category'] ?? '').toString();
-    _category = _categories.contains(category) ? category : null;
+    _category = category.isEmpty ? null : category;
   }
 
   @override
@@ -258,16 +255,11 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
             _section(
               title: 'Category & price',
               children: [
-                DropdownButtonFormField<String>(
-                  initialValue: _category,
-                  isExpanded: true,
+                CategoryPicker(
+                  value: _category,
+                  enabled: !_saving,
                   decoration: _decoration('Category', Icons.category_outlined),
-                  items: _categories
-                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                      .toList(),
                   onChanged: (value) => setState(() => _category = value),
-                  validator: (v) =>
-                      (v == null || v.isEmpty) ? 'Please pick a category' : null,
                 ),
                 SizedBox(height: 14.h),
                 _field(
@@ -276,6 +268,8 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
                   icon: Icons.sell_outlined,
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  // Rebuild so the earnings estimate tracks what they type.
+                  onChanged: (_) => setState(() {}),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return 'Enter a price';
                     if (double.tryParse(v.trim()) == null) {
@@ -284,6 +278,8 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
                     return null;
                   },
                 ),
+                SizedBox(height: 10.h),
+                EarningsHint(priceText: _price.text),
               ],
             ),
             SizedBox(height: 14.h),
@@ -441,6 +437,7 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
     int maxLines = 1,
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
+    ValueChanged<String>? onChanged,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
@@ -449,6 +446,7 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
       enabled: !_saving,
+      onChanged: onChanged,
       style: GoogleFonts.poppins(fontSize: 13.sp),
       decoration: _decoration(label, icon),
       validator: validator,

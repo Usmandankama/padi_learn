@@ -9,6 +9,7 @@ import 'package:padi_learn/controller/course_controller.dart';
 import 'package:padi_learn/controller/marketplace_controller.dart';
 import 'package:padi_learn/screens/description/course_description_screen.dart';
 import 'package:padi_learn/screens/marketplace/components/course_card.dart';
+import 'package:padi_learn/services/category_service.dart';
 import 'package:padi_learn/utils/colors.dart';
 
 /// Spacing scale used across the screen.
@@ -27,14 +28,10 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   final MarketplaceController _controller = Get.find<MarketplaceController>();
   final TextEditingController _searchController = TextEditingController();
 
-  static const List<String> _categories = [
-    'All',
-    'Programming',
-    'Design',
-    'Marketing',
-    'Business',
-    'Data Science',
-  ];
+  /// Browse filters, loaded from the database so the catalogue can be widened
+  /// without shipping a release. Only approved categories appear here — a
+  /// teacher's pending suggestion must not become a chip everyone sees.
+  List<String> _categories = const ['All'];
 
   // Local (presentation-only) filter state.
   String _selectedCategory = 'All';
@@ -47,11 +44,21 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   @override
   void initState() {
     super.initState();
+    _loadCategories();
     // Show the shimmer briefly; if no data arrives we fall through to the
     // empty state instead of spinning forever.
     Timer(const Duration(milliseconds: 1200), () {
       if (mounted) setState(() => _showShimmer = false);
     });
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final names = await CategoryService.forBrowse();
+      if (mounted) setState(() => _categories = ['All', ...names]);
+    } catch (_) {
+      // Keep 'All' only — browsing still works, just unfiltered.
+    }
   }
 
   @override

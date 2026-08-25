@@ -3,7 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'package:padi_learn/config/supabase_config.dart';
 import 'package:padi_learn/controller/course_controller.dart';
 import 'package:padi_learn/controller/settings_controller.dart';
@@ -15,7 +14,6 @@ import 'utils/colors.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   await Supabase.initialize(
     url: SupabaseConfig.url,
     publishableKey: SupabaseConfig.publishableKey,
@@ -48,7 +46,7 @@ void registerAppControllers() {
  
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
+ 
   ThemeData _theme(Brightness brightness) { 
     return ThemeData(
       colorScheme: ColorScheme.fromSeed(

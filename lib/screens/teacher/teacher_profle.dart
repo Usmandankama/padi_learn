@@ -8,6 +8,7 @@ import 'package:padi_learn/screens/components/settings_tile.dart';
 import 'package:padi_learn/screens/notifications/notification_bell.dart';
 import 'package:padi_learn/screens/settings/settings_screen.dart';
 import 'package:padi_learn/screens/teacher/editprofile_screen.dart';
+import 'package:padi_learn/screens/teacher/payout_account_screen.dart';
 import 'package:padi_learn/services/auth_service.dart';
 import 'package:padi_learn/utils/colors.dart';
 
@@ -66,6 +67,16 @@ class TeacherProfileScreen extends StatelessWidget {
                 icon: Icons.person_outline,
                 title: 'Edit Profile',
                 onTap: () => _editProfile(context),
+              ),
+              SettingsTile(
+                icon: Icons.account_balance_outlined,
+                title: 'Payout Account',
+                subtitle: 'Where your earnings are sent',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const PayoutAccountScreen()),
+                ),
               ),
               // "My Courses" used to be duplicated here; it is the Courses tab
               // in the bottom bar, which is a shorter route to the same screen.

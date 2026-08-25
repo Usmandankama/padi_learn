@@ -92,17 +92,24 @@ Deno.serve(async (req) => {
     // the Paystack reference and (user, course) respectively.
     const amountKobo = Number(vData.data.amount);
 
-    // Paystack deducts its fee before settlement, so this is recorded to keep
-    // the real economics reconstructable. NOTE: the platform split below is
-    // still taken on gross — whether it should be taken on net is an open
-    // business decision, and changing it later must not rewrite past rows.
+    // Paystack deducts its fee before settlement, so it is recorded and the
+    // platform's commission is taken on what actually *arrives*, not on the
+    // list price. Taking 15% of gross would mean paying out more than was
+    // received on low-priced courses, where the flat fee dominates.
+    //
+    // The three parts always reconstruct the total:
+    //   amount = paystack_fee + platform_fee + teacher_earning
     const paystackFeeKobo = Number(vData.data.fees ?? 0) || 0;
+    const netKobo = Math.max(0, amountKobo - paystackFeeKobo);
 
+    // Defaults to the agreed 15% so a missing secret cannot silently hand over
+    // 100% of every sale. Override per-environment if it ever changes; past
+    // rows keep whatever split they were written with.
     const feePercent = Math.min(
       100,
-      Math.max(0, Number(Deno.env.get("PLATFORM_FEE_PERCENT") ?? "0") || 0),
+      Math.max(0, Number(Deno.env.get("PLATFORM_FEE_PERCENT") ?? "15") || 0),
     );
-    const platformFeeKobo = Math.round((amountKobo * feePercent) / 100);
+    const platformFeeKobo = Math.round((netKobo * feePercent) / 100);
 
     const { error: ledgerErr } = await admin.from("transactions").upsert(
       {
@@ -117,7 +124,7 @@ Deno.serve(async (req) => {
         currency: vData.data.currency ?? "NGN",
         paystack_fee_kobo: paystackFeeKobo,
         platform_fee_kobo: platformFeeKobo,
-        teacher_earning_kobo: amountKobo - platformFeeKobo,
+        teacher_earning_kobo: netKobo - platformFeeKobo,
         status: "success",
         channel: vData.data.channel ?? null,
         paid_at: vData.data.paid_at ?? null,
