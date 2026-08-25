@@ -49,6 +49,9 @@ dependencies:
   shared_preferences: ^2.5.3
   chewie: ^1.11.3
   webview_flutter: ^4.7.0
+  google_sign_in: ^7.2.0
+  sign_in_with_apple: ^7.0.1
+  crypto: ^3.0.7
 
 dev_dependencies:
   flutter_test:

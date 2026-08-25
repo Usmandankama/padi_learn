@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:padi_learn/screens/components/custom_role_dropdown.dart';
 import 'package:padi_learn/screens/components/custom_textfield.dart';
 import 'package:padi_learn/screens/components/primary_button.dart';
+import 'package:padi_learn/screens/components/social_sign_in.dart';
 import 'package:padi_learn/screens/home/home_shell.dart';
 import 'package:padi_learn/screens/login/login_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
@@ -212,6 +213,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   isLoading: _isLoading,
                   onPressed: _submitForm,
                 ),
+                const SocialSignIn(),
                 SizedBox(height: 20.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,

@@ -8,6 +8,7 @@ import 'package:padi_learn/screens/home/components/bottom_nav_bar.dart';
 import 'package:padi_learn/screens/marketplace/marketplace_screen.dart';
 import 'package:padi_learn/screens/student/student_dashboard.dart';
 import 'package:padi_learn/screens/login/login_screen.dart';
+import 'package:padi_learn/screens/onboarding/role_selection_screen.dart';
 import 'package:padi_learn/screens/teacher/my_courses.dart';
 import 'package:padi_learn/utils/colors.dart';
 import '../student/student_profile_screen.dart';
@@ -65,9 +66,18 @@ class _HomeShellState extends State<HomeShell> {
       // The request succeeded and there is genuinely no profile row (an
       // orphaned session, or a signup whose profile was never created). That
       // is a real dead session, so clear it.
-      if (data == null || data['role'] == null) {
+      if (data == null) {
         await supabase.auth.signOut();
         _goToLogin();
+        return;
+      }
+
+      // A row with no role is not a dead session — it is a Google/Apple signup
+      // that has not been asked yet, since those providers return an identity
+      // and no role. Signing them out here (as this used to) trapped them in a
+      // loop: every social sign-in landed straight back on the login screen.
+      if (data['role'] == null) {
+        _goToRoleSelection();
         return;
       }
 
@@ -119,6 +129,15 @@ class _HomeShellState extends State<HomeShell> {
         ),
       );
     }
+  }
+
+  void _goToRoleSelection() {
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const RoleSelectionScreen()),
+      (route) => false,
+    );
   }
 
   void _goToLogin() {
