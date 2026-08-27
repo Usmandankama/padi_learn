@@ -12,6 +12,41 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-08-27 — Spores, depth, and a director's cut
+
+### Logo
+
+Particles and a slight 3D tilt on the mark. The motes are precomputed once from
+Remotion's seeded `random`, **not** `Math.random`: frames render independently
+and in parallel, so an unseeded value re-rolls every frame and the motes strobe
+instead of drifting. The tilt is capped around 16 degrees — past roughly 14 the
+tile's rounded corners start reading as a distorted rectangle rather than a
+square turned in space.
+
+Two wrong passes on the particles worth remembering: brand green made them
+invisible (they travel over green in both variants), and clustering them at the
+leaf's base read as dirt on the artwork rather than something coming off it.
+They are white now, larger, spread along the leaf's whole length.
+
+### Editing direction
+
+`EditorsNotes` — the ad at half size with running timecode, the current scene
+and its bounds, and the voiceover / sound / vibe direction beside it, plus a
+scene timeline and the notes holding across the whole cut. For handing to a
+sound designer, VO artist or editor.
+
+**A separate composition, not an overlay inside the ad.** That was a choice: an
+in-ad flag can be left switched on, and the notes would then ship. This way
+`AppAdLandscape` has no code path that draws them at all. The reference cut
+also carries a standing "REFERENCE — NOT FOR RELEASE" watermark so a stray copy
+is obviously not the deliverable, with no context needed.
+
+The direction lives in `src/theme.ts` beside the ad copy and reads the same
+`SCENES` table the ad does, so retiming a scene carries its notes along instead
+of silently desynchronising them.
+
+---
+
 ## 2026-08-27 — Logo motion graphic
 
 `video/src/components/LogoMark.tsx` — the mark animated as a plant growing,

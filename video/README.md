@@ -20,6 +20,7 @@ npm run render:all      # both cuts into out/
 | `AppAdVertical` | 1080×1920 | Play Store listing, social, WhatsApp |
 | `LogoSting` | 1920×1080 | Intro bumper, splash, top of any future video |
 | `LogoStingSquare` | 1080×1080 | Social avatar animation, square placements |
+| `EditorsNotes` | 1920×1080 | Marked-up reference for a sound designer / VO artist / editor |
 
 The two ad cuts are 720 frames — 24 seconds at 30fps; the stings are 120, or 4
 seconds. Each pair shares every component and all its copy, so the cuts cannot
@@ -64,6 +65,24 @@ white for a green background makes it disappear into the letter.
 alone; the ad's closing card runs it at `speed={2}` because it has a scene to
 fit into, not four seconds to spend.
 
+## Handing it to an editor
+
+`npm run render:notes` produces the ad with direction laid beside it: running
+timecode, the current scene and its bounds, the voiceover line, the sound cue
+and the intended vibe, plus a scene timeline and the notes that hold across the
+whole cut.
+
+It is a **separate composition**, not an overlay toggled inside the ad. There
+is no flag that could be left switched on, `AppAdLandscape` has no code path
+that draws the notes, and the reference cut carries a standing
+"REFERENCE — NOT FOR RELEASE" watermark so a stray copy is obviously not the
+deliverable even with no context.
+
+The direction itself is in `src/theme.ts` under `directions` and
+`globalDirections`, beside the ad copy. It reads the same `SCENES` table the ad
+does, so retiming a scene moves its notes with it rather than silently
+desynchronising them.
+
 ## The mock screens
 
 `src/components/` recreates the real UI in React rather than compositing screen
@@ -83,9 +102,11 @@ real seed once that exists.
 
 ## Known gaps
 
-- **No narration.** Remotion animates but does not speak, and a silent ad is a
-  weak one. Record a voiceover and add it with Remotion's `<Audio>`, or drop in
-  a music bed — but check the licence on anything you did not make.
+- **No narration and no music.** Remotion animates but does not speak, and a
+  silent ad is a weak one. The lines and cues are written — render
+  `EditorsNotes` and hand it over — but nothing has been recorded. Add audio
+  with Remotion's `<Audio>`, and check the licence on anything you did not make
+  yourself.
 - **No captions.** Most social video is watched muted. Worth adding before the
   vertical cut goes anywhere public.
 - **Licence.** Remotion is free for individuals and small companies but

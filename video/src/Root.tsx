@@ -2,6 +2,7 @@ import React from 'react';
 import {Composition} from 'remotion';
 import {AppAd, AD_DURATION} from './AppAd';
 import {LogoSting, STING_DURATION} from './LogoSting';
+import {EditorsNotes} from './EditorsNotes';
 import {FPS} from './theme';
 
 /**
@@ -17,6 +18,17 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="AppAdLandscape"
         component={AppAd}
+        durationInFrames={AD_DURATION}
+        fps={FPS}
+        width={1920}
+        height={1080}
+      />
+      {/* The marked-up reference cut. Separate from AppAdLandscape on
+          purpose: there is no flag that could leave the notes switched on in
+          the deliverable. */}
+      <Composition
+        id="EditorsNotes"
+        component={EditorsNotes}
         durationInFrames={AD_DURATION}
         fps={FPS}
         width={1920}

@@ -9,7 +9,8 @@
     "render:ad-vertical": "remotion render AppAdVertical out/padilearn-ad-9x16.mp4",
     "render:all": "npm run render:ad && npm run render:ad-vertical && npm run render:sting",
     "render:sting": "remotion render LogoSting out/padilearn-logo-sting.mp4",
-    "render:sting-square": "remotion render LogoStingSquare out/padilearn-logo-sting-square.mp4"
+    "render:sting-square": "remotion render LogoStingSquare out/padilearn-logo-sting-square.mp4",
+    "render:notes": "remotion render EditorsNotes out/padilearn-ad-EDITING-NOTES.mp4"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.0",
