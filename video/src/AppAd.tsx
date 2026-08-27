@@ -1,10 +1,12 @@
 import React from 'react';
 import {
   AbsoluteFill,
+  Audio,
   Easing,
   Sequence,
   interpolate,
   spring,
+  staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from 'remotion';
@@ -360,7 +362,13 @@ const Cta: React.FC = () => {
   );
 };
 
+/** Frames over which the bed fades up, and back down at the end. */
+const MUSIC_FADE_IN = 24;
+const MUSIC_FADE_OUT = 50;
+
 export const AppAd: React.FC = () => {
+  const musicFrames = AD_DURATION - SCENES.browse.from;
+
   return (
     // Grayscale antialiasing throughout: Chrome's default subpixel rendering
     // put visible colour fringes on light text over the dark scenes.
@@ -370,6 +378,26 @@ export const AppAd: React.FC = () => {
         WebkitFontSmoothing: 'antialiased',
       }}
     >
+      {/* The bed starts at the browse scene, not at frame 0 — the hook plays
+          dry so the opening line lands in silence. That is the direction in
+          `directions.hook`, honoured here rather than left as a note for
+          somebody else to apply.
+
+          Placeholder track, and the one thing here I could not check: audio
+          cannot be reviewed by looking at it. Swap the file, keep the name. */}
+      <Sequence from={SCENES.browse.from}>
+        <Audio
+          src={staticFile('audio/bed-ad.mp3')}
+          volume={(f) =>
+            interpolate(
+              f,
+              [0, MUSIC_FADE_IN, musicFrames - MUSIC_FADE_OUT, musicFrames],
+              [0, 0.55, 0.55, 0],
+              {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'},
+            )
+          }
+        />
+      </Sequence>
       <Sequence from={SCENES.hook.from} durationInFrames={SCENES.hook.duration}>
         <SceneFade duration={SCENES.hook.duration}>
           <Hook />

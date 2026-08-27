@@ -12,6 +12,46 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-08-27 — Audio pipeline, with placeholder beds
+
+Remotion's `<Audio>` takes a per-frame `volume` function, so fades and (later)
+ducking under a voiceover are envelope edits rather than new plumbing. Both
+compositions now carry a bed.
+
+The ad's music starts at the **browse** scene rather than frame 0, so the hook
+plays dry and the opening line lands in silence — that is what
+`directions.hook` asks for, honoured in the build instead of left as a note for
+someone else to apply.
+
+### Sourcing was harder than expected
+
+Free Music Archive, Pixabay and Incompetech all turned out to be dead ends for
+automated download: FMA and Pixabay serve file URLs through JavaScript, and
+Incompetech's old direct MP3 paths now 404. The Internet Archive was the only
+source with genuinely direct, unauthenticated file URLs.
+
+Landed on two HoliznaCC0 tracks — that artist dedicates their catalogue under
+CC0 1.0, so no attribution is owed and the dedication cannot be revoked.
+
+### Two caveats, both recorded in `public/audio/SOURCES.md`
+
+- **The licence rests on the artist, not the Archive item it came from.** That
+  item has no `licenseurl` in its metadata and is a user-assembled compilation
+  containing other artists whose terms were not checked. Only HoliznaCC0-credited
+  files were taken; the authoritative CC0 statement is on the artist's own FMA
+  pages. Verify there before anything ships.
+- **Nobody has listened to these.** They were picked from title, genre tag and
+  duration. Audio is the one thing in this project that cannot be checked by
+  looking at it, and music choice is almost entirely taste. Placeholders that
+  prove the pipeline — swapping is a file replacement, same names, nothing else
+  changes.
+
+Still missing: voiceover, and every spot effect the direction asks for. A logo
+sting in particular wants designed sound rather than a music bed; what is on it
+now exists so the file is not silent.
+
+---
+
 ## 2026-08-27 — Spores, depth, and a director's cut
 
 ### Logo

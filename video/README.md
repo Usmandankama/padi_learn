@@ -102,11 +102,11 @@ real seed once that exists.
 
 ## Known gaps
 
-- **No narration and no music.** Remotion animates but does not speak, and a
-  silent ad is a weak one. The lines and cues are written — render
-  `EditorsNotes` and hand it over — but nothing has been recorded. Add audio
-  with Remotion's `<Audio>`, and check the licence on anything you did not make
-  yourself.
+- **A placeholder music bed, and nothing else.** Two CC0 tracks are wired up
+  (see `public/audio/SOURCES.md`) — but nobody has listened to them, because
+  audio cannot be judged by inspecting it. They prove the pipeline; they are
+  not a scoring decision. **No voiceover and no spot effects**: the lines and
+  cues are written, render `EditorsNotes` and hand it over.
 - **No captions.** Most social video is watched muted. Worth adding before the
   vertical cut goes anywhere public.
 - **Licence.** Remotion is free for individuals and small companies but

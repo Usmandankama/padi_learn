@@ -1,9 +1,11 @@
 import React from 'react';
 import {
   AbsoluteFill,
+  Audio,
   Easing,
   interpolate,
   spring,
+  staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from 'remotion';
@@ -53,6 +55,21 @@ export const LogoSting: React.FC = () => {
         WebkitFontSmoothing: 'antialiased',
       }}
     >
+      {/* Placeholder bed. A sting really wants designed sound — a whoosh on
+          the bowl sweep, a soft plucked note as the leaf opens — rather than
+          music; see `directions.cta`. This is here so the file is not silent,
+          not because it is the right answer. */}
+      <Audio
+        src={staticFile('audio/bed-sting.mp3')}
+        volume={(f) =>
+          interpolate(
+            f,
+            [0, 10, STING_DURATION - 26, STING_DURATION],
+            [0, 0.5, 0.5, 0],
+            {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'},
+          )
+        }
+      />
       {/* A soft bloom that swells as the mark lands, so the tile is sitting in
           light rather than pasted onto flat white. */}
       <div

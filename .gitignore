@@ -61,3 +61,5 @@ supabase/**/.env
 # Remotion video workspace: source is tracked, dependencies and renders are not.
 video/node_modules/
 video/out/
+
+# Downloaded audio beds are tracked — they are small and the render needs them.
