@@ -12,6 +12,61 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-08-27 — Promo video, rendered from code
+
+### Why
+
+The demo needs course content, and the honest options were all bad: scraped
+TikTok or YouTube clips are somebody else's copyright (and their music is
+licensed for playback *on that platform*, so even the creator's permission
+doesn't clear it), and stock b-roll doesn't look like a lesson. Building the ad
+instead sidesteps the question entirely and produces something needed anyway —
+a Play Store listing video, a pitch asset, a thing to forward on WhatsApp.
+
+It also gives the marketplace an honest place to put it: a free "Welcome to
+PadiLearn" course pinned at the top, which real platforms genuinely do.
+
+### What
+
+`video/` — a standalone Remotion workspace. Node, not Dart; it is not part of
+the Flutter build and does not touch `pubspec.yaml`. The only thing crossing
+the boundary is the MP4s, which get uploaded to `course-media` like any other
+video. Both cuts render at ~3 MB, well under the free tier's 50 MB per-file cap.
+
+Two compositions off one set of components — 1920x1080 for the in-app course
+video, 1080x1920 for store and social. Sharing the components is the point:
+the two cuts cannot drift apart, and the layout reads its own orientation to
+decide whether the caption sits beside the phone or above it.
+
+The app screens in it are React recreations, not screen recordings.
+`CourseCard.tsx` follows the real widget's proportions and `Phone.tsx` lays its
+children out at 393x852 — the app's own ScreenUtil design size — so a mock is
+built from a widget's real dimensions with no arithmetic. Sharper than a
+capture, re-renders at any resolution, and needs no device. The tradeoff is
+that it can drift: **if a screen changes materially, the mock has to follow, or
+the ad advertises something that no longer exists.**
+
+All ad copy lives in one `script` object in `src/theme.ts`, and all timing in
+one `SCENES` table in `AppAd.tsx`. Rewording the ad is editing strings and
+re-rendering — no re-timing, no reflowing. That is the whole argument for doing
+this in code rather than a timeline.
+
+### Still outstanding
+
+- **No narration.** Remotion animates but does not speak. A voiceover recorded
+  in a Nigerian accent would carry more for this market than any TTS; add it
+  with Remotion's `<Audio>`.
+- **No captions**, and most social video is watched muted. Needed before the
+  vertical cut goes anywhere public.
+- **Licence.** Remotion is free for individuals and small companies but needs a
+  paid company licence above a small headcount — check remotion.dev/license
+  before this ships as company work.
+- `demoCourses` is placeholder catalogue data, and the payout figure in the
+  teacher scene is illustrative. Both want replacing with real seed data before
+  the ad is shown as fact.
+
+---
+
 ## 2026-08-24 — Social sign-in, and role as a separate step
 
 ### Why

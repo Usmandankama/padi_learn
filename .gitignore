@@ -57,3 +57,7 @@ google-services.json
 supabase/.branches/
 supabase/.temp/
 supabase/**/.env
+
+# Remotion video workspace: source is tracked, dependencies and renders are not.
+video/node_modules/
+video/out/

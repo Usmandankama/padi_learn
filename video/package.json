@@ -1,0 +1,23 @@
+{
+  "name": "padilearn-video",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Promotional and lesson video rendering for PadiLearn. Standalone: renders MP4s that get uploaded to the course-media bucket. Never part of the Flutter build.",
+  "scripts": {
+    "studio": "remotion studio",
+    "render:ad": "remotion render AppAdLandscape out/padilearn-ad-16x9.mp4",
+    "render:ad-vertical": "remotion render AppAdVertical out/padilearn-ad-9x16.mp4",
+    "render:all": "npm run render:ad && npm run render:ad-vertical"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.0",
+    "@remotion/google-fonts": "^4.0.0",
+    "remotion": "^4.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.1",
+    "typescript": "^5.5.4"
+  }
+}
