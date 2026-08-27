@@ -12,6 +12,45 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-08-27 — Logo motion graphic
+
+`video/src/components/LogoMark.tsx` — the mark animated as a plant growing,
+which is the idea already sitting in the logo that nothing was using. The stem
+rises out of the baseline, the bowl sweeps right to close the "P", the shoot
+draws along its curve, and the leaf springs from where it meets the shoot with
+a little overshoot. A pass of light crosses the tile; once settled the mark
+breathes very slightly, so a held frame is never quite dead.
+
+Two new compositions (`LogoSting`, `LogoStingSquare`, 4s each) and the ad's
+closing card, which now runs the same build instead of showing a flat PNG.
+
+### Why live SVG rather than animating the PNG
+
+The point is animating the parts *against each other* — a raster can only scale
+and fade as one lump. The leaf, its vein and the shoot are the exact path data
+lifted out of `assets/branding/icon_foreground.svg`, so the organic shapes are
+the real artwork. Only the "P" is reconstructed: it is two rounded rectangles
+and a half-round right edge, trivial to match and far easier to reveal
+piecewise than the converter's clip-path soup.
+
+**Consequence to remember:** the mark is now drawn in two places. If the brand
+mark ever changes, `LogoMark.tsx` has to follow, and it will not fail loudly if
+it doesn't — it will just quietly animate the old logo.
+
+### The mistake worth keeping
+
+The first attempt at the tile-less variant inverted the fills, painting
+everything white for the green background. The leaf disappeared: it sits *on*
+the white P in the real artwork, so white-on-white is nothing at all. The
+variant now keeps the true colours and only drops the tile. Noted in the props
+doc so it isn't re-derived.
+
+`speed` multiplies the build's pace — the full 110-frame growth reads well
+standing alone but would eat a whole scene of the ad, so the closing card runs
+it at 2x and holds the wordmark back until the mark has finished.
+
+---
+
 ## 2026-08-27 — Demo catalogue seed
 
 `supabase/seed/demo_catalogue.sql` — 11 courses, 42 lessons, and one student

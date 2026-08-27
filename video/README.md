@@ -18,11 +18,13 @@ npm run render:all      # both cuts into out/
 |---|---|---|
 | `AppAdLandscape` | 1920×1080 | The in-app "Welcome to PadiLearn" course video |
 | `AppAdVertical` | 1080×1920 | Play Store listing, social, WhatsApp |
+| `LogoSting` | 1920×1080 | Intro bumper, splash, top of any future video |
+| `LogoStingSquare` | 1080×1080 | Social avatar animation, square placements |
 
-Both are 720 frames — 24 seconds at 30fps. They share every component and all
-the copy, so the two cuts cannot drift apart; only the frame differs, and the
-layout reads its own orientation to decide whether the caption sits beside the
-phone or above it.
+The two ad cuts are 720 frames — 24 seconds at 30fps; the stings are 120, or 4
+seconds. Each pair shares every component and all its copy, so the cuts cannot
+drift apart: only the frame differs, and the layout reads its own orientation
+to decide whether the caption sits beside the phone or above it.
 
 ## Changing it
 
@@ -37,6 +39,30 @@ lengthened without also updating a duration constant somewhere else.
 **The palette** is `src/theme.ts`, mirrored by hand from
 `lib/utils/colors.dart`. If the app's colours change, this is the one file that
 has to follow.
+
+## The logo animation
+
+`src/components/LogoMark.tsx` builds the mark as a plant growing: the stem
+rises out of the baseline, the bowl sweeps out to close the "P", the shoot
+draws itself, then the leaf springs from where it meets the shoot with a little
+overshoot. A pass of light crosses it, and once settled it breathes very
+slightly so a held frame is never quite static.
+
+It is live SVG, not `icon_light.png` being scaled around, because the whole
+point is animating the parts *against each other* — a raster can only move as
+one lump. The leaf, its vein and the shoot are the exact paths from
+`assets/branding/icon_foreground.svg`, so the organic shapes are the real
+artwork; only the "P" is reconstructed, being two rounded rectangles and a
+half-round right edge.
+
+Two variants. `tile` is the app-icon lockup on its green tile; `bare` drops the
+tile for placing on a brand-green background. **The fills do not invert between
+them** — the leaf is green *on* the white P in the real mark, so painting it
+white for a green background makes it disappear into the letter.
+
+`speed` multiplies the pace. The full 110-frame build reads well standing
+alone; the ad's closing card runs it at `speed={2}` because it has a scene to
+fit into, not four seconds to spend.
 
 ## The mock screens
 

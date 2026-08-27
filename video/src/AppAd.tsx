@@ -2,11 +2,9 @@ import React from 'react';
 import {
   AbsoluteFill,
   Easing,
-  Img,
   Sequence,
   interpolate,
   spring,
-  staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from 'remotion';
@@ -16,6 +14,7 @@ import {colors, script} from './theme';
 import {Phone} from './components/Phone';
 import {MarketplaceMock} from './components/MarketplaceMock';
 import {LessonMock} from './components/LessonMock';
+import {LogoMark} from './components/LogoMark';
 
 const {fontFamily: poppins} = loadPoppins();
 const {fontFamily: playfair} = loadPlayfair();
@@ -301,7 +300,11 @@ const Cta: React.FC = () => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
   const vertical = useIsVertical();
-  const pop = spring({frame, fps, config: {damping: 180, mass: 0.7}});
+  // The type is held back until the mark has finished growing (the build runs
+  // at speed 2, so ~55 frames) — otherwise the wordmark races the logo and
+  // both land in a muddle. Only the type is gated; the mark needs to be on
+  // screen from frame 0 to have something to build.
+  const pop = spring({frame: frame - 50, fps, config: {damping: 180, mass: 0.7}});
 
   return (
     <AbsoluteFill
@@ -314,24 +317,17 @@ const Cta: React.FC = () => {
     >
       <div
         style={{
-          transform: `scale(${interpolate(pop, [0, 1], [0.8, 1])})`,
-          opacity: pop,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
         }}
       >
-        {/* The mark alone, not icon_light_stacked.png — that one carries its
-            own wordmark, which set a second, fainter "PadiLearn" above the
-            typeset one. Hidden rather than fatal if it was never copied into
-            video/public: a missing asset should not fail a render. */}
-        <Img
-          src={staticFile('icon_light.png')}
-          style={{width: vertical ? 190 : 158, marginBottom: 34}}
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).style.display = 'none';
-          }}
-        />
+        {/* The animated mark rather than the flat PNG this used to show, so
+            the ad closes on the same growth build as the standalone sting.
+            `bare` because the card is already brand green. */}
+        <div style={{marginBottom: 10}}>
+          <LogoMark variant="bare" size={vertical ? 300 : 250} speed={2} />
+        </div>
         <div
           style={{
             fontFamily: playfair,
@@ -339,6 +335,8 @@ const Cta: React.FC = () => {
             fontWeight: 700,
             color: colors.appWhite,
             letterSpacing: -2,
+            opacity: pop,
+            transform: `translateY(${interpolate(pop, [0, 1], [26, 0])}px)`,
           }}
         >
           {script.cta.wordmark}
@@ -349,6 +347,10 @@ const Cta: React.FC = () => {
             fontSize: vertical ? 34 : 29,
             color: 'rgba(255,255,255,0.9)',
             marginTop: 14,
+            opacity: interpolate(frame, [66, 80], [0, 1], {
+              extrapolateLeft: 'clamp',
+              extrapolateRight: 'clamp',
+            }),
           }}
         >
           {script.cta.tagline}

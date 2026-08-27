@@ -1,6 +1,7 @@
 import React from 'react';
 import {Composition} from 'remotion';
 import {AppAd, AD_DURATION} from './AppAd';
+import {LogoSting, STING_DURATION} from './LogoSting';
 import {FPS} from './theme';
 
 /**
@@ -19,6 +20,22 @@ export const RemotionRoot: React.FC = () => {
         durationInFrames={AD_DURATION}
         fps={FPS}
         width={1920}
+        height={1080}
+      />
+      <Composition
+        id="LogoSting"
+        component={LogoSting}
+        durationInFrames={STING_DURATION}
+        fps={FPS}
+        width={1920}
+        height={1080}
+      />
+      <Composition
+        id="LogoStingSquare"
+        component={LogoSting}
+        durationInFrames={STING_DURATION}
+        fps={FPS}
+        width={1080}
         height={1080}
       />
       <Composition
