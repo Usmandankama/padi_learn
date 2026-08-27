@@ -12,6 +12,51 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-08-27 — Demo catalogue seed
+
+`supabase/seed/demo_catalogue.sql` — 11 courses, 42 lessons, and one student
+part-way through a course. Applied to the remote project.
+
+**Not in `supabase/migrations/`.** Migrations describe the database's shape and
+every environment has to run all of them; this is sample data for showing the
+app to people, and production should be able to skip it. Run by hand.
+
+Re-runnable: every id is derived from its slug
+(`'a0000000-…' || substr(md5(slug),1,12)`) rather than generated, so a second
+run updates the same rows instead of duplicating them. The shared prefix is
+also what makes the teardown at the bottom of the file safe — real courses get
+random ids and cannot collide with it.
+
+Two things the first run taught us, both now fixed in the file:
+
+- `courses.enrollments` is maintained by a trigger on real signups, so the
+  `on conflict do update` must NOT refresh it — doing so would discard genuine
+  enrolments every time the seed was re-applied. The invented starting counts
+  are set on insert only.
+- The first row's `null` category needed an explicit `::text`, or the column
+  type stays unknown and the FK to `categories(name)` will not resolve.
+
+Student progress is seeded by inserting `lesson_progress` rows and letting the
+recompute trigger derive the percentage, rather than writing
+`enrollments.progress` directly — so what the app shows is what the app would
+have calculated. JAMB Mathematics reads 33%, from 2 of 6 lessons complete.
+
+### Outstanding, and deliberate
+
+The seed writes thumbnail URLs and video keys for files that do not exist yet.
+Nothing breaks meanwhile: `CourseThumbnail` degrades to the branded placeholder
+on a 404, so it reads as deliberate rather than broken. The file header carries
+the manifest of exactly which filenames to upload and to which bucket. The one
+that matters most is `demo/welcome-to-padilearn/1.mp4` — put the rendered ad
+there and it becomes the video that plays in the free Welcome course.
+
+**The instructor names, enrolment counts and ratings are invented.** They exist
+so the cards do not all read "0 students". Do not present them as traction, and
+do not let an invented instructor name reach anywhere a reader would take it
+for a real teacher.
+
+---
+
 ## 2026-08-27 — Promo video, rendered from code
 
 ### Why
