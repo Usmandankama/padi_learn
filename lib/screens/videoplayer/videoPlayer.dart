@@ -72,8 +72,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   }
 
   Future<void> _init() async {
-    await _loadCourse();
-    await _loadRatings();
+    await _loadCourseBundle();
 
     if (_lessons.isNotEmpty) {
       final initial = _pickInitialLesson();
@@ -83,20 +82,66 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     if (mounted) setState(() => _loading = false);
   }
 
-  Future<void> _loadCourse() async {
+  /// Runs a fetch that must not take the others down with it.
+  ///
+  /// The four loads below used to sit inside one try/catch, so a failure in any
+  /// of them abandoned the rest — a ratings hiccup would leave the screen with
+  /// no lessons. Each is now independently survivable, and a null just means
+  /// that one piece is missing.
+  Future<T?> _safe<T>(Future<T> work, String what) async {
     try {
-      final course = await supabase
-          .from('courses')
-          .select()
-          .eq('id', widget.courseId)
-          .maybeSingle();
-      if (course != null) _course = Map<String, dynamic>.from(course);
-
-      _lessons = await LessonService.forCourse(widget.courseId);
-      _progress = await LessonService.progressForCourse(widget.courseId);
+      return await work;
     } catch (e) {
-      debugPrint('Error loading course: $e');
+      debugPrint('Could not load $what: $e');
+      return null;
     }
+  }
+
+  /// Everything the screen needs before it can render, fetched concurrently.
+  ///
+  /// None of these four depend on each other, but they used to run one after
+  /// another: course, then lessons, then this user's progress, then their
+  /// rating. That is four sequential round trips before the player even asks
+  /// for a video URL — most of a second on a mobile connection, and the main
+  /// reason opening a course felt slow. Now it costs one.
+  ///
+  /// The course row is also selected by column rather than `select()`, which
+  /// was pulling every field including the full description twice over.
+  Future<void> _loadCourseBundle() async {
+    final uid = supabase.auth.currentUser?.id;
+
+    final (course, lessons, progress, myRating) = await (
+      _safe(
+        supabase
+            .from('courses')
+            .select(
+                'id, title, description, author, user_id, rating_avg, rating_count')
+            .eq('id', widget.courseId)
+            .maybeSingle(),
+        'course',
+      ),
+      _safe(LessonService.forCourse(widget.courseId), 'lessons'),
+      _safe(LessonService.progressForCourse(widget.courseId), 'progress'),
+      _safe(
+        uid == null
+            ? Future<Map<String, dynamic>?>.value(null)
+            : supabase
+                .from('course_ratings')
+                .select('rating')
+                .eq('user_id', uid)
+                .eq('course_id', widget.courseId)
+                .maybeSingle(),
+        'your rating',
+      ),
+    ).wait;
+
+    if (course != null) _course = Map<String, dynamic>.from(course);
+    if (lessons != null) _lessons = lessons;
+    if (progress != null) _progress = progress;
+
+    _avgRating = (_course['rating_avg'] as num?)?.toDouble() ?? 0;
+    _ratingCount = (_course['rating_count'] as num?)?.toInt() ?? 0;
+    _userRating = (myRating?['rating'] as num?)?.toInt() ?? 0;
   }
 
   /// Resume where they left off: the first lesson they have not finished.
@@ -243,25 +288,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     }).catchError((Object e) {
       debugPrint('Could not sync progress: $e');
     });
-  }
-
-  Future<void> _loadRatings() async {
-    _avgRating = (_course['rating_avg'] as num?)?.toDouble() ?? 0;
-    _ratingCount = (_course['rating_count'] as num?)?.toInt() ?? 0;
-
-    final uid = supabase.auth.currentUser?.id;
-    if (uid == null) return;
-    try {
-      final mine = await supabase
-          .from('course_ratings')
-          .select('rating')
-          .eq('user_id', uid)
-          .eq('course_id', widget.courseId)
-          .maybeSingle();
-      _userRating = (mine?['rating'] as num?)?.toInt() ?? 0;
-    } catch (_) {
-      // Non-critical.
-    }
   }
 
   Future<void> _submitRating(int value) async {

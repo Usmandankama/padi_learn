@@ -80,6 +80,11 @@ class OngoingCoursesController extends GetxController {
         .from('enrollments')
         .stream(primaryKey: ['id'])
         .eq('user_id', userId)
+        // Most recently enrolled first. Without this the rows arrive in
+        // whatever order Postgres returns them, so "Continue learning" put the
+        // course you just bought wherever it happened to land — usually not
+        // first, which is the one place a user expects to find it.
+        .order('enrolled_at', ascending: false)
         .listen((rows) {
       final mapped = _mapRows(rows);
       ongoingCourses.value = mapped;
@@ -105,7 +110,10 @@ class OngoingCoursesController extends GetxController {
       final rows = await supabase
           .from('enrollments')
           .select('course_id, title, image, progress')
-          .eq('user_id', userId);
+          .eq('user_id', userId)
+          // Same order as the stream, so a pull-to-refresh cannot reshuffle
+          // the list into a different order than the one it just had.
+          .order('enrolled_at', ascending: false);
 
       final mapped = _mapRows(List<Map<String, dynamic>>.from(rows));
       ongoingCourses.value = mapped;

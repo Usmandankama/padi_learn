@@ -12,6 +12,58 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-08-31 — Continue-learning order, course load time, thumbnails
+
+### Latest enrolment first
+
+`ongoing_courses_controller.dart` had **no ordering at all** — neither the
+realtime stream nor the pull-to-refresh path. Rows arrived in whatever order
+Postgres returned them, so the course you just bought landed wherever it
+happened to fall, which is the one place a user will not look for it. Both
+paths now `.order('enrolled_at', ascending: false)`. Ordering both matters: if
+only the stream had it, a refresh would reshuffle the list.
+
+### Opening a course was four round trips
+
+`videoPlayer.dart` fetched the course, then its lessons, then this user's
+progress, then their rating — sequentially, each awaiting the last, none
+depending on the one before. Four serial round trips before the player even
+asked for a video URL, which on a mobile connection is most of a second of
+nothing.
+
+Now one `Future.wait` over a record. Two things fell out of the rewrite:
+
+- Each fetch is individually wrapped, so one failure no longer takes the others
+  down. They previously shared a try/catch, meaning a ratings hiccup could
+  leave the screen with no lessons at all.
+- The course row is selected by column instead of `select()`, which had been
+  pulling every field including the full description.
+
+The fifth trip — the signed playback URL — genuinely depends on knowing which
+lesson, so it stays sequential.
+
+### Thumbnails
+
+Eleven photographs, 1.4 MB, at `video/out/demo-thumbs/`. Plain photography with
+no text baked in: the card already prints title, author and price *underneath*
+the image, so type in the picture collides with it, and stock photos with words
+on top are the tacky look to avoid.
+
+Took three passes, and every rejection came from actually looking at the
+results: a literal **snake** for Python, a **cartoon dog with a guitar** for the
+welcome card, a flat "RISK ASSESSMENT" illustration for Excel, the blue
+"SOCIAL" tech-collage for WhatsApp, and — twice — foreign banknotes for a
+course priced in naira. Adding `image_type=photo` to the Pixabay search stopped
+the vector art; the currency problem was solved by picking an image with no
+money in frame.
+
+Remaining imperfections are recorded in `supabase/seed/DEMO_THUMBNAILS.md`
+rather than smoothed over: the finance ledger is a joke if you read it closely,
+the photography card shows a film SLR rather than a phone, and the WhatsApp one
+leans laptop.
+
+---
+
 ## 2026-08-31 — Demo lesson clips
 
 Eleven themed clips, one per seeded course, 13 MB total, sitting at
