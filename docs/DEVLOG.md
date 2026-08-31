@@ -12,6 +12,51 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-08-31 — Demo lesson clips
+
+Eleven themed clips, one per seeded course, 13 MB total, sitting at
+`video/out/demo-clips/` ready to drag into `course-media`. Every seeded lesson
+now points at them with a truthful `duration_seconds`.
+
+**Pixabay was the only stock library that could be scripted.** Coverr, and
+Pexels without an API key, are closed; Pixabay's search pages do expose their
+CDN `_medium.mp4` URLs. One catch worth recording: Pixabay serves curl fine but
+returns 403 to Python's urllib no matter what User-Agent is set — they
+fingerprint below the header level, so `fetch_demo_clips.py` shells out to curl.
+
+Pixabay Content License: commercial use, no attribution. The one limit is that
+you cannot redistribute their content *as the product* — fine as placeholder
+lesson video, not fine if a paid course were nothing but Pixabay stock.
+
+### Verified by looking, which audio never allowed
+
+Extracted a frame from each clip and actually reviewed them. Three of the first
+ten were wrong and got refetched: Flutter had a dated "matrix code" wall,
+personal finance showed hands counting **US dollars** for a course priced in
+naira, and photography was an out-of-focus coastline — a photo's subject, not
+the craft. A fourth pass caught phone-photography and whatsapp-marketing
+resolving to the *identical* clip, which would have played the same video in
+two different courses; the fetch script grew a candidate offset.
+
+This is the difference from the music: video can be checked before it ships.
+
+### Decisions
+
+- **One clip per course, shared by its lessons.** Nobody in a demo opens six
+  lessons of one course, and 11 files keep this at 13 MB rather than 42 files.
+- **`duration_seconds` rewritten to the real file length**, and the seeded
+  resume point pulled from 4:12 back to 6s — it was beyond the end of a 14s
+  clip, so the player would have tried to seek past the file.
+- **Silent.** Audio stripped; the sources were ambient b-roll.
+- Clips are gitignored (regenerable stock footage); the fetch script and
+  `DEMO_MEDIA.md` are tracked so the set can be rebuilt or audited.
+
+Still approximations: the photography clip shows a film camera rather than a
+phone, and the finance spreadsheet is in dollars. Best available from a general
+stock library — replace first if anyone will look closely.
+
+---
+
 ## 2026-08-27 — Audio pipeline, with placeholder beds
 
 Remotion's `<Audio>` takes a per-frame `volume` function, so fades and (later)

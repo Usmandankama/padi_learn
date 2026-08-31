@@ -32,15 +32,14 @@
 -- Landscape, 16:9, 1280x720 is plenty. The card crops to fill, so keep the
 -- subject centred.
 --
--- VIDEOS -> bucket `course-media` (private), key `demo/<slug>/<position>.mp4`
---   The one that matters most is:
---     demo/welcome-to-padilearn/1.mp4  <- video/out/padilearn-ad-16x9.mp4
---   That makes the ad the thing that plays when someone opens the free
---   "Welcome to PadiLearn" course, which is the only lesson most people in a
---   demo will actually tap.
+-- VIDEOS -> bucket `course-media` (private), key `demo/<slug>/clip.mp4`
+--   ALREADY PREPARED. `video/out/demo-clips/demo/` holds all 11 files laid out
+--   in exactly this structure — drag that `demo` folder into the bucket root
+--   and every seeded lesson plays. 13 MB total. See video/out/demo-clips/
+--   UPLOAD.md for provenance and licence.
 --
---   Every other lesson points at a key too. Fill in the ones you plan to open
---   on stage; the rest can stay missing until you have real content.
+--   All lessons of a course share one clip, and `duration_seconds` above
+--   matches the real file.
 --
 --
 -- ================================ HONESTY ==================================
@@ -281,6 +280,23 @@ select * from (values
   ('personal-finance', 4, 'First steps into investing', 820, false)
 ) as t(course_slug, position, title, duration_seconds, is_preview);
 
+-- One clip per course, shared by all its lessons, with the real duration of
+-- the file sitting at that key.
+--
+-- Not one video per lesson: nobody in a demo opens six lessons of the same
+-- course, and 11 clips keep the whole set at 13 MB rather than 42 files.
+-- `duration_seconds` must match the actual file or the progress bar lies and
+-- the player tries to seek past the end.
+create temporary table _seed_clips on commit drop as
+select * from (values
+  ('excel-for-office-work', 14), ('flutter-for-beginners', 15),
+  ('jamb-mathematics',      14), ('personal-finance',      12),
+  ('phone-photography',      5), ('python-basics',         15),
+  ('start-a-small-business',  7), ('tailoring-basics',     10),
+  ('waec-english',          15), ('welcome-to-padilearn',  24),
+  ('whatsapp-marketing',     8)
+) as t(course_slug, clip_seconds);
+
 insert into public.lessons (
   id, course_id, title, position, video_url, duration_seconds, is_preview
 )
@@ -290,12 +306,12 @@ select
   ('a0000000-0000-4000-8000-' || substr(md5(l.course_slug), 1, 12))::uuid,
   l.title,
   l.position,
-  -- Object key in the private course-media bucket, never a URL. Matches what
-  -- the upload path writes, so a file dropped at this key just works.
-  'demo/' || l.course_slug || '/' || l.position || '.mp4',
-  l.duration_seconds,
+  -- Object key in the private course-media bucket, never a URL.
+  'demo/' || l.course_slug || '/clip.mp4',
+  c.clip_seconds,
   l.is_preview
 from _seed_lessons l
+join _seed_clips c on c.course_slug = l.course_slug
 on conflict (id) do update set
   title            = excluded.title,
   position         = excluded.position,
@@ -347,9 +363,11 @@ select
   case when p.completed then now() else null end
 from _seed_ctx ctx
 cross join (values
-  ('jamb-mathematics', 1, true,  0),
-  ('jamb-mathematics', 2, true,  0),
-  ('jamb-mathematics', 3, false, 252)
+  ('jamb-mathematics', 1, true, 0),
+  ('jamb-mathematics', 2, true, 0),
+  -- Inside the clip, not the 4:12 a full-length lesson would have had — the
+  -- player would otherwise try to seek past the end of a 14-second file.
+  ('jamb-mathematics', 3, false, 6)
 ) as p(course_slug, position, completed, seconds)
 join public.lessons le
   on le.id = ('b0000000-0000-4000-8000-' ||
