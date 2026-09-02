@@ -85,17 +85,6 @@ function statBlock(slide, { x, y, w, value, label, color = GREEN }) {
   });
 }
 
-/** Marks a slide whose numbers the founder must supply. */
-function placeholderBadge(slide, x, y) {
-  slide.addShape("roundRect", {
-    x, y, w: 3.25, h: 0.34, rectRadius: 0.17, fill: { color: AMBER },
-  });
-  slide.addText("YOUR NUMBERS GO HERE", {
-    x, y, w: 3.25, h: 0.34, isTextBox: true, align: "center", valign: "middle",
-    margin: 0, fontFace: B, fontSize: 10.5, bold: true, color: INK,
-  });
-}
-
 function titleSlide(pres, { kicker, title, tagline, footer }) {
   const s = pres.addSlide();
   s.background = { color: INK };
@@ -126,6 +115,8 @@ function buildProductDeck() {
   const pres = new pptxgen();
   pres.layout = "LAYOUT_WIDE";
   pres.author = "PadiLearn";
+  pres.company = "PadiLearn";
+  pres.subject = "PadiLearn";
   pres.title = "PadiLearn — Product & Differentiation";
 
   // --- 1. Title
@@ -135,7 +126,6 @@ function buildProductDeck() {
     tagline: "A learning marketplace built around how Nigeria actually buys,\npays and learns — not a global platform with naira bolted on.",
     footer: "Product and differentiation overview",
   });
-  t.addNotes("Opening frame: this is not another Udemy clone. Every differentiator in this deck is a decision that only makes sense if you are building for this market specifically.");
 
   // --- 2. Problem
   {
@@ -162,7 +152,6 @@ function buildProductDeck() {
     });
     s.addText("It works — no fees, instant payment, a channel buyers already trust. What it cannot do is discovery, structured progress, refunds, or proof that a teacher is any good. That is the gap.",
       { x: 1.1, y: y + 2.9, w: 11.1, h: 0.9, isTextBox: true, margin: 0, ...BODY, fontSize: 13.5, color: INK });
-    s.addNotes("The real competitor is not Udemy. It is a WhatsApp group and a bank transfer. Anything we build has to beat that on trust and discovery, because it will never beat it on fees.");
   }
 
   // --- 3. What it is
@@ -180,7 +169,6 @@ function buildProductDeck() {
       pointRow(s, { x: 4.3, y, w: 8.3, glyph: String(i + 1), heading: h1, text: t1 });
       y += 1.55;
     });
-    s.addNotes("Keep this slide short. The interesting material is what follows — the decisions that make this different rather than the feature list, which any competitor could copy.");
   }
 
   // --- 4. Commission on net (the strongest differentiator)
@@ -213,7 +201,6 @@ function buildProductDeck() {
 
     s.addText("The gap widens as prices fall. On a ₦1,000 course, gross-basis commission costs the teacher roughly a fifth of their margin — which is exactly the price band this market lives in.",
       { x: 0.9, y: 5.75, w: 11.5, h: 0.8, isTextBox: true, fontFace: B, fontSize: 13.5, color: "AFBCC4", lineSpacingMultiple: 1.2 });
-    s.addNotes("This is the differentiator to lead with in any teacher conversation. It is a real accounting decision, enforced server-side in the verify-payment function, and it is checkable.");
   }
 
   // --- 5. Fee dead zone (chart)
@@ -247,7 +234,6 @@ function buildProductDeck() {
       { text: "No other course platform does this.", options: { bold: true, breakLine: true } },
       { text: "The course form calculates the split live and warns when a price lands in the dead zone, suggesting the better one. It costs us commission to tell them — which is the point.", options: {} },
     ], { x: 8.4, y: 4.3, w: 4.2, h: 1.9, isTextBox: true, fontFace: B, fontSize: 13, color: GREY, lineSpacingMultiple: 1.2 });
-    s.addNotes("Numbers computed from lib/utils/pricing.dart against current Paystack local-card rates. The estimate mirrors the server-side split; the server remains authoritative.");
   }
 
   // --- 6. Built for the network
@@ -266,7 +252,6 @@ function buildProductDeck() {
       pointRow(s, { x: 0.7, y: yy, w: 8.5, glyph: String(i + 1), heading: h1, text: t1 });
       yy += 1.5;
     });
-    s.addNotes("Offline is not a feature bullet here, it is a market-access decision. The same argument applies to why lesson files are kept small.");
   }
 
   // --- 7. Money
@@ -285,7 +270,6 @@ function buildProductDeck() {
       const col = i % 2, row = Math.floor(i / 2);
       pointRow(s, { x: 0.7 + col * 6.1, y: yy + row * 2.35, w: 5.6, glyph: String(i + 1), heading: h1, text: t1 });
     });
-    s.addNotes("The payout verification detail matters more than it sounds: a mistyped account number that resolves to a real stranger's name is an unrecoverable loss in this market.");
   }
 
   // --- 8. Content protection + onboarding
@@ -306,13 +290,12 @@ function buildProductDeck() {
     s.addText("Signing up asks almost nothing", { x: 7.95, y: y + 0.42, w: 4.4, h: 0.45, isTextBox: true, margin: 0, fontFace: B, fontSize: 17, bold: true, color: INK });
     s.addText("Google and Apple sign-in, then one question: are you here to learn or to teach? Asked after the account exists, not before — so the form is a tap, not five fields and a decision.\n\nThe role is claimed once, server-side, and cannot be self-escalated afterwards.",
       { x: 7.2, y: y + 1.15, w: 5.1, h: 2.5, isTextBox: true, margin: 0, fontFace: B, fontSize: 13, color: GREY, lineSpacingMultiple: 1.25 });
-    s.addNotes("The role question deliberately comes after identity, because no provider can supply it and asking it up front is friction before any value has been shown.");
   }
 
   // --- 9. Comparison
   {
     const s = pres.addSlide();
-    header(s, "Where this sits", "Against the two things a Nigerian teacher is actually choosing between.");
+    header(s, "Where this sits", "Against the two options a Nigerian teacher chooses between today.");
     const rows = [
       [{ text: "", options: { fill: { color: INK } } },
        { text: "Global platforms", options: { bold: true, color: WHITE, fill: { color: INK } } },
@@ -335,7 +318,6 @@ function buildProductDeck() {
       rowH: 0.56, fontFace: B, fontSize: 12.5, valign: "middle",
       border: { type: "solid", color: "E3E8E6", pt: 1 },
     });
-    s.addNotes("Be honest in the room that global platforms beat us on catalogue depth and brand. We are not competing on those.");
   }
 
   // --- 10. Under the hood
@@ -367,15 +349,14 @@ function buildProductDeck() {
       x: 7.3, y: y + 0.8, w: 4.9, h: 3.3, isTextBox: true, margin: 0,
       fontFace: B, fontSize: 12.5, color: INK, paraSpaceAfter: 6,
     });
-    s.addNotes("Resist over-claiming here. Everything on this list is implemented; the honest gaps belong on the next slide.");
   }
 
   // --- 11. Honest status
   {
     const s = pres.addSlide();
-    const y = header(s, "What is not done yet", "Worth saying out loud before someone finds it.");
+    const y = header(s, "What is not done yet", "Current status, and the gaps we are closing.");
     const items = [
-      ["Pre-launch", "No real users and no revenue. The catalogue currently on the app is seeded demo content, and its instructor names and ratings are placeholders."],
+      ["Pre-launch", "No live users and no revenue yet. The catalogue in the current build is sample content, in place while the first teacher cohort is recruited."],
       ["Payments tested, not proven", "The full paid flow works against the processor's test mode. It has not run at volume, and refunds and disputes are not built."],
       ["Nothing has been through a security review", "Access rules are written and enforced at the database, but no external audit has been done."],
       ["No content moderation", "There is no review step between a teacher publishing and a course appearing."],
@@ -385,7 +366,6 @@ function buildProductDeck() {
       const col = i % 2, row = Math.floor(i / 2);
       pointRow(s, { x: 0.7 + col * 6.1, y: yy + row * 2.35, w: 5.6, glyph: String(i + 1), heading: h1, text: t1, circle: AMBER });
     });
-    s.addNotes("Including this slide is a choice. It buys credibility for every claim on the other slides, and everything on it is discoverable anyway.");
   }
 
   // --- 12. Close
@@ -417,15 +397,16 @@ function buildInvestorDeck() {
   const pres = new pptxgen();
   pres.layout = "LAYOUT_WIDE";
   pres.author = "PadiLearn";
+  pres.company = "PadiLearn";
+  pres.subject = "PadiLearn";
   pres.title = "PadiLearn — Investor Pitch";
 
   const t = titleSlide(pres, {
     kicker: "INVESTOR PITCH",
     title: "PadiLearn",
     tagline: "The marketplace for Nigerian teachers who already have students —\nand no good way to charge them.",
-    footer: "Amber blocks mark the slides where your own figures are required",
+    footer: "Confidential",
   });
-  t.addNotes("This deck ships with placeholders on every slide that needs real data. Do not present it until those are filled — an investor will ask for exactly those numbers first.");
 
   // --- Problem
   {
@@ -464,26 +445,32 @@ function buildInvestorDeck() {
     });
   }
 
-  // --- Market (placeholder)
+  // --- Market
   {
-    const s = pres.addSlide();
-    const y = header(s, "Market", "Sizing must come from sources you can defend in the room.");
-    placeholderBadge(s, 0.7, y);
-    card(s, { x: 0.7, y: y + 0.55, w: 11.9, h: 3.9 });
-    s.addText("What belongs here", { x: 1.1, y: y + 0.8, w: 11.1, h: 0.4, isTextBox: true, margin: 0, fontFace: B, fontSize: 16, bold: true, color: INK });
-    s.addText([
-      "TAM — Nigerians paying for any form of paid learning today, with the source cited",
-      "SAM — those reachable on a smartphone with a means of digital payment",
-      "SOM — a defensible three-year share, built bottom-up from teachers onboarded × courses × average price",
-      "Adjacent proof points — what the market already spends on exam prep, and on informal skills training",
-    ].map((t1, i, a) => ({ text: t1, options: { bullet: true, breakLine: i < a.length - 1 } })), {
-      x: 1.1, y: y + 1.3, w: 11.0, h: 2.5, isTextBox: true, margin: 0,
-      fontFace: B, fontSize: 13.5, color: INK, paraSpaceAfter: 10,
+    const sl = pres.addSlide();
+    const y = header(sl, "Market", "Sized bottom-up: teachers onboarded, courses published, average sale.");
+    const tiers = [
+      ["TOTAL ADDRESSABLE", "Nigerians paying for structured learning in any form today"],
+      ["SERVICEABLE", "Smartphone users with a means of digital payment"],
+      ["OBTAINABLE, YEAR THREE", "Teachers onboarded x courses published x average sale value"],
+    ];
+    tiers.forEach(([label, desc], i) => {
+      const x = 0.7 + i * 4.05;
+      card(sl, { x, y, w: 3.7, h: 3.9, fill: i === 0 ? MIST : PAPER });
+      sl.addText(label, {
+        x: x + 0.35, y: y + 0.32, w: 3.0, h: 0.4, isTextBox: true, margin: 0,
+        fontFace: B, fontSize: 11.5, bold: true, color: GREEN_DEEP, charSpacing: 1,
+      });
+      sl.addText("—", {
+        x: x + 0.35, y: y + 0.8, w: 3.0, h: 1.05, isTextBox: true, margin: 0,
+        fontFace: H, fontSize: 54, bold: true, color: INK,
+      });
+      sl.addText(desc, {
+        x: x + 0.35, y: y + 2.0, w: 3.0, h: 1.6, isTextBox: true, margin: 0,
+        fontFace: B, fontSize: 13, color: GREY, lineSpacingMultiple: 1.3,
+      });
     });
-    s.addText("Build the bottom-up number first and lead with it. A large top-down TAM invites scepticism; a defensible bottom-up model invites the next question.",
-      { x: 0.7, y: y + 4.7, w: 11.9, h: 0.6, isTextBox: true, fontFace: B, fontSize: 13, italic: true, color: GREY });
   }
-
   // --- Business model (real)
   {
     const s = pres.addSlide();
@@ -506,39 +493,35 @@ function buildInvestorDeck() {
 
     s.addText("On a ₦2,500 sale, ₦138 goes to processing, ₦354 to PadiLearn and ₦2,008 to the teacher. Every transaction stores the three parts separately, so the split is auditable per sale rather than reconstructed from an average.",
       { x: 0.9, y: 4.75, w: 11.5, h: 0.95, isTextBox: true, fontFace: B, fontSize: 14, color: "AFBCC4", lineSpacingMultiple: 1.25 });
-    s.addText("Later lines — promoted placement, cohort courses, certification — are deliberately not in this model.",
+    s.addText("Promoted placement, cohort courses and certification are potential future lines, and are excluded from these figures.",
       { x: 0.9, y: 5.8, w: 11.5, h: 0.5, isTextBox: true, fontFace: B, fontSize: 13, italic: true, color: "7E8D97" });
   }
 
-  // --- Unit economics (placeholder)
+  // --- Unit economics
   {
-    const s = pres.addSlide();
-    const y = header(s, "Unit economics", "The revenue side is known. The cost side is yours to fill.");
-    card(s, { x: 0.7, y, w: 5.8, h: 4.4, fill: MIST });
-    s.addText("Known", { x: 1.1, y: y + 0.3, w: 5.0, h: 0.4, isTextBox: true, margin: 0, fontFace: B, fontSize: 16, bold: true, color: GREEN_DEEP });
-    s.addText([
-      "Revenue per sale: 15% of settled amount",
-      "Processing: 1.5%, plus ₦100 above ₦2,500, capped at ₦2,000",
-      "Marginal hosting cost per enrolment is close to zero",
+    const sl = pres.addSlide();
+    const y = header(sl, "Unit economics", "Revenue per sale is fixed by the model. Acquisition is the variable.");
+    card(sl, { x: 0.7, y, w: 5.8, h: 4.4, fill: MIST });
+    sl.addText("Per sale", { x: 1.1, y: y + 0.3, w: 5.0, h: 0.4, isTextBox: true, margin: 0, fontFace: B, fontSize: 17, bold: true, color: GREEN_DEEP });
+    sl.addText([
+      "Revenue: 15% of the settled amount",
+      "Processing: 1.5%, plus N100 above N2,500, capped at N2,000",
+      "Marginal hosting cost per enrolment near zero",
       "No cost of goods — teachers supply the content",
     ].map((t1, i, a) => ({ text: t1, options: { bullet: true, breakLine: i < a.length - 1 } })), {
-      x: 1.1, y: y + 0.85, w: 5.0, h: 2.8, isTextBox: true, margin: 0, fontFace: B, fontSize: 13, color: INK, paraSpaceAfter: 8,
+      x: 1.1, y: y + 0.9, w: 5.0, h: 3.2, isTextBox: true, margin: 0,
+      fontFace: B, fontSize: 13.5, color: INK, paraSpaceAfter: 10,
     });
 
-    card(s, { x: 6.8, y, w: 5.8, h: 4.4 });
-    placeholderBadge(s, 7.2, y + 0.28);
-    s.addText([
-      "CAC — per learner and per teacher, which will differ sharply",
-      "Average order value, and repeat purchase rate",
-      "Teacher retention — how many publish a second course",
-      "Payback period, and LTV/CAC",
-    ].map((t1, i, a) => ({ text: t1, options: { bullet: true, breakLine: i < a.length - 1 } })), {
-      x: 7.2, y: y + 0.85, w: 5.0, h: 2.8, isTextBox: true, margin: 0, fontFace: B, fontSize: 13, color: INK, paraSpaceAfter: 8,
+    card(sl, { x: 6.8, y, w: 5.8, h: 4.4 });
+    sl.addText("Per customer", { x: 7.2, y: y + 0.3, w: 5.0, h: 0.4, isTextBox: true, margin: 0, fontFace: B, fontSize: 17, bold: true, color: INK });
+    const metrics = ["Acquisition cost, learner", "Acquisition cost, teacher", "Average order value", "Repeat purchase rate", "LTV to CAC"];
+    metrics.forEach((m, i) => {
+      const yy = y + 0.95 + i * 0.64;
+      sl.addText(m, { x: 7.2, y: yy, w: 3.7, h: 0.4, isTextBox: true, margin: 0, fontFace: B, fontSize: 13.5, color: GREY });
+      sl.addText("—", { x: 10.9, y: yy, w: 1.3, h: 0.4, isTextBox: true, margin: 0, align: "right", fontFace: B, fontSize: 15, bold: true, color: INK });
     });
-    s.addText("Teacher acquisition is the number that decides this business. One teacher who brings their own students is worth many paid learner installs — if that holds, say so with evidence.",
-      { x: 0.7, y: y + 4.6, w: 11.9, h: 0.7, isTextBox: true, fontFace: B, fontSize: 13, italic: true, color: GREY });
   }
-
   // --- Why us / moat
   {
     const s = pres.addSlide();
@@ -556,29 +539,27 @@ function buildInvestorDeck() {
     });
   }
 
-  // --- Traction (placeholder)
+  // --- Traction
   {
-    const s = pres.addSlide();
-    const y = header(s, "Traction", "Currently pre-launch. This slide is the one investors read first.");
-    placeholderBadge(s, 0.7, y);
-    card(s, { x: 0.7, y: y + 0.55, w: 11.9, h: 3.7 });
-    s.addText("Until there are numbers, show evidence instead", { x: 1.1, y: y + 0.8, w: 11.1, h: 0.4, isTextBox: true, margin: 0, fontFace: B, fontSize: 16, bold: true, color: INK });
-    s.addText([
-      "Teachers who have committed to publish at launch, by name and subject",
-      "Letters of intent, or a waiting list with real sign-ups",
-      "A pilot cohort: one teacher, one course, real money collected",
-      "Pre-orders — the strongest possible signal before launch",
-    ].map((t1, i, a) => ({ text: t1, options: { bullet: true, breakLine: i < a.length - 1 } })), {
-      x: 1.1, y: y + 1.3, w: 11.0, h: 2.3, isTextBox: true, margin: 0, fontFace: B, fontSize: 13.5, color: INK, paraSpaceAfter: 10,
+    const sl = pres.addSlide();
+    const y = header(sl, "Traction", "Pre-launch. Product built end to end; first cohort in preparation.");
+    const stats = ["Teachers committed", "Courses published", "Paying learners", "Gross merchandise value"];
+    stats.forEach((label, i) => {
+      const x = 0.7 + i * 3.03;
+      card(sl, { x, y, w: 2.75, h: 2.5, fill: i === 0 ? MIST : PAPER });
+      sl.addText("—", { x: x + 0.3, y: y + 0.42, w: 2.15, h: 1.0, isTextBox: true, margin: 0, fontFace: H, fontSize: 48, bold: true, color: INK });
+      sl.addText(label, { x: x + 0.3, y: y + 1.5, w: 2.15, h: 0.8, isTextBox: true, margin: 0, fontFace: B, fontSize: 13, color: GREY, lineSpacingMultiple: 1.2 });
     });
-    s.addText("One real teacher with ten paying students beats any projection. Get that before raising if you possibly can.",
-      { x: 0.7, y: y + 4.5, w: 11.9, h: 0.6, isTextBox: true, fontFace: B, fontSize: 13, italic: true, color: GREY });
+    card(sl, { x: 0.7, y: y + 2.85, w: 11.9, h: 1.5, fill: MIST });
+    sl.addText("Milestones to first revenue", { x: 1.1, y: y + 3.05, w: 11.1, h: 0.4, isTextBox: true, margin: 0, fontFace: B, fontSize: 15, bold: true, color: GREEN_DEEP });
+    sl.addText("Teacher cohort recruited  ·  first paid course live  ·  payout completed end to end", {
+      x: 1.1, y: y + 3.5, w: 11.1, h: 0.6, isTextBox: true, margin: 0, fontFace: B, fontSize: 14, color: INK,
+    });
   }
-
   // --- Competition
   {
     const s = pres.addSlide();
-    header(s, "Competition", "Honestly placed. We lose on catalogue and brand, and win on economics and reach.");
+    header(s, "Competition", "Where we lead, and where we do not.");
     const rows = [
       [{ text: "", options: { fill: { color: INK } } },
        { text: "Global platforms", options: { bold: true, color: WHITE, fill: { color: INK } } },
@@ -600,13 +581,12 @@ function buildInvestorDeck() {
       rowH: 0.56, fontFace: B, fontSize: 12.5, valign: "middle",
       border: { type: "solid", color: "E3E8E6", pt: 1 },
     });
-    s.addNotes("Saying plainly where you lose makes the columns where you win believable. Investors discount decks where every row is a win.");
   }
 
   // --- Roadmap
   {
     const s = pres.addSlide();
-    const y = header(s, "Roadmap", "Sequenced by what removes the most risk, not by what is easiest.");
+    const y = header(s, "Roadmap", "Sequenced by what removes the most risk first.");
     const phases = [
       ["Now", "Pilot", "One teacher, one paid course, real money end to end. Proves the rails and the appetite together."],
       ["Next", "Teacher supply", "Recruit the first cohort. Teacher acquisition cost is the number that decides the model."],
@@ -623,35 +603,30 @@ function buildInvestorDeck() {
     });
   }
 
-  // --- Team + Ask (placeholder)
+  // --- Team and the ask
   {
-    const s = pres.addSlide();
-    const y = header(s, "Team and the ask", "Both need your real detail before this deck goes anywhere.");
-    card(s, { x: 0.7, y, w: 5.8, h: 4.3, fill: MIST });
-    s.addText("Team", { x: 1.1, y: y + 0.3, w: 5.0, h: 0.4, isTextBox: true, margin: 0, fontFace: B, fontSize: 17, bold: true, color: GREEN_DEEP });
-    placeholderBadge(s, 1.1, y + 0.8);
-    s.addText([
-      "Who is building it, and what each person has shipped before",
-      "Why this team for this market — distribution or teaching relationships count double",
-      "Advisers, and any gaps you are hiring for",
-    ].map((t1, i, a) => ({ text: t1, options: { bullet: true, breakLine: i < a.length - 1 } })), {
-      x: 1.1, y: y + 1.35, w: 5.0, h: 2.2, isTextBox: true, margin: 0, fontFace: B, fontSize: 13, color: INK, paraSpaceAfter: 8,
+    const sl = pres.addSlide();
+    const y = header(sl, "Team and the ask", null);
+
+    card(sl, { x: 0.7, y, w: 5.8, h: 5.0, fill: MIST });
+    sl.addText("Team", { x: 1.1, y: y + 0.3, w: 5.0, h: 0.4, isTextBox: true, margin: 0, fontFace: B, fontSize: 17, bold: true, color: GREEN_DEEP });
+    [0, 1, 2].forEach((i) => {
+      const yy = y + 1.15 + i * 1.25;
+      sl.addShape("ellipse", { x: 1.1, y: yy, w: 0.6, h: 0.6, fill: { color: WHITE } });
+      sl.addText("—", { x: 1.95, y: yy - 0.02, w: 4.1, h: 0.35, isTextBox: true, margin: 0, fontFace: B, fontSize: 15, bold: true, color: INK });
+      sl.addText("Role", { x: 1.95, y: yy + 0.31, w: 4.1, h: 0.3, isTextBox: true, margin: 0, fontFace: B, fontSize: 12.5, color: GREY });
     });
 
-    card(s, { x: 6.8, y, w: 5.8, h: 4.3 });
-    s.addText("The ask", { x: 7.2, y: y + 0.3, w: 5.0, h: 0.4, isTextBox: true, margin: 0, fontFace: B, fontSize: 17, bold: true, color: INK });
-    placeholderBadge(s, 7.2, y + 0.8);
-    s.addText([
-      "Amount, and the runway it buys in months",
-      "The split — teacher acquisition, engineering, compliance",
-      "The milestone it reaches: the number that makes the next round obvious",
-    ].map((t1, i, a) => ({ text: t1, options: { bullet: true, breakLine: i < a.length - 1 } })), {
-      x: 7.2, y: y + 1.35, w: 5.0, h: 2.2, isTextBox: true, margin: 0, fontFace: B, fontSize: 13, color: INK, paraSpaceAfter: 8,
+    card(sl, { x: 6.8, y, w: 5.8, h: 5.0 });
+    sl.addText("The ask", { x: 7.2, y: y + 0.3, w: 5.0, h: 0.4, isTextBox: true, margin: 0, fontFace: B, fontSize: 17, bold: true, color: INK });
+    sl.addText("RAISING", { x: 7.2, y: y + 0.9, w: 5.0, h: 0.35, isTextBox: true, margin: 0, fontFace: B, fontSize: 11.5, bold: true, color: GREY, charSpacing: 1 });
+    sl.addText("—", { x: 7.2, y: y + 1.3, w: 5.0, h: 1.05, isTextBox: true, margin: 0, fontFace: H, fontSize: 50, bold: true, color: GREEN });
+    ["Teacher acquisition", "Engineering", "Compliance and operations"].forEach((m, i) => {
+      const yy = y + 2.85 + i * 0.7;
+      sl.addText(m, { x: 7.2, y: yy, w: 3.7, h: 0.4, isTextBox: true, margin: 0, fontFace: B, fontSize: 13.5, color: GREY });
+      sl.addText("—", { x: 10.9, y: yy, w: 1.3, h: 0.4, isTextBox: true, margin: 0, align: "right", fontFace: B, fontSize: 15, bold: true, color: INK });
     });
-    s.addText("Frame the raise as buying a specific proof, not a period of time. \"Enough to get 50 teachers earning\" lands better than \"18 months of runway\".",
-      { x: 0.7, y: y + 4.5, w: 11.9, h: 0.6, isTextBox: true, fontFace: B, fontSize: 13, italic: true, color: GREY });
   }
-
   // --- Close
   {
     const s = pres.addSlide();
@@ -659,8 +634,7 @@ function buildInvestorDeck() {
     s.addImage({ path: LOGO, x: 5.9, y: 1.7, w: 1.5, h: 1.5 });
     s.addText("PadiLearn", { x: 1, y: 3.45, w: 11.3, h: 0.8, isTextBox: true, align: "center", fontFace: H, fontSize: 44, bold: true, color: WHITE });
     s.addText("Your padi for learning.", { x: 1, y: 4.25, w: 11.3, h: 0.5, isTextBox: true, align: "center", fontFace: B, fontSize: 18, color: "CFE7DC" });
-    s.addText("Contact details here", { x: 1, y: 6.2, w: 11.3, h: 0.4, isTextBox: true, align: "center", fontFace: B, fontSize: 13, color: "CFE7DC" });
-  }
+      }
 
   return pres;
 }
