@@ -32,10 +32,10 @@ class MarketplaceController extends GetxController {
         .stream(primaryKey: ['id'])
         .order('created_at', ascending: false)
         .listen((rows) {
-      courses.assignAll(List<Map<String, dynamic>>.from(rows));
-    }, onError: (Object e) {
-      // Keep the last good list on transient errors.
-    });
+          courses.assignAll(List<Map<String, dynamic>>.from(rows));
+        }, onError: (Object e) {
+          // Keep the last good list on transient errors.
+        });
   }
 
   /// One-shot re-fetch for pull-to-refresh. The realtime stream already keeps
@@ -54,5 +54,4 @@ class MarketplaceController extends GetxController {
       // Keep the last good list.
     }
   }
-
 }

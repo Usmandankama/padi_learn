@@ -170,7 +170,8 @@ Future<bool> signUp(BuildContext context, String email, String password,
     if (!context.mounted) return false;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Account created. Check your email to confirm, then log in.'),
+        content:
+            Text('Account created. Check your email to confirm, then log in.'),
         backgroundColor: Colors.green,
       ),
     );
@@ -184,7 +185,8 @@ Future<bool> signUp(BuildContext context, String email, String password,
   } catch (e) {
     if (!context.mounted) return false;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error signing up: $e'), backgroundColor: Colors.red),
+      SnackBar(
+          content: Text('Error signing up: $e'), backgroundColor: Colors.red),
     );
     return false;
   }

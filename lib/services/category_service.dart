@@ -31,7 +31,9 @@ class CategoryService {
         .order('position', ascending: true)
         .order('name', ascending: true);
 
-    return rows.map((row) => Category.fromRow(Map<String, dynamic>.from(row))).toList();
+    return rows
+        .map((row) => Category.fromRow(Map<String, dynamic>.from(row)))
+        .toList();
   }
 
   /// Approved categories only — what the marketplace offers as filters.

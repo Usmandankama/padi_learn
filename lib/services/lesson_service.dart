@@ -88,7 +88,9 @@ class LessonService {
         .eq('course_id', courseId)
         .order('position', ascending: true);
 
-    return rows.map((row) => Lesson.fromRow(Map<String, dynamic>.from(row))).toList();
+    return rows
+        .map((row) => Lesson.fromRow(Map<String, dynamic>.from(row)))
+        .toList();
   }
 
   /// Appends a lesson, taking the next free position.
@@ -100,8 +102,9 @@ class LessonService {
     bool isPreview = false,
   }) async {
     final existing = await forCourse(courseId);
-    final nextPosition =
-        existing.isEmpty ? 1 : existing.map((l) => l.position).reduce((a, b) => a > b ? a : b) + 1;
+    final nextPosition = existing.isEmpty
+        ? 1
+        : existing.map((l) => l.position).reduce((a, b) => a > b ? a : b) + 1;
 
     final row = await supabase
         .from('lessons')

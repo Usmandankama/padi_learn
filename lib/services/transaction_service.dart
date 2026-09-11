@@ -78,7 +78,9 @@ class TransactionService {
         .order('paid_at', ascending: false)
         .limit(limit);
 
-    return rows.map((row) => Sale.fromRow(Map<String, dynamic>.from(row))).toList();
+    return rows
+        .map((row) => Sale.fromRow(Map<String, dynamic>.from(row)))
+        .toList();
   }
 
   /// Sales of one course, newest first.
@@ -89,7 +91,9 @@ class TransactionService {
         .eq('course_id', courseId)
         .order('paid_at', ascending: false);
 
-    return rows.map((row) => Sale.fromRow(Map<String, dynamic>.from(row))).toList();
+    return rows
+        .map((row) => Sale.fromRow(Map<String, dynamic>.from(row)))
+        .toList();
   }
 
   /// Total naira owed to the teacher across [sales].

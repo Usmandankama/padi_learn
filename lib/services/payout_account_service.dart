@@ -59,11 +59,14 @@ class PayoutAccountService {
 
     final row = await supabase
         .from('payout_accounts')
-        .select('bank_code, bank_name, account_number, account_name, verified_at')
+        .select(
+            'bank_code, bank_name, account_number, account_name, verified_at')
         .eq('user_id', uid)
         .maybeSingle();
 
-    return row == null ? null : PayoutAccount.fromRow(Map<String, dynamic>.from(row));
+    return row == null
+        ? null
+        : PayoutAccount.fromRow(Map<String, dynamic>.from(row));
   }
 
   /// Nigerian banks, alphabetical.
