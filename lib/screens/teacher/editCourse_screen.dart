@@ -197,14 +197,17 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: AppColors.palette.ground,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F8FA),
+        backgroundColor: AppColors.palette.ground,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: AppColors.richBlack),
+        iconTheme: IconThemeData(color: AppColors.palette.ink),
         title: Text(
           'Edit Course',
           style: GoogleFonts.poppins(
@@ -293,13 +296,13 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
                 Row(
                   children: [
                     Icon(Icons.info_outline,
-                        size: 15.sp, color: AppColors.fontGrey),
+                        size: 15.sp, color: AppColors.palette.inkSoft),
                     SizedBox(width: 6.w),
                     Expanded(
                       child: Text(
                         'Lesson videos are managed in the Lessons tab.',
                         style: GoogleFonts.poppins(
-                            fontSize: 11.sp, color: AppColors.fontGrey),
+                            fontSize: 11.sp, color: AppColors.palette.inkSoft),
                       ),
                     ),
                   ],
@@ -332,7 +335,7 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
           style: GoogleFonts.poppins(
             fontSize: 12.5.sp,
             fontWeight: FontWeight.w600,
-            color: AppColors.richBlack,
+            color: AppColors.palette.ink,
           ),
         ),
         SizedBox(height: 8.h),
@@ -350,7 +353,7 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
                         errorBuilder: (_, __, ___) => Container(
                           color: AppColors.primaryAccent,
                           child: Icon(Icons.image_not_supported,
-                              color: AppColors.fontGrey, size: 26.sp),
+                              color: AppColors.palette.inkSoft, size: 26.sp),
                         ),
                       ),
           ),
@@ -374,7 +377,7 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
                   'New · ${formatBytes(_newThumbnailBytes)}',
                   textAlign: TextAlign.right,
                   style: GoogleFonts.poppins(
-                      fontSize: 11.sp, color: AppColors.fontGrey),
+                      fontSize: 11.sp, color: AppColors.palette.inkSoft),
                 ),
               ),
           ],
@@ -387,7 +390,7 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.appWhite,
+        color: AppColors.palette.surface,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
@@ -405,7 +408,7 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
             style: GoogleFonts.poppins(
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
-              color: AppColors.richBlack,
+              color: AppColors.palette.ink,
             ),
           ),
           SizedBox(height: 14.h),
@@ -418,11 +421,11 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
   InputDecoration _decoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
-      labelStyle:
-          GoogleFonts.poppins(fontSize: 13.sp, color: AppColors.fontGrey),
+      labelStyle: GoogleFonts.poppins(
+          fontSize: 13.sp, color: AppColors.palette.inkSoft),
       prefixIcon: Icon(icon, size: 20.sp, color: AppColors.primaryColor),
       filled: true,
-      fillColor: const Color(0xFFF7F8FA),
+      fillColor: AppColors.palette.ground,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12.r),
         borderSide: BorderSide.none,

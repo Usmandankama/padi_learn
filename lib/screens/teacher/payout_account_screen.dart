@@ -113,8 +113,8 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
       if (mounted) setState(() => _resolvedName = name);
     } catch (e) {
       if (mounted) {
-        setState(() =>
-            _resolveError = e.toString().replaceFirst('Exception: ', ''));
+        setState(
+            () => _resolveError = e.toString().replaceFirst('Exception: ', ''));
       }
     } finally {
       if (mounted) setState(() => _resolving = false);
@@ -200,14 +200,17 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: AppColors.palette.ground,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F8FA),
+        backgroundColor: AppColors.palette.ground,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: AppColors.richBlack),
+        iconTheme: IconThemeData(color: AppColors.palette.ink),
         title: Text(
           'Payout Account',
           style: GoogleFonts.poppins(
@@ -240,7 +243,7 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
           width: double.infinity,
           padding: EdgeInsets.all(18.w),
           decoration: BoxDecoration(
-            color: AppColors.appWhite,
+            color: AppColors.palette.surface,
             borderRadius: BorderRadius.circular(16.r),
             boxShadow: [
               BoxShadow(
@@ -264,7 +267,7 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
                       style: GoogleFonts.poppins(
                         fontSize: 14.sp,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.richBlack,
+                        color: AppColors.palette.ink,
                       ),
                     ),
                   ),
@@ -279,7 +282,7 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 17.sp,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.richBlack,
+                  color: AppColors.palette.ink,
                 ),
               ),
               SizedBox(height: 4.h),
@@ -288,7 +291,7 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 14.sp,
                   letterSpacing: 1.5,
-                  color: AppColors.fontGrey,
+                  color: AppColors.palette.inkSoft,
                 ),
               ),
             ],
@@ -343,7 +346,7 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
           style: GoogleFonts.poppins(
             fontSize: 12.5.sp,
             fontWeight: FontWeight.w600,
-            color: AppColors.richBlack,
+            color: AppColors.palette.ink,
           ),
         ),
         SizedBox(height: 8.h),
@@ -352,7 +355,7 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 16.h),
             decoration: BoxDecoration(
-              color: AppColors.appWhite,
+              color: AppColors.palette.surface,
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: Row(
@@ -366,12 +369,13 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
                     style: GoogleFonts.poppins(
                       fontSize: 13.sp,
                       color: _selectedBank == null
-                          ? AppColors.fontGrey
-                          : AppColors.richBlack,
+                          ? AppColors.palette.inkSoft
+                          : AppColors.palette.ink,
                     ),
                   ),
                 ),
-                Icon(Icons.keyboard_arrow_down, color: AppColors.fontGrey),
+                Icon(Icons.keyboard_arrow_down,
+                    color: AppColors.palette.inkSoft),
               ],
             ),
           ),
@@ -384,7 +388,7 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
           style: GoogleFonts.poppins(
             fontSize: 12.5.sp,
             fontWeight: FontWeight.w600,
-            color: AppColors.richBlack,
+            color: AppColors.palette.ink,
           ),
         ),
         SizedBox(height: 8.h),
@@ -400,7 +404,7 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
             hintText: '0123456789',
             counterText: '',
             filled: true,
-            fillColor: AppColors.appWhite,
+            fillColor: AppColors.palette.surface,
             prefixIcon: Icon(Icons.pin_outlined,
                 size: 20.sp, color: AppColors.primaryColor),
             border: OutlineInputBorder(
@@ -426,7 +430,7 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
             child: Text(
               'Cancel',
               style: GoogleFonts.poppins(
-                  fontSize: 13.sp, color: AppColors.fontGrey),
+                  fontSize: 13.sp, color: AppColors.palette.inkSoft),
             ),
           ),
         ],
@@ -448,7 +452,7 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
           Text(
             'Checking with the bank…',
             style: GoogleFonts.poppins(
-                fontSize: 12.sp, color: AppColors.fontGrey),
+                fontSize: 12.sp, color: AppColors.palette.inkSoft),
           ),
         ],
       );
@@ -495,14 +499,14 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
                   Text(
                     'Account name',
                     style: GoogleFonts.poppins(
-                        fontSize: 10.5.sp, color: AppColors.fontGrey),
+                        fontSize: 10.5.sp, color: AppColors.palette.inkSoft),
                   ),
                   Text(
                     _resolvedName!,
                     style: GoogleFonts.poppins(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.richBlack,
+                      color: AppColors.palette.ink,
                     ),
                   ),
                 ],
@@ -515,7 +519,8 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
 
     return Text(
       'Enter your 10-digit account number and we will confirm the name.',
-      style: GoogleFonts.poppins(fontSize: 11.5.sp, color: AppColors.fontGrey),
+      style: GoogleFonts.poppins(
+          fontSize: 11.5.sp, color: AppColors.palette.inkSoft),
     );
   }
 
@@ -523,7 +528,7 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(Icons.lock_outline, size: 14.sp, color: AppColors.fontGrey),
+        Icon(Icons.lock_outline, size: 14.sp, color: AppColors.palette.inkSoft),
         SizedBox(width: 6.w),
         Expanded(
           child: Text(
@@ -531,7 +536,7 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
             style: GoogleFonts.poppins(
               fontSize: 11.sp,
               height: 1.4,
-              color: AppColors.fontGrey,
+              color: AppColors.palette.inkSoft,
             ),
           ),
         ),
@@ -561,6 +566,9 @@ class _BankPickerSheetState extends State<_BankPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     final query = _search.text.trim().toLowerCase();
     final banks = query.isEmpty
         ? widget.banks
@@ -575,7 +583,7 @@ class _BankPickerSheetState extends State<_BankPickerSheet> {
       expand: false,
       builder: (_, controller) => Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFF7F8FA),
+          color: AppColors.palette.ground,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
         ),
         child: Column(
@@ -601,7 +609,7 @@ class _BankPickerSheetState extends State<_BankPickerSheet> {
                   prefixIcon:
                       const Icon(Icons.search, color: AppColors.primaryColor),
                   filled: true,
-                  fillColor: AppColors.appWhite,
+                  fillColor: AppColors.palette.surface,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.r),
                     borderSide: BorderSide.none,
@@ -615,15 +623,16 @@ class _BankPickerSheetState extends State<_BankPickerSheet> {
                       child: Text(
                         'No banks match "${_search.text.trim()}"',
                         style: GoogleFonts.poppins(
-                            fontSize: 12.sp, color: AppColors.fontGrey),
+                            fontSize: 12.sp, color: AppColors.palette.inkSoft),
                       ),
                     )
                   : ListView.separated(
                       controller: controller,
-                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      padding: EdgeInsets.fromLTRB(16.w, 0, 16.w,
+                          MediaQuery.of(context).padding.bottom + 12.h),
                       itemCount: banks.length,
                       separatorBuilder: (_, __) =>
-                          const Divider(height: 1, color: AppColors.lightGrey),
+                          Divider(height: 1, color: AppColors.palette.hairline),
                       itemBuilder: (_, i) => ListTile(
                         title: Text(
                           banks[i].name,

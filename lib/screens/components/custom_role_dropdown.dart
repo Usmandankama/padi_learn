@@ -23,6 +23,9 @@ class CustomRoleDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     final bool hasError = borderColor != null;
     final Color accent = hasError ? borderColor! : AppColors.primaryColor;
 
@@ -33,7 +36,8 @@ class CustomRoleDropdown extends StatelessWidget {
       style: TextStyle(fontSize: 15.sp, color: AppColors.appBlack),
       decoration: InputDecoration(
         labelText: 'Select Role',
-        labelStyle: TextStyle(color: AppColors.fontGrey, fontSize: 14.sp),
+        labelStyle:
+            TextStyle(color: AppColors.palette.inkSoft, fontSize: 14.sp),
         filled: true,
         fillColor: const Color(0xFFF4F6F5),
         prefixIcon: Icon(Icons.person_outline, color: accent, size: 20.sp),

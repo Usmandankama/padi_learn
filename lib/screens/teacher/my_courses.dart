@@ -38,7 +38,12 @@ class TeacherMyCoursesPage extends StatefulWidget {
 }
 
 class _TeacherMyCoursesPageState extends State<TeacherMyCoursesPage> {
-  final TeacherController controller = Get.put(TeacherController());
+  // Get.find, not Get.put: main() registers this with `fenix: true` so it
+  // survives sign-out, and a Get.put here replaced that registration with a
+  // non-fenix one — after which every other screen's Get.find threw. It also
+  // built a fresh controller (and re-ran all three fetches) each time this
+  // tab was rebuilt.
+  final TeacherController controller = Get.find<TeacherController>();
   final TextEditingController _search = TextEditingController();
 
   /// Built once. Creating the stream inside `build` opened a new realtime
@@ -69,10 +74,7 @@ class _TeacherMyCoursesPageState extends State<TeacherMyCoursesPage> {
           break;
       }
       if (query.isEmpty) return true;
-      return (course['title'] ?? '')
-          .toString()
-          .toLowerCase()
-          .contains(query);
+      return (course['title'] ?? '').toString().toLowerCase().contains(query);
     }).toList();
   }
 
@@ -94,10 +96,13 @@ class _TeacherMyCoursesPageState extends State<TeacherMyCoursesPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: AppColors.palette.ground,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F8FA),
+        backgroundColor: AppColors.palette.ground,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
@@ -182,21 +187,20 @@ class _TeacherMyCoursesPageState extends State<TeacherMyCoursesPage> {
           hintText: 'Search your courses',
           hintStyle: GoogleFonts.poppins(
             fontSize: 13.sp,
-            color: AppColors.fontGrey,
+            color: AppColors.palette.inkSoft,
           ),
-          prefixIcon:
-              const Icon(Icons.search, color: AppColors.primaryColor),
+          prefixIcon: const Icon(Icons.search, color: AppColors.primaryColor),
           suffixIcon: _search.text.isEmpty
               ? null
               : IconButton(
-                  icon: const Icon(Icons.close, color: AppColors.fontGrey),
+                  icon: Icon(Icons.close, color: AppColors.palette.inkSoft),
                   onPressed: () {
                     _search.clear();
                     setState(() {});
                   },
                 ),
           filled: true,
-          fillColor: AppColors.appWhite,
+          fillColor: AppColors.palette.surface,
           contentPadding: EdgeInsets.symmetric(vertical: 4.h),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14.r),
@@ -223,7 +227,9 @@ class _TeacherMyCoursesPageState extends State<TeacherMyCoursesPage> {
                 alignment: Alignment.center,
                 padding: EdgeInsets.symmetric(horizontal: 16.w),
                 decoration: BoxDecoration(
-                  color: selected ? AppColors.primaryColor : AppColors.appWhite,
+                  color: selected
+                      ? AppColors.primaryColor
+                      : AppColors.palette.surface,
                   borderRadius: BorderRadius.circular(20.r),
                 ),
                 child: Text(
@@ -231,8 +237,9 @@ class _TeacherMyCoursesPageState extends State<TeacherMyCoursesPage> {
                   style: GoogleFonts.poppins(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w600,
-                    color:
-                        selected ? AppColors.appWhite : AppColors.fontGrey,
+                    color: selected
+                        ? AppColors.appWhite
+                        : AppColors.palette.inkSoft,
                   ),
                 ),
               ),
@@ -250,14 +257,14 @@ class _TeacherMyCoursesPageState extends State<TeacherMyCoursesPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 40.sp, color: AppColors.lightGrey),
+            Icon(icon, size: 40.sp, color: AppColors.palette.hairline),
             SizedBox(height: 12.h),
             Text(
               text,
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 13.sp,
-                color: AppColors.fontGrey,
+                color: AppColors.palette.inkSoft,
               ),
             ),
           ],
@@ -274,7 +281,7 @@ class _TeacherMyCoursesPageState extends State<TeacherMyCoursesPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.video_library_outlined,
-                size: 52.sp, color: AppColors.lightGrey),
+                size: 52.sp, color: AppColors.palette.hairline),
             SizedBox(height: 16.h),
             Text(
               'You have not published a course yet',
@@ -282,7 +289,7 @@ class _TeacherMyCoursesPageState extends State<TeacherMyCoursesPage> {
               style: GoogleFonts.poppins(
                 fontSize: 15.sp,
                 fontWeight: FontWeight.w600,
-                color: AppColors.richBlack,
+                color: AppColors.palette.ink,
               ),
             ),
             SizedBox(height: 8.h),
@@ -292,7 +299,7 @@ class _TeacherMyCoursesPageState extends State<TeacherMyCoursesPage> {
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 12.5.sp,
-                color: AppColors.fontGrey,
+                color: AppColors.palette.inkSoft,
               ),
             ),
             SizedBox(height: 24.h),

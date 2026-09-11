@@ -45,6 +45,9 @@ class _SocialSignInState extends State<SocialSignIn> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     final showGoogle = isGoogleSignInConfigured;
     final showApple = isAppleSignInAvailable;
     if (!showGoogle && !showApple) return const SizedBox.shrink();
@@ -55,15 +58,16 @@ class _SocialSignInState extends State<SocialSignIn> {
         SizedBox(height: 20.h),
         Row(
           children: [
-            const Expanded(child: Divider(color: AppColors.lightGrey)),
+            Expanded(child: Divider(color: AppColors.palette.hairline)),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 12.w),
               child: Text(
                 'or continue with',
-                style: TextStyle(color: AppColors.fontGrey, fontSize: 12.sp),
+                style: TextStyle(
+                    color: AppColors.palette.inkSoft, fontSize: 12.sp),
               ),
             ),
-            const Expanded(child: Divider(color: AppColors.lightGrey)),
+            Expanded(child: Divider(color: AppColors.palette.hairline)),
           ],
         ),
         SizedBox(height: 20.h),
@@ -100,13 +104,16 @@ class _GoogleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return SizedBox(
       height: 52.h,
       child: OutlinedButton(
         onPressed: isLoading ? null : onPressed,
         style: OutlinedButton.styleFrom(
-          backgroundColor: AppColors.appWhite,
-          side: const BorderSide(color: AppColors.lightGrey),
+          backgroundColor: AppColors.palette.surface,
+          side: BorderSide(color: AppColors.palette.hairline),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14.r),
           ),
@@ -140,7 +147,7 @@ class _GoogleButton extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 14.5.sp,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.richBlack,
+                      color: AppColors.palette.ink,
                     ),
                   ),
                 ],

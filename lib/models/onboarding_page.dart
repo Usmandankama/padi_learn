@@ -20,6 +20,9 @@ class OnboardingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -39,7 +42,7 @@ class OnboardingPage extends StatelessWidget {
           SizedBox(height: 10.h),
           Text(
             description,
-            style: TextStyle(fontSize: 16.sp, color: AppColors.fontGrey),
+            style: TextStyle(fontSize: 16.sp, color: AppColors.palette.inkSoft),
             textAlign: TextAlign.center,
           ),
         ],

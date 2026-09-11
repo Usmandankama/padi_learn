@@ -21,17 +21,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: AppColors.palette.ground,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F8FA),
+        backgroundColor: AppColors.palette.ground,
         elevation: 0,
         scrolledUnderElevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.richBlack),
+        iconTheme: IconThemeData(color: AppColors.palette.ink),
         title: Text(
           'Notifications',
           style: GoogleFonts.poppins(
-            color: AppColors.richBlack,
+            color: AppColors.palette.ink,
             fontSize: 18.sp,
             fontWeight: FontWeight.w600,
           ),
@@ -82,14 +85,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.notifications_none_rounded,
-              size: 56.sp, color: AppColors.lightGrey),
+              size: 56.sp, color: AppColors.palette.hairline),
           SizedBox(height: 12.h),
           Text(
             'No notifications yet',
             style: GoogleFonts.poppins(
               fontSize: 15.sp,
               fontWeight: FontWeight.w600,
-              color: AppColors.richBlack,
+              color: AppColors.palette.ink,
             ),
           ),
           SizedBox(height: 4.h),
@@ -97,7 +100,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             "You'll hear here when students enrol or comment.",
             style: GoogleFonts.poppins(
               fontSize: 12.sp,
-              color: AppColors.fontGrey,
+              color: AppColors.palette.inkSoft,
             ),
           ),
         ],
@@ -112,6 +115,9 @@ class _NotificationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     final unread = item['is_read'] != true;
     final type = (item['type'] ?? '').toString();
     final isComment = type == 'comment';
@@ -146,9 +152,9 @@ class _NotificationTile extends StatelessWidget {
         child: Container(
           padding: EdgeInsets.all(14.w),
           decoration: BoxDecoration(
-            color: unread ? AppColors.primaryAccent : AppColors.appWhite,
+            color: unread ? AppColors.primaryAccent : AppColors.palette.surface,
             borderRadius: BorderRadius.circular(14.r),
-            border: Border.all(color: AppColors.lightGrey),
+            border: Border.all(color: AppColors.palette.hairline),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,9 +184,8 @@ class _NotificationTile extends StatelessWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 13.sp,
                         height: 1.4,
-                        fontWeight:
-                            unread ? FontWeight.w600 : FontWeight.w500,
-                        color: AppColors.richBlack,
+                        fontWeight: unread ? FontWeight.w600 : FontWeight.w500,
+                        color: AppColors.palette.ink,
                       ),
                     ),
                     SizedBox(height: 4.h),
@@ -188,7 +193,7 @@ class _NotificationTile extends StatelessWidget {
                       _timeAgo(item['created_at']),
                       style: GoogleFonts.poppins(
                         fontSize: 10.sp,
-                        color: AppColors.fontGrey,
+                        color: AppColors.palette.inkSoft,
                       ),
                     ),
                   ],

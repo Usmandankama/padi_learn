@@ -9,6 +9,7 @@ import 'package:padi_learn/screens/settings/settings_screen.dart';
 import 'package:padi_learn/screens/teacher/editprofile_screen.dart';
 import 'package:padi_learn/services/auth_service.dart';
 import 'package:padi_learn/utils/colors.dart';
+import 'package:padi_learn/screens/components/profile_support_section.dart';
 
 class StudentProfileScreen extends StatelessWidget {
   const StudentProfileScreen({super.key});
@@ -22,12 +23,15 @@ class StudentProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     final UserController controller = Get.find<UserController>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: AppColors.palette.ground,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F8FA),
+        backgroundColor: AppColors.palette.ground,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
@@ -39,16 +43,6 @@ class StudentProfileScreen extends StatelessWidget {
             fontWeight: FontWeight.w700,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined,
-                color: AppColors.primaryColor),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
-            ),
-          ),
-        ],
       ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 32.h),
@@ -59,14 +53,12 @@ class StudentProfileScreen extends StatelessWidget {
             onEdit: () => _editProfile(context),
           ),
           SizedBox(height: 24.h),
+          // "Edit Profile" used to sit here too, duplicating the button in the
+          // header card directly above — which is where you look to change the
+          // name and photo it edits, so that is the one that stayed.
           SettingsSection(
             title: 'ACCOUNT',
             children: [
-              SettingsTile(
-                icon: Icons.person_outline,
-                title: 'Edit Profile',
-                onTap: () => _editProfile(context),
-              ),
               SettingsTile(
                 icon: Icons.settings_outlined,
                 title: 'Settings',
@@ -78,28 +70,7 @@ class StudentProfileScreen extends StatelessWidget {
             ],
           ),
           SizedBox(height: 24.h),
-          SettingsSection(
-            title: 'SUPPORT',
-            children: [
-              SettingsTile(
-                icon: Icons.help_outline,
-                title: 'Help & Support',
-                onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Support is coming soon')),
-                ),
-              ),
-              SettingsTile(
-                icon: Icons.info_outline,
-                title: 'About',
-                onTap: () => showAboutDialog(
-                  context: context,
-                  applicationName: 'PadiLearn',
-                  applicationVersion: '1.0.0',
-                  applicationLegalese: '© 2026 PadiLearn',
-                ),
-              ),
-            ],
-          ),
+          const ProfileSupportSection(),
           SizedBox(height: 24.h),
           SettingsSection(
             children: [
@@ -134,11 +105,14 @@ class _ProfileHeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 20.w),
       decoration: BoxDecoration(
-        color: AppColors.appWhite,
+        color: AppColors.palette.surface,
         borderRadius: BorderRadius.circular(20.r),
         boxShadow: [
           BoxShadow(
@@ -187,7 +161,7 @@ class _ProfileHeaderCard extends StatelessWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.richBlack,
+                  color: AppColors.palette.ink,
                 ),
               )),
           SizedBox(height: 8.h),

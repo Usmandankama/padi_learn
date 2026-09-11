@@ -77,7 +77,8 @@ class _CategoryPickerState extends State<CategoryPicker> {
       builder: (dialogContext) => AlertDialog(
         title: Text(
           'Suggest a category',
-          style: GoogleFonts.poppins(fontSize: 16.sp, fontWeight: FontWeight.w600),
+          style:
+              GoogleFonts.poppins(fontSize: 16.sp, fontWeight: FontWeight.w600),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -87,7 +88,8 @@ class _CategoryPickerState extends State<CategoryPicker> {
               controller: controller,
               autofocus: true,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(hintText: 'e.g. Public Speaking'),
+              decoration:
+                  const InputDecoration(hintText: 'e.g. Public Speaking'),
               onSubmitted: (v) => Navigator.pop(dialogContext, v),
             ),
             SizedBox(height: 10.h),
@@ -95,7 +97,7 @@ class _CategoryPickerState extends State<CategoryPicker> {
               'It will be used for this course straight away. We review new '
               'categories before they show up as a filter for students.',
               style: GoogleFonts.poppins(
-                  fontSize: 11.sp, color: AppColors.fontGrey),
+                  fontSize: 11.sp, color: AppColors.palette.inkSoft),
             ),
           ],
         ),
@@ -133,6 +135,9 @@ class _CategoryPickerState extends State<CategoryPicker> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     final names = _names;
 
     return DropdownButtonFormField<String>(
@@ -164,7 +169,7 @@ class _CategoryPickerState extends State<CategoryPicker> {
                   Text(
                     '(pending review)',
                     style: GoogleFonts.poppins(
-                        fontSize: 10.sp, color: AppColors.fontGrey),
+                        fontSize: 10.sp, color: AppColors.palette.inkSoft),
                   ),
                 ],
               ],

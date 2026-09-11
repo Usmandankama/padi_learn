@@ -28,6 +28,9 @@ class SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     final color = iconColor ?? AppColors.primaryColor;
     return Material(
       color: Colors.transparent,
@@ -58,7 +61,7 @@ class SettingsTile extends StatelessWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 13.5.sp,
                         fontWeight: FontWeight.w500,
-                        color: titleColor ?? AppColors.richBlack,
+                        color: titleColor ?? AppColors.palette.ink,
                       ),
                     ),
                     if (subtitle != null) ...[
@@ -67,7 +70,7 @@ class SettingsTile extends StatelessWidget {
                         subtitle!,
                         style: GoogleFonts.poppins(
                           fontSize: 11.sp,
-                          color: AppColors.fontGrey,
+                          color: AppColors.palette.inkSoft,
                         ),
                       ),
                     ],
@@ -76,7 +79,7 @@ class SettingsTile extends StatelessWidget {
               ),
               trailing ??
                   Icon(Icons.chevron_right,
-                      size: 20.sp, color: AppColors.fontGrey),
+                      size: 20.sp, color: AppColors.palette.inkSoft),
             ],
           ),
         ),
@@ -95,6 +98,9 @@ class SettingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -106,13 +112,13 @@ class SettingsSection extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
-                color: AppColors.fontGrey,
+                color: AppColors.palette.inkSoft,
               ),
             ),
           ),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.appWhite,
+            color: AppColors.palette.surface,
             borderRadius: BorderRadius.circular(16.r),
             boxShadow: [
               BoxShadow(

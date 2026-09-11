@@ -5,6 +5,7 @@ import 'package:padi_learn/controller/teacher_controller.dart';
 import 'package:padi_learn/utils/colors.dart';
 
 import 'analytic_item.dart';
+import 'package:padi_learn/utils/money.dart';
 
 class EarningsWidget extends StatelessWidget {
   const EarningsWidget({super.key});
@@ -56,7 +57,7 @@ class EarningsWidget extends StatelessWidget {
               const SizedBox(height: 10),
               Obx(
                 () => Text(
-                  'NGN ${controller.totalEarnings.value.toStringAsFixed(0)}',
+                  formatNaira(controller.totalEarnings.value),
                   style: TextStyle(
                     color: AppColors.appWhite,
                     fontSize: 35.sp,

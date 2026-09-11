@@ -27,7 +27,12 @@ class TeacherDashboardScreen extends StatefulWidget {
 }
 
 class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
-  final TeacherController controller = Get.put(TeacherController());
+  // Get.find, not Get.put: main() registers this with `fenix: true` so it
+  // survives sign-out, and a Get.put here replaced that registration with a
+  // non-fenix one — after which every other screen's Get.find threw. It also
+  // built a fresh controller (and re-ran all three fetches) each time this
+  // tab was rebuilt.
+  final TeacherController controller = Get.find<TeacherController>();
 
   /// Built once — creating it in `build` resubscribed on every rebuild.
   late final Stream<List<Map<String, dynamic>>> _activity =
@@ -51,8 +56,11 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: AppColors.palette.ground,
       appBar: AppBar(
         centerTitle: true,
         title: Text(
@@ -64,7 +72,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           ),
         ),
         actions: const [NotificationBell()],
-        backgroundColor: const Color(0xFFF7F8FA),
+        backgroundColor: AppColors.palette.ground,
         elevation: 0,
         scrolledUnderElevation: 0,
         iconTheme: const IconThemeData(color: AppColors.primaryColor),
@@ -95,7 +103,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       style: GoogleFonts.poppins(
         fontSize: 16.sp,
         fontWeight: FontWeight.w700,
-        color: AppColors.richBlack,
+        color: AppColors.palette.ink,
       ),
     );
   }
@@ -104,7 +112,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.appWhite,
+        color: AppColors.palette.surface,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
@@ -132,7 +140,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                     style: GoogleFonts.poppins(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.richBlack,
+                      color: AppColors.palette.ink,
                     ),
                   ),
                 ),
@@ -220,20 +228,20 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       width: double.infinity,
       padding: EdgeInsets.symmetric(vertical: 28.h, horizontal: 16.w),
       decoration: BoxDecoration(
-        color: AppColors.appWhite,
+        color: AppColors.palette.surface,
         borderRadius: BorderRadius.circular(16.r),
       ),
       child: Column(
         children: [
           Icon(Icons.notifications_none_rounded,
-              size: 30.sp, color: AppColors.lightGrey),
+              size: 30.sp, color: AppColors.palette.hairline),
           SizedBox(height: 8.h),
           Text(
             'No activity yet. Enrollments and student questions will show up here.',
             textAlign: TextAlign.center,
             style: GoogleFonts.poppins(
               fontSize: 12.sp,
-              color: AppColors.fontGrey,
+              color: AppColors.palette.inkSoft,
             ),
           ),
         ],
@@ -251,7 +259,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       child: Container(
         padding: EdgeInsets.all(12.w),
         decoration: BoxDecoration(
-          color: AppColors.appWhite,
+          color: AppColors.palette.surface,
           borderRadius: BorderRadius.circular(14.r),
           border: Border.all(
             color: unread ? AppColors.primaryAccent : Colors.transparent,
@@ -287,7 +295,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                     style: GoogleFonts.poppins(
                       fontSize: 12.5.sp,
                       fontWeight: unread ? FontWeight.w600 : FontWeight.w400,
-                      color: AppColors.richBlack,
+                      color: AppColors.palette.ink,
                     ),
                   ),
                   SizedBox(height: 2.h),
@@ -295,14 +303,14 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                     _timeAgo(item['created_at']),
                     style: GoogleFonts.poppins(
                       fontSize: 10.5.sp,
-                      color: AppColors.fontGrey,
+                      color: AppColors.palette.inkSoft,
                     ),
                   ),
                 ],
               ),
             ),
             Icon(Icons.chevron_right_rounded,
-                size: 20.sp, color: AppColors.fontGrey),
+                size: 20.sp, color: AppColors.palette.inkSoft),
           ],
         ),
       ),

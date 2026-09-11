@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:padi_learn/utils/colors.dart';
 import 'package:padi_learn/utils/pricing.dart';
+import 'package:padi_learn/utils/money.dart';
 
 /// Live "here's what you'll actually earn" line under a price field.
 ///
@@ -27,6 +28,9 @@ class EarningsHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     final price = double.tryParse(priceText.trim()) ?? 0;
     if (price <= 0) {
       return _line(
@@ -43,8 +47,8 @@ class EarningsHint extends StatelessWidget {
       children: [
         _line(
           Icons.account_balance_wallet_outlined,
-          'You earn about ₦${_format(breakdown.teacherEarning)} per sale '
-          '(~${breakdown.teacherShareOfList.round()}% of ₦${_format(price)}). '
+          'You earn about ${formatNaira(breakdown.teacherEarning)} per sale '
+          '(~${breakdown.teacherShareOfList.round()}% of ${formatNaira(price)}). '
           'PadiLearn takes ${kPlatformFeePercent.round()}% after card fees.',
           emphasis: true,
         ),
@@ -52,8 +56,10 @@ class EarningsHint extends StatelessWidget {
           SizedBox(height: 6.h),
           _line(
             Icons.lightbulb_outline,
-            'Pricing at ₦${_format(PriceBreakdown.suggestedPriceBelowThreshold)} '
-            'would earn you more — the card fee jumps by ₦100 from ₦2,500.',
+            'Pricing at '
+            '${formatNaira(PriceBreakdown.suggestedPriceBelowThreshold)} '
+            'would earn you more — the card fee jumps by NGN 100 from '
+            'NGN 2,500.',
             warning: true,
           ),
         ],
@@ -62,7 +68,8 @@ class EarningsHint extends StatelessWidget {
           _line(
             Icons.trending_up,
             'Most PadiLearn courses are under '
-            '₦${_format(softPriceCeiling)}. Higher is allowed, but expect fewer '
+            '${formatNaira(softPriceCeiling)}. Higher is allowed, but expect '
+            'fewer '
             'buyers while the platform is new.',
           ),
         ],
@@ -80,7 +87,7 @@ class EarningsHint extends StatelessWidget {
         ? const Color(0xFFB26A00)
         : emphasis
             ? AppColors.primaryColor
-            : AppColors.fontGrey;
+            : AppColors.palette.inkSoft;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -100,16 +107,5 @@ class EarningsHint extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  /// Thousands separators, no decimals — naira amounts read better whole.
-  String _format(double value) {
-    final whole = value.round().toString();
-    final buffer = StringBuffer();
-    for (var i = 0; i < whole.length; i++) {
-      if (i > 0 && (whole.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(whole[i]);
-    }
-    return buffer.toString();
   }
 }

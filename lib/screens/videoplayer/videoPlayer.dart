@@ -229,8 +229,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       debugPrint('Error opening lesson: $e');
       if (!mounted || token != _loadToken) return;
       setState(() {
-        _videoError =
-            e is Exception ? e.toString().replaceFirst('Exception: ', '') : '$e';
+        _videoError = e is Exception
+            ? e.toString().replaceFirst('Exception: ', '')
+            : '$e';
         _switching = false;
       });
     }
@@ -254,7 +255,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   void _syncProgress({bool force = false}) {
     final lesson = _current;
     final controller = _videoController;
-    if (lesson == null || controller == null || !controller.value.isInitialized) {
+    if (lesson == null ||
+        controller == null ||
+        !controller.value.isInitialized) {
       return;
     }
 
@@ -314,7 +317,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
           .maybeSingle();
       if (updated != null && mounted) {
         setState(() {
-          _avgRating = (updated['rating_avg'] as num?)?.toDouble() ?? _avgRating;
+          _avgRating =
+              (updated['rating_avg'] as num?)?.toDouble() ?? _avgRating;
           _ratingCount =
               (updated['rating_count'] as num?)?.toInt() ?? _ratingCount;
         });
@@ -339,22 +343,25 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     final completed =
         _progress.values.where((progress) => progress.completed).length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: AppColors.palette.ground,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F8FA),
+        backgroundColor: AppColors.palette.ground,
         elevation: 0,
         scrolledUnderElevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.richBlack),
+        iconTheme: IconThemeData(color: AppColors.palette.ink),
         title: Text(
           (_course['title'] ?? 'Course').toString(),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: GoogleFonts.poppins(
-            color: AppColors.richBlack,
+            color: AppColors.palette.ink,
             fontSize: 16.sp,
             fontWeight: FontWeight.w600,
           ),
@@ -378,7 +385,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                           style: GoogleFonts.poppins(
                             fontSize: 18.sp,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.richBlack,
+                            color: AppColors.palette.ink,
                           ),
                         ),
                         SizedBox(height: 6.h),
@@ -393,21 +400,22 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                           style: GoogleFonts.poppins(
                             fontSize: 15.sp,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.richBlack,
+                            color: AppColors.palette.ink,
                           ),
                         ),
                         SizedBox(height: 8.h),
                         Text(
-                          (_course['description'] ?? 'No description available.')
+                          (_course['description'] ??
+                                  'No description available.')
                               .toString(),
                           style: GoogleFonts.poppins(
                             fontSize: 13.sp,
                             height: 1.6,
-                            color: AppColors.fontGrey,
+                            color: AppColors.palette.inkSoft,
                           ),
                         ),
                         SizedBox(height: 28.h),
-                        const Divider(height: 1, color: AppColors.lightGrey),
+                        Divider(height: 1, color: AppColors.palette.hairline),
                         SizedBox(height: 20.h),
                         CommentsSection(
                           courseId: widget.courseId,
@@ -415,7 +423,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                               ? null
                               : _course['user_id'].toString(),
                         ),
-                        SizedBox(height: 24.h),
+                        SizedBox(
+                            height:
+                                24.h + MediaQuery.of(context).padding.bottom),
                       ],
                     ),
                   ),
@@ -428,7 +438,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   Widget _buildMetaRow() {
     return Row(
       children: [
-        Icon(Icons.person_outline, size: 16.sp, color: AppColors.fontGrey),
+        Icon(Icons.person_outline,
+            size: 16.sp, color: AppColors.palette.inkSoft),
         SizedBox(width: 4.w),
         Expanded(
           child: Text(
@@ -436,7 +447,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: GoogleFonts.poppins(
-                fontSize: 12.sp, color: AppColors.fontGrey),
+                fontSize: 12.sp, color: AppColors.palette.inkSoft),
           ),
         ),
         Icon(Icons.star_rounded, size: 16.sp, color: const Color(0xFFFFC107)),
@@ -448,7 +459,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
           style: GoogleFonts.poppins(
             fontSize: 12.sp,
             fontWeight: FontWeight.w600,
-            color: AppColors.richBlack,
+            color: AppColors.palette.ink,
           ),
         ),
       ],
@@ -498,14 +509,14 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         width: double.infinity,
         padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 16.w),
         decoration: BoxDecoration(
-          color: AppColors.appWhite,
+          color: AppColors.palette.surface,
           borderRadius: BorderRadius.circular(14.r),
         ),
         child: Text(
           'This course has no lessons yet.',
           textAlign: TextAlign.center,
-          style:
-              GoogleFonts.poppins(fontSize: 12.5.sp, color: AppColors.fontGrey),
+          style: GoogleFonts.poppins(
+              fontSize: 12.5.sp, color: AppColors.palette.inkSoft),
         ),
       );
     }
@@ -522,7 +533,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
               style: GoogleFonts.poppins(
                 fontSize: 15.sp,
                 fontWeight: FontWeight.w600,
-                color: AppColors.richBlack,
+                color: AppColors.palette.ink,
               ),
             ),
             const Spacer(),
@@ -532,21 +543,24 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                 if (total != null) total,
               ].join(' · '),
               style: GoogleFonts.poppins(
-                  fontSize: 11.5.sp, color: AppColors.fontGrey),
+                  fontSize: 11.5.sp, color: AppColors.palette.inkSoft),
             ),
           ],
         ),
         SizedBox(height: 10.h),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.appWhite,
+            color: AppColors.palette.surface,
             borderRadius: BorderRadius.circular(14.r),
           ),
           child: Column(
             children: [
               for (var i = 0; i < _lessons.length; i++) ...[
                 if (i > 0)
-                  Divider(height: 1, indent: 56.w, color: AppColors.lightGrey),
+                  Divider(
+                      height: 1,
+                      indent: 56.w,
+                      color: AppColors.palette.hairline),
                 _buildLessonRow(_lessons[i], i + 1),
               ],
             ],
@@ -587,7 +601,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                       size: 16.sp,
                       color: isCurrent
                           ? AppColors.appWhite
-                          : AppColors.fontGrey,
+                          : AppColors.palette.inkSoft,
                     ),
             ),
             SizedBox(width: 12.w),
@@ -602,7 +616,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                     style: GoogleFonts.poppins(
                       fontSize: 12.5.sp,
                       fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w500,
-                      color: AppColors.richBlack,
+                      color: AppColors.palette.ink,
                     ),
                   ),
                   if (lesson.durationLabel != null || lesson.isPreview) ...[
@@ -613,10 +627,12 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                           Text(
                             lesson.durationLabel!,
                             style: GoogleFonts.poppins(
-                                fontSize: 10.5.sp, color: AppColors.fontGrey),
+                                fontSize: 10.5.sp,
+                                color: AppColors.palette.inkSoft),
                           ),
                         if (lesson.isPreview) ...[
-                          if (lesson.durationLabel != null) SizedBox(width: 6.w),
+                          if (lesson.durationLabel != null)
+                            SizedBox(width: 6.w),
                           Text(
                             'Preview',
                             style: GoogleFonts.poppins(
@@ -643,7 +659,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       width: double.infinity,
       padding: EdgeInsets.symmetric(vertical: 18.h, horizontal: 16.w),
       decoration: BoxDecoration(
-        color: AppColors.appWhite,
+        color: AppColors.palette.surface,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
@@ -660,7 +676,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
             style: GoogleFonts.poppins(
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
-              color: AppColors.richBlack,
+              color: AppColors.palette.ink,
             ),
           ),
           SizedBox(height: 12.h),

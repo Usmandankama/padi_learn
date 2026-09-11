@@ -61,8 +61,11 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Scaffold(
-      backgroundColor: AppColors.appWhite,
+      backgroundColor: AppColors.palette.surface,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
@@ -83,7 +86,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               Text(
                 'How do you want to use PadiLearn?',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.fontGrey, fontSize: 14.sp),
+                style: TextStyle(
+                    color: AppColors.palette.inkSoft, fontSize: 14.sp),
               ),
               SizedBox(height: 32.h),
               _RoleCard(
@@ -93,7 +97,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                     'your progress.',
                 icon: Icons.school_rounded,
                 selected: _selected == 'Student',
-                onTap: _isSaving ? null : () => setState(() => _selected = 'Student'),
+                onTap: _isSaving
+                    ? null
+                    : () => setState(() => _selected = 'Student'),
               ),
               SizedBox(height: 14.h),
               _RoleCard(
@@ -103,7 +109,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                     'students.',
                 icon: Icons.cast_for_education_rounded,
                 selected: _selected == 'Teacher',
-                onTap: _isSaving ? null : () => setState(() => _selected = 'Teacher'),
+                onTap: _isSaving
+                    ? null
+                    : () => setState(() => _selected = 'Teacher'),
               ),
               SizedBox(height: 28.h),
               PrimaryButton(
@@ -116,7 +124,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                 'This decides which version of the app you see, and cannot be '
                 'changed from here later.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.fontGrey, fontSize: 11.5.sp),
+                style: TextStyle(
+                    color: AppColors.palette.inkSoft, fontSize: 11.5.sp),
               ),
             ],
           ),
@@ -145,6 +154,9 @@ class _RoleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16.r),
@@ -152,10 +164,11 @@ class _RoleCard extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: EdgeInsets.all(18.w),
         decoration: BoxDecoration(
-          color: selected ? AppColors.primaryAccent : AppColors.appWhite,
+          color: selected ? AppColors.primaryAccent : AppColors.palette.surface,
           borderRadius: BorderRadius.circular(16.r),
           border: Border.all(
-            color: selected ? AppColors.primaryColor : AppColors.lightGrey,
+            color:
+                selected ? AppColors.primaryColor : AppColors.palette.hairline,
             width: selected ? 2 : 1,
           ),
         ),
@@ -181,7 +194,7 @@ class _RoleCard extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 15.sp,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.richBlack,
+                      color: AppColors.palette.ink,
                     ),
                   ),
                   SizedBox(height: 4.h),
@@ -189,7 +202,7 @@ class _RoleCard extends StatelessWidget {
                     blurb,
                     style: GoogleFonts.poppins(
                       fontSize: 12.sp,
-                      color: AppColors.fontGrey,
+                      color: AppColors.palette.inkSoft,
                       height: 1.4,
                     ),
                   ),
@@ -200,7 +213,9 @@ class _RoleCard extends StatelessWidget {
               selected
                   ? Icons.radio_button_checked
                   : Icons.radio_button_unchecked,
-              color: selected ? AppColors.primaryColor : AppColors.lightGrey,
+              color: selected
+                  ? AppColors.primaryColor
+                  : AppColors.palette.hairline,
               size: 22.sp,
             ),
           ],

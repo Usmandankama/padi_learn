@@ -4,6 +4,7 @@
 /// from Paystack's reported fee — this only mirrors it so a teacher can see
 /// roughly what they will earn *while* setting a price. Always present the
 /// result as approximate.
+library;
 
 /// Platform commission, taken on the amount that actually settles (after
 /// Paystack's cut). Mirrors `PLATFORM_FEE_PERCENT` on the server — change both.

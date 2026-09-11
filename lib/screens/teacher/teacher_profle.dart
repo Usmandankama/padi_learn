@@ -11,6 +11,8 @@ import 'package:padi_learn/screens/teacher/editprofile_screen.dart';
 import 'package:padi_learn/screens/teacher/payout_account_screen.dart';
 import 'package:padi_learn/services/auth_service.dart';
 import 'package:padi_learn/utils/colors.dart';
+import 'package:padi_learn/utils/money.dart';
+import 'package:padi_learn/screens/components/profile_support_section.dart';
 
 class TeacherProfileScreen extends StatelessWidget {
   const TeacherProfileScreen({super.key});
@@ -24,12 +26,15 @@ class TeacherProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     final TeacherController controller = Get.find<TeacherController>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: AppColors.palette.ground,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F8FA),
+        backgroundColor: AppColors.palette.ground,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
@@ -41,17 +46,7 @@ class TeacherProfileScreen extends StatelessWidget {
             fontWeight: FontWeight.w700,
           ),
         ),
-        actions: [
-          const NotificationBell(),
-          IconButton(
-            icon: const Icon(Icons.settings_outlined,
-                color: AppColors.primaryColor),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
-            ),
-          ),
-        ],
+        actions: const [NotificationBell()],
       ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 32.h),
@@ -60,14 +55,14 @@ class TeacherProfileScreen extends StatelessWidget {
           SizedBox(height: 16.h),
           _buildStats(controller),
           SizedBox(height: 24.h),
+          // Two entries only. "My Courses" used to sit here as well — it is the
+          // Courses tab in the bottom bar, a shorter route to the same screen —
+          // and "Edit Profile" was a third, duplicating the button in the
+          // header card directly above, which is where you look to change the
+          // name and photo it edits.
           SettingsSection(
             title: 'ACCOUNT',
             children: [
-              SettingsTile(
-                icon: Icons.person_outline,
-                title: 'Edit Profile',
-                onTap: () => _editProfile(context),
-              ),
               SettingsTile(
                 icon: Icons.account_balance_outlined,
                 title: 'Payout Account',
@@ -78,8 +73,6 @@ class TeacherProfileScreen extends StatelessWidget {
                       builder: (_) => const PayoutAccountScreen()),
                 ),
               ),
-              // "My Courses" used to be duplicated here; it is the Courses tab
-              // in the bottom bar, which is a shorter route to the same screen.
               SettingsTile(
                 icon: Icons.settings_outlined,
                 title: 'Settings',
@@ -90,6 +83,8 @@ class TeacherProfileScreen extends StatelessWidget {
               ),
             ],
           ),
+          SizedBox(height: 24.h),
+          const ProfileSupportSection(),
           SizedBox(height: 24.h),
           SettingsSection(
             children: [
@@ -113,7 +108,7 @@ class TeacherProfileScreen extends StatelessWidget {
       width: double.infinity,
       padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 20.w),
       decoration: BoxDecoration(
-        color: AppColors.appWhite,
+        color: AppColors.palette.surface,
         borderRadius: BorderRadius.circular(20.r),
         boxShadow: [
           BoxShadow(
@@ -162,7 +157,7 @@ class TeacherProfileScreen extends StatelessWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.richBlack,
+                  color: AppColors.palette.ink,
                 ),
               )),
           SizedBox(height: 8.h),
@@ -225,7 +220,7 @@ class TeacherProfileScreen extends StatelessWidget {
           Expanded(
             child: _statCard(
               icon: Icons.account_balance_wallet_outlined,
-              value: 'NGN ${controller.totalEarnings.value.toStringAsFixed(0)}',
+              value: formatNaira(controller.totalEarnings.value),
               label: 'Earnings',
             ),
           ),
@@ -242,7 +237,7 @@ class TeacherProfileScreen extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 18.h, horizontal: 12.w),
       decoration: BoxDecoration(
-        color: AppColors.appWhite,
+        color: AppColors.palette.surface,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
@@ -263,7 +258,7 @@ class TeacherProfileScreen extends StatelessWidget {
             style: GoogleFonts.poppins(
               fontSize: 15.sp,
               fontWeight: FontWeight.w700,
-              color: AppColors.richBlack,
+              color: AppColors.palette.ink,
             ),
           ),
           SizedBox(height: 2.h),
@@ -271,7 +266,7 @@ class TeacherProfileScreen extends StatelessWidget {
             label,
             style: GoogleFonts.poppins(
               fontSize: 11.sp,
-              color: AppColors.fontGrey,
+              color: AppColors.palette.inkSoft,
             ),
           ),
         ],

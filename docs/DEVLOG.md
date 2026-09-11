@@ -12,6 +12,277 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-09-06 — Courses you already own
+
+A student could see a course they had already bought sitting in the marketplace
+with its price on it, and buy it again.
+
+Two changes. The marketplace now hides courses the student is enrolled in — the
+shelf is for things they can still buy. Everywhere a card can still show an
+owned course (the dashboard's "Popular Courses", the course page) it prints
+**Owned** where the price would go.
+
+"Owned" rather than "Purchased" on purpose: free courses are enrolments too, and
+telling someone they purchased something they got for nothing is a small lie a
+receipt would contradict.
+
+### Where the answer comes from
+
+`OngoingCoursesController` already streams this student's `enrollments` for the
+"Continue learning" row, so `ownedIds` is derived from the rows it has rather
+than from a second query. Opening another realtime subscription on the same
+table for the same user would have doubled this screen's share of the
+connection budget to learn nothing new.
+
+All three places rows land — the stream, the pull-to-refresh, the offline cache
+— now go through one `_apply`, so the id set cannot drift from the list.
+
+Two things that would have made this silently not work:
+
+- **`RxSet` was the wrong type.** Its `value` is `@protected`, and its
+  `contains()` reads the backing field directly — so calling it inside an `Obx`
+  registers no dependency and the marketplace would not drop a course until
+  some unrelated rebuild wandered past. It is a plain `Rx<Set<String>>`, read
+  through `.value`, which is what actually subscribes.
+- **Registration order.** The controller is registered per user id by the
+  dashboard's widget, so whether the marketplace saw any enrolments depended on
+  which tab built first. `HomeShell` now registers it alongside the student
+  screens, and `forCurrentUser()` is the read-only accessor for screens that
+  should not care about the tag — returning null rather than throwing, because
+  teachers and signed-out users have no enrolments controller at all.
+
+### Outstanding
+
+Search shares the filter, so searching for a course you own finds nothing. That
+is defensible for browsing and arguably wrong for search — the fix, if it
+bites, is to filter the catalogue but let an explicit query through with the
+card's `isOwned` badge already built for it.
+
+---
+
+## 2026-09-05 — Dark mode actually works, and password reset reaches the app
+
+### Dark mode was a toggle attached to nothing
+
+`SettingsController` switched `ThemeMode` and 36 files went on painting
+`appWhite` surfaces with `richBlack` text, so turning it on produced black text
+on white cards on a dark ground. The toggle worked; nothing downstream did.
+
+The fix is a split in `colors.dart`. Constants there are now only things that
+mean the same in both themes — the brand green, and foregrounds that always sit
+on it (white on the green button is white either way). Anything describing a
+**surface, or the ink on it**, moved to `AppPalette`, a `ThemeExtension` with
+five tokens: `ground`, `surface`, `surfaceAlt`, `ink`, `inkSoft`, `hairline`.
+Five, not a full system, because those are the only ones the app broke without.
+
+`primaryColor` stays theme-independent on purpose. It is the identity, it
+carries white text at the same contrast on either ground, and freezing it kept
+168 usages out of this change.
+
+`main.dart` now points every Material default that paints a surface at the
+palette — scaffold, app bar, cards, dividers, dialogs, sheets, inputs,
+snackbars. That matters more than it sounds: a screen that simply *doesn't* set
+a colour now comes out right in both themes, so only the screens that
+hard-coded one needed touching.
+
+302 substitutions across 36 files. `appWhite` was the hard part — 71 uses split
+between "white text on a green button" (must stay white) and "card background"
+(must flip), which no find-and-replace can tell apart. They were classified by
+walking back to the enclosing constructor, defaulting to *leaving it white*
+when ambiguous: a stray white card is visible and fixable, white text turned
+dark on a green button is invisible. 48 flipped, 24 stayed.
+
+### `AppColors.palette` is a deliberate compromise
+
+Much of this app paints from helper methods that were never handed a
+`BuildContext` — `Widget _buildStats(TeacherController c)` and its like. A
+context-only API would have meant changing dozens of signatures across 36 files
+to fix a colour bug.
+
+So there is a static `AppColors.palette`, bound once per frame from `MyApp`'s
+builder above the Navigator. `AppColors.of(context)` still exists and is
+preferred where a context is already in hand. The static holds because this app
+has one `MaterialApp` and never renders two themes at once — if that changes, a
+themed preview or a per-subtree `Theme`, those widgets have to move to `of`.
+
+**The first version of this shipped broken, and it is worth understanding why.**
+Reading a static creates *no dependency* on the `Theme` inherited widget. So
+when the mode flipped, `MaterialApp` rebuilt and the static updated correctly,
+but every screen already sitting in the Navigator never rebuilt — nothing had
+told it to. Switching to light mode left a dark screen with a light strip along
+the bottom, where the `Scaffold` (which *does* depend on the theme) had
+repainted underneath a body that had not.
+
+The fix is `AppColors.watch(context)`, called once at the top of every `build`
+that paints from the palette — 46 of them. `Theme.of` inside it registers the
+dependency, which is the part that makes the widget rebuild; refreshing the
+static at the same time is what keeps the context-free helper methods correct,
+since they re-run as part of that rebuild.
+
+`test/widget_test.dart` covers it: a probe widget that watches and then paints
+from the static, asserted across a mode flip. Removing the `watch` call fails
+it, so it is a real guard rather than a restatement.
+
+### Password reset dead-ended before it reached the app
+
+`resetPasswordForEmail` was called with no `redirectTo`, there was no scheme
+registered on Android, and nothing listened for the recovery session. The mail
+arrived, the link opened a browser, and that was the end of it — no screen in
+the app could set a password.
+
+Now: `redirectTo: DeepLinks.passwordReset` (`padilearn://reset-callback`), an
+intent-filter in `AndroidManifest.xml`, and a `passwordRecovery` listener in
+`MyApp` that pushes the new `ResetPasswordScreen`. Following the link signs the
+user into a short-lived recovery session, which is what lets `updateUser`
+change the password without the old one — so that screen is only ever reached
+from the link, never navigated to directly.
+
+**Three places have to agree** or the redirect is silently refused and the user
+lands on the project's site URL: `lib/config/deep_links.dart`, the
+intent-filter, and Supabase's Redirect URLs allowlist.
+
+### One home per account action
+
+Logout, About and Edit Profile each existed in both Settings and the Profile
+screen. They now live on Profile only, and Settings keeps just the things that
+have no other home: Change Password, Notifications, Dark Mode.
+
+The direction matters more than which copy survived. Removing duplicates in
+*opposite* directions — Logout kept on Profile, Edit Profile kept in Settings —
+would have taught two contradictory rules for where account actions live. So
+Profile is the single home, and the Edit Profile button stays under the name
+card, beside the photo and name it changes.
+
+The commented-out GENERAL block went with it rather than being left to rot; git
+has it.
+
+Deleting it exposed a gap: About had only ever existed there and in the
+*student* profile, so teachers were left without it. The section is now a shared
+`ProfileSupportSection` used by both profiles rather than a block copied into
+one of them — the two profile screens are maintained separately, which is
+exactly how the roles diverged in the first place.
+
+The version string went the same way. It had been written by hand in two places
+and this would have made three, so `lib/utils/app_info.dart` holds the name,
+version and legalese. It is still a constant that has to track `pubspec.yaml` by
+hand; `package_info_plus` reads the number the build was actually stamped with,
+and is worth adding the first time a shipped build claims the wrong version.
+
+### Outstanding — needs doing in the Supabase dashboard
+
+- Add `padilearn://reset-callback` under **Authentication → URL Configuration →
+  Redirect URLs**. Until this is done the deep link does not work.
+- Point **Authentication → SMTP Settings** at a real provider. The built-in
+  sender is rate-limited to a handful of mails an hour and is not for
+  production — a reset nobody receives is the same bug in a different place.
+  Custom SMTP is available on the free plan; this does not need Pro.
+- iOS will need the same scheme under `CFBundleURLTypes` whenever it ships.
+
+---
+
+## 2026-09-03 — System navigation insets, and four kinds of duplication
+
+### The nav pill was underneath the device's own navigation
+
+Flutter draws edge-to-edge by default at this target SDK, so the Scaffold's
+`bottomNavigationBar` slot extends *behind* the system navigation bar. The pill
+had a hard-coded `margin: bottom 30`, measured from the bottom of the screen
+rather than from the bottom of the usable area — so on three-button navigation
+(48dp) its lower half sat behind Back/Home/Recents, and on gesture navigation
+it sat inside the handle strip, which swallows touches outright.
+
+The gap is now measured from `MediaQuery.viewPadding.bottom`. `viewPadding`
+rather than `padding` because `padding` collapses to zero when the keyboard is
+up, and the pill would jump.
+
+Same bug, same fix, in every other place something is anchored to the bottom:
+the onboarding "Get Started" sheet, the marketplace filter and course-preview
+sheets, the settings change-password sheet, the bank picker's last row, the
+video player's comment box, and the course description's buy button. Bottom
+sheets use `padding.bottom` there, not `viewPadding` — they already offset for
+`viewInsets`, and double-counting would leave a gap the height of the nav bar
+above the keyboard.
+
+Two things fell out of rewriting the pill:
+
+- The `Stack` around it was **not** left over from the deleted centre button —
+  it was doing the centring. Scaffold hands that slot a *tight* full-width
+  constraint, so a `Container` with its own `width` cannot size itself and
+  silently becomes a full-width bar. It needs a full-width parent (`Align`) to
+  be a pill inside. A test caught this; the eye would not have, quickly.
+- The items are `Expanded` now. They were fixed-width children scaled with
+  `.w` inside a pill whose width was *not* scaled, which overflows once the
+  screen is far enough from the 393pt design width. Scale all three or none —
+  this file now scales none, matching its unscaled 28pt icons.
+
+`test/widget_test.dart` covers it at 0 / 24 / 48dp insets. It was the generated
+counter smoke test before, tapping an `Icons.add` this app has never had.
+
+### `Get.put` was quietly undoing the fenix registration
+
+`teacher_dashboard.dart` and `my_courses.dart` both did
+`Get.put(TeacherController())`. `main()` registers that controller with
+`fenix: true` specifically so it survives the `Get.deleteAll()` on sign-out —
+and `Get.put` replaces that registration with a non-fenix one, after which
+every *other* screen's `Get.find<TeacherController>()` throws once someone
+signs out. It also built a fresh controller, re-running all three fetches,
+every time either tab was rebuilt. Both are `Get.find` now.
+
+Register in `main()`, find at the point of use. Don't `Get.put` a controller
+`main()` already owns.
+
+### Tabs are an IndexedStack
+
+`_screens[_selectedIndex]` disposed the outgoing tab's State on every switch,
+which tore down and rebuilt its realtime subscriptions — the teacher's course
+stream, the activity feed — and discarded scroll position and search text.
+Safe to do now that the tabs share their controllers rather than each putting
+their own.
+
+### One spelling for money
+
+`'NGN ${x.toStringAsFixed(0)}'` was written by hand in six places; the
+"Free or price" rule existed a seventh time inside `PriceTag`, which took a
+pre-stringified price *and* an `isFree` bool the price already implies; the
+marketplace screen imported a card *component* to reach `formatPriceLabel`;
+and `earnings_hint.dart` carried its own thousands-separator routine and wrote
+the currency as the naira glyph while every other screen wrote `NGN`.
+
+All of it is `lib/utils/money.dart` now, and the app says `NGN` throughout.
+`NGN` over the glyph deliberately: the glyph is not guaranteed present in every
+font we ship, and a tofu box where a price should be is worse than three
+letters. Amounts are grouped (`NGN 25,000`), which they were not before outside
+the earnings hint.
+
+### Dead code
+
+Removed: `avatar_stack.dart` (hard-coded `+52` and three asset faces, never
+referenced), `custom_back_button.dart` and `center_nav_button.dart` (entirely
+commented out), `otp_screen.dart` (a non-functional stub whose button does
+nothing — nothing routes to it), and `firebase.json` (a leftover pointing at
+the retired Firebase project; nothing in `pubspec.yaml` or `lib/` references
+Firebase any more).
+
+`CoursesController` lost `courses` / `fetchCourses()` and its `UserController`
+handle. Nothing read that list — `MarketplaceController` owns the catalogue and
+both the marketplace and the student dashboard read it from there — so it was a
+full-table `select()`, every column including descriptions, fetched on every
+launch and thrown away. It carries the tapped course to the description screen;
+that is all it ever did.
+
+### Still outstanding
+
+`README.md` still describes a Firebase backend, `firebase_options.dart`, and a
+FlutterFire setup that no longer exists. It needs rewriting against Supabase
+before anyone new tries to follow it.
+
+Dark mode is a toggle that does not work. `SettingsController` switches
+`ThemeMode` and 36 files then paint `AppColors.appWhite` backgrounds and
+`richBlack` text regardless. Either hide the toggle for v1 or do a proper
+token pass — a half-dark app is worse than a light one.
+
+---
+
 ## 2026-08-31 — Continue-learning order, course load time, thumbnails
 
 ### Latest enrolment first

@@ -38,9 +38,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: AppColors.appWhite,
+      backgroundColor: AppColors.palette.surface,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -80,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   'Sign in to continue learning',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: AppColors.fontGrey,
+                    color: AppColors.palette.inkSoft,
                     fontSize: 14.sp,
                   ),
                 ),
@@ -134,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       'Don\'t have an account?',
                       style: TextStyle(
-                        color: AppColors.fontGrey,
+                        color: AppColors.palette.inkSoft,
                         fontSize: 13.sp,
                       ),
                     ),

@@ -15,7 +15,8 @@ import 'package:padi_learn/utils/colors.dart';
 /// Screen that displays full course details with the option to enroll or continue learning.
 class CourseDescriptionScreen extends StatefulWidget {
   @override
-  State<CourseDescriptionScreen> createState() => _CourseDescriptionScreenState();
+  State<CourseDescriptionScreen> createState() =>
+      _CourseDescriptionScreenState();
 }
 
 class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
@@ -83,6 +84,9 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Scaffold(
       appBar: AppBar(), // Basic app bar
       body: Padding(
@@ -91,23 +95,22 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               /// Course image, author, and price tag (modular component)
               Obx(() => CourseHeader(
-                imageUrl: coursesController.selectedCourseImage.value,
-                author: coursesController.selectedCourseAuthor.value,
-                isFree: isFree,
-                price: coursesController.selectedCoursePrice.value
-                    .toStringAsFixed(0),
-              )),
+                    imageUrl: coursesController.selectedCourseImage.value,
+                    author: coursesController.selectedCourseAuthor.value,
+                    price: coursesController.selectedCoursePrice.value,
+                    isOwned: isAlreadyEnrolled,
+                  )),
 
               SizedBox(height: 20.h),
 
               /// Course Title
               Obx(() => Text(
-                coursesController.selectedCourseTitle.value,
-                style: TextStyle(fontSize: 28.sp, fontWeight: FontWeight.bold),
-              )),
+                    coursesController.selectedCourseTitle.value,
+                    style:
+                        TextStyle(fontSize: 28.sp, fontWeight: FontWeight.bold),
+                  )),
 
               SizedBox(height: 10.h),
 
@@ -116,9 +119,10 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
 
               /// Course Description
               Obx(() => Text(
-                coursesController.selectedCourseDescription.value,
-                style: TextStyle(fontSize: 16.sp, color: AppColors.fontGrey),
-              )),
+                    coursesController.selectedCourseDescription.value,
+                    style: TextStyle(
+                        fontSize: 16.sp, color: AppColors.palette.inkSoft),
+                  )),
 
               SizedBox(height: 24.h),
 
@@ -138,7 +142,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                 onPressed:
                     isAlreadyEnrolled ? _continueCourse : _handleEnrollment,
               ),
-              SizedBox(height: 24.h),
+              SizedBox(height: 24.h + MediaQuery.of(context).padding.bottom),
             ],
           ),
         ),
@@ -247,7 +251,8 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                 '${_lessons.length} lesson${_lessons.length == 1 ? '' : 's'}',
                 if (total != null) total,
               ].join(' · '),
-              style: TextStyle(fontSize: 12.sp, color: AppColors.fontGrey),
+              style:
+                  TextStyle(fontSize: 12.sp, color: AppColors.palette.inkSoft),
             ),
           ],
         ),
@@ -272,7 +277,8 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
             Icon(
               unlocked ? Icons.play_circle_outline : Icons.lock_outline,
               size: 20.sp,
-              color: unlocked ? AppColors.primaryColor : AppColors.fontGrey,
+              color:
+                  unlocked ? AppColors.primaryColor : AppColors.palette.inkSoft,
             ),
             SizedBox(width: 12.w),
             Expanded(
@@ -282,7 +288,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 14.sp,
-                  color: AppColors.richBlack,
+                  color: AppColors.palette.ink,
                 ),
               ),
             ),
@@ -305,7 +311,8 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
             else if (lesson.durationLabel != null)
               Text(
                 lesson.durationLabel!,
-                style: TextStyle(fontSize: 12.sp, color: AppColors.fontGrey),
+                style: TextStyle(
+                    fontSize: 12.sp, color: AppColors.palette.inkSoft),
               ),
           ],
         ),
@@ -315,6 +322,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
 
   /// Navigates the user to the course video player screen
   void _continueCourse() {
-    Get.to(() => VideoPlayerPage(courseId: coursesController.selectedCourseId.value));
+    Get.to(() =>
+        VideoPlayerPage(courseId: coursesController.selectedCourseId.value));
   }
 }

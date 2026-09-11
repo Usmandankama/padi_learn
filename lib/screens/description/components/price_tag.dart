@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:padi_learn/utils/colors.dart';
+import 'package:padi_learn/utils/money.dart';
 
 class PriceTag extends StatelessWidget {
-  final bool isFree;
-  final String price;
+  final num price;
 
-  const PriceTag({Key? key, required this.isFree, required this.price}) : super(key: key);
+  /// Already enrolled. Shows ownership rather than a price they cannot act on.
+  final bool isOwned;
+
+  const PriceTag({super.key, required this.price, this.isOwned = false});
 
   @override
   Widget build(BuildContext context) {
@@ -21,12 +24,12 @@ class PriceTag extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12.0),
           child: Text(
-            isFree ? 'Free' : 'NGN $price',
-            style: const TextStyle(color: AppColors.appWhite, fontWeight: FontWeight.bold),
+            isOwned ? 'Owned' : formatPriceLabel(price),
+            style: const TextStyle(
+                color: AppColors.appWhite, fontWeight: FontWeight.bold),
           ),
         ),
       ),
     );
   }
 }
-// }

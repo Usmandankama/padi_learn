@@ -22,8 +22,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Scaffold(
-      backgroundColor: AppColors.appWhite,
+      backgroundColor: AppColors.palette.surface,
       body: PageView(
         controller: _pageController,
         onPageChanged: (int page) {
@@ -61,87 +64,94 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
         ],
       ),
-      bottomSheet: _currentPage == 2
-          ? Container(
-              decoration: const BoxDecoration(
-                color: AppColors.appWhite,
-              ),
-              padding: const EdgeInsets.all(25.0),
-              child: ElevatedButton(
-                style: ButtonStyle(
-                  backgroundColor:
-                      WidgetStateProperty.all(AppColors.primaryColor),
-                  padding: WidgetStateProperty.all(
-                    const EdgeInsets.symmetric(horizontal: 80.0, vertical: 20),
-                  ),
+      // The bottomSheet slot is laid out behind the device's own navigation
+      // bar on edge-to-edge Android, which put 'Get Started' under the
+      // gesture handle. SafeArea lifts it clear.
+      bottomSheet: SafeArea(
+        top: false,
+        child: _currentPage == 2
+            ? Container(
+                decoration: BoxDecoration(
+                  color: AppColors.palette.surface,
                 ),
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const LoginScreen()),
-                  );
-                },
-                child: Text(
-                  'Get Started',
-                  style: TextStyle(
-                    fontSize: 18.sp,
-                    color: AppColors.appWhite,
-                  ),
-                ),
-              ),
-            )
-          : Container(
-              color: Colors.white,
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  TextButton(
-                    onPressed: () {
-                      _pageController.jumpToPage(2); // Skip to last page
-                    },
-                    child: Text(
-                      'Skip',
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        color: AppColors.primaryColor,
-                      ),
+                padding: const EdgeInsets.all(25.0),
+                child: ElevatedButton(
+                  style: ButtonStyle(
+                    backgroundColor:
+                        WidgetStateProperty.all(AppColors.primaryColor),
+                    padding: WidgetStateProperty.all(
+                      const EdgeInsets.symmetric(
+                          horizontal: 80.0, vertical: 20),
                     ),
                   ),
-                  Row(
-                    children: List.generate(3, (index) {
-                      return Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4.0),
-                        width: _currentPage == index ? 12.0 : 8.0,
-                        height: _currentPage == index ? 12.0 : 8.0,
-                        decoration: BoxDecoration(
-                          color: _currentPage == index
-                              ? AppColors.primaryColor
-                              : Colors.grey,
-                          borderRadius: BorderRadius.circular(8.0),
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const LoginScreen()),
+                    );
+                  },
+                  child: Text(
+                    'Get Started',
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      color: AppColors.appWhite,
+                    ),
+                  ),
+                ),
+              )
+            : Container(
+                color: Colors.white,
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: <Widget>[
+                    TextButton(
+                      onPressed: () {
+                        _pageController.jumpToPage(2); // Skip to last page
+                      },
+                      child: Text(
+                        'Skip',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          color: AppColors.primaryColor,
                         ),
-                      );
-                    }),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      _pageController.nextPage(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeIn,
-                      );
-                    },
-                    child: Text(
-                      'Next',
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        color: AppColors.primaryColor,
                       ),
                     ),
-                  ),
-                ],
+                    Row(
+                      children: List.generate(3, (index) {
+                        return Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                          width: _currentPage == index ? 12.0 : 8.0,
+                          height: _currentPage == index ? 12.0 : 8.0,
+                          decoration: BoxDecoration(
+                            color: _currentPage == index
+                                ? AppColors.primaryColor
+                                : Colors.grey,
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                        );
+                      }),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        _pageController.nextPage(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeIn,
+                        );
+                      },
+                      child: Text(
+                        'Next',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          color: AppColors.primaryColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 }

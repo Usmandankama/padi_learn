@@ -3,17 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:padi_learn/screens/components/course_thumbnail.dart';
 import 'package:padi_learn/utils/colors.dart';
-
-/// Compact count formatter (e.g. 1200 -> "1.2k").
-String formatStudentCount(num value) {
-  if (value >= 1000000) return '${(value / 1000000).toStringAsFixed(1)}M';
-  if (value >= 1000) return '${(value / 1000).toStringAsFixed(1)}k';
-  return value.toStringAsFixed(0);
-}
-
-/// Price label ("Free" or "NGN 5000").
-String formatPriceLabel(num price) =>
-    price <= 0 ? 'Free' : 'NGN ${price.toStringAsFixed(0)}';
+import 'package:padi_learn/utils/money.dart';
 
 /// A modern, tappable course card with thumbnail, category tag, rating,
 /// instructor, student count and price. Scales up on hover (web/desktop) and
@@ -24,12 +14,20 @@ class CourseCard extends StatefulWidget {
   final VoidCallback? onLongPress;
   final double rating;
 
+  /// Already enrolled — show that instead of a price they cannot pay again.
+  ///
+  /// "Owned" rather than "Purchased" because free courses are enrolments too,
+  /// and telling someone they purchased something they got for nothing is a
+  /// small lie the receipt would contradict.
+  final bool isOwned;
+
   const CourseCard({
     super.key,
     required this.course,
     required this.onTap,
     this.onLongPress,
     this.rating = 4.5,
+    this.isOwned = false,
   });
 
   @override
@@ -44,6 +42,9 @@ class _CourseCardState extends State<CourseCard> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     final course = widget.course;
     final title = (course['title'] ?? 'Untitled course').toString();
     final author = (course['author'] ?? 'Unknown').toString();
@@ -68,7 +69,7 @@ class _CourseCardState extends State<CourseCard> {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             decoration: BoxDecoration(
-              color: AppColors.appWhite,
+              color: AppColors.palette.surface,
               borderRadius: BorderRadius.circular(18.r),
               border: Border.all(color: Colors.black.withOpacity(0.04)),
               boxShadow: [
@@ -108,7 +109,7 @@ class _CourseCardState extends State<CourseCard> {
                               fontSize: 13.5.sp,
                               height: 1.25,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.richBlack,
+                              color: AppColors.palette.ink,
                             ),
                           ),
                           Row(
@@ -122,7 +123,7 @@ class _CourseCardState extends State<CourseCard> {
                                   overflow: TextOverflow.ellipsis,
                                   style: GoogleFonts.poppins(
                                     fontSize: 11.sp,
-                                    color: AppColors.fontGrey,
+                                    color: AppColors.palette.inkSoft,
                                   ),
                                 ),
                               ),
@@ -135,25 +136,45 @@ class _CourseCardState extends State<CourseCard> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(Icons.people_alt_outlined,
-                                      size: 14.sp, color: AppColors.fontGrey),
+                                      size: 14.sp,
+                                      color: AppColors.palette.inkSoft),
                                   SizedBox(width: 3.w),
                                   Text(
                                     formatStudentCount(students),
                                     style: GoogleFonts.poppins(
                                       fontSize: 11.sp,
-                                      color: AppColors.fontGrey,
+                                      color: AppColors.palette.inkSoft,
                                     ),
                                   ),
                                 ],
                               ),
-                              Text(
-                                formatPriceLabel(price),
-                                style: GoogleFonts.poppins(
-                                  fontSize: 13.sp,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.primaryColor,
+                              if (widget.isOwned)
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.check_circle_rounded,
+                                        size: 13.sp,
+                                        color: AppColors.primaryColor),
+                                    SizedBox(width: 3.w),
+                                    Text(
+                                      'Owned',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 13.sp,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.primaryColor,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              else
+                                Text(
+                                  formatPriceLabel(price),
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 13.sp,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.primaryColor,
+                                  ),
                                 ),
-                              ),
                             ],
                           ),
                         ],
@@ -183,6 +204,9 @@ class _Thumbnail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -273,11 +297,8 @@ class _InitialsAvatar extends StatelessWidget {
   const _InitialsAvatar({required this.name});
 
   String get _initials {
-    final parts = name
-        .trim()
-        .split(RegExp(r'\s+'))
-        .where((p) => p.isNotEmpty)
-        .toList();
+    final parts =
+        name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
     if (parts.isEmpty) return '?';
     if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
     return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
@@ -286,6 +307,9 @@ class _InitialsAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Container(
       width: 22.w,
       height: 22.w,
@@ -329,9 +353,12 @@ class _CourseCardShimmerState extends State<CourseCardShimmer>
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.appWhite,
+        color: AppColors.palette.surface,
         borderRadius: BorderRadius.circular(18.r),
         border: Border.all(color: Colors.black.withOpacity(0.04)),
       ),
