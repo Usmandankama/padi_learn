@@ -26,6 +26,22 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+
+            <!-- Brings the password-reset email back into the app. Supabase
+                 redirects to padilearn://reset-callback, which without this
+                 filter Android has no idea what to do with, so the link opened
+                 a browser and the reset flow dead-ended there.
+
+                 The same value is in lib/config/deep_links.dart and must also
+                 be listed under Authentication -> URL Configuration ->
+                 Redirect URLs in the Supabase dashboard. All three have to
+                 agree or the redirect is refused. -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="padilearn" android:host="reset-callback"/>
+            </intent-filter>
         </activity>
 
         <meta-data
