@@ -1,37 +1,19 @@
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:padi_learn/services/supabase.dart';
-import 'user_controller.dart';
-
+/// Carries the course the user tapped from a list to the description screen.
+///
+/// It used to also hold its own `courses` list, filled by a `select()` over
+/// the whole `courses` table on every app start. Nothing ever read it —
+/// `MarketplaceController` owns the catalogue, and both the marketplace and
+/// the student dashboard read it from there — so that was a full-table fetch,
+/// every column including descriptions, thrown away each launch.
 class CoursesController extends GetxController {
-  var courses = <Map<String, dynamic>>[].obs; // Observable list of courses
   var selectedCourseId = ''.obs;
   var selectedCourseTitle = ''.obs;
   var selectedCourseImage = ''.obs;
   var selectedCoursePrice = 0.0.obs; // numeric price (0 == free)
   var selectedCourseDescription = ''.obs;
   var selectedCourseAuthor = ''.obs;
-
-  final UserController userController = Get.find<UserController>();
-
-  @override
-  void onInit() {
-    super.onInit();
-    fetchCourses();
-  }
-
-  Future<void> fetchCourses() async {
-    try {
-      final rows = await supabase
-          .from('courses')
-          .select()
-          .order('created_at', ascending: false);
-      courses.value = List<Map<String, dynamic>>.from(rows);
-    } catch (e) {
-      // Leave list empty on failure.
-    }
-  }
 
   /// Stores the tapped course's details for the description screen.
   ///
@@ -46,8 +28,4 @@ class CoursesController extends GetxController {
     selectedCourseAuthor.value = author;
     selectedCourseDescription.value = description;
   }
-
-  String getCurrentUserName() => userController.userName.value;
-
-  User? getCurrentUser() => supabase.auth.currentUser;
 }
