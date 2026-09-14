@@ -1,0 +1,72 @@
+---
+// Where Supabase sends people after they tap the link in a sign-up
+// confirmation or email-change email (WebLinks.emailConfirmed in the app).
+//
+// By the time the browser gets here Supabase has already verified the link,
+// so this page confirms nothing itself. Its job is to say it worked, or say
+// the link was stale, and send the person back to the app to log in.
+//
+// A web page rather than a padilearn:// deep link because these emails are
+// opened on laptops as often as phones, and a deep link does nothing there.
+import Base from '../layouts/Base.astro';
+import { site, mailto } from '../site';
+---
+
+<Base title="Email confirmed" noindex>
+  <section class="container prose page">
+    <div data-state="ok">
+      <h1>Your email is confirmed</h1>
+      <p>Thanks. Go back to the PadiLearn app on your phone and log in.</p>
+    </div>
+
+    <div data-state="error" hidden>
+      <h1>This link didn't work</h1>
+      <p data-error-reason>It has expired or has already been used.</p>
+      <p>
+        Open PadiLearn and try to log in. If it says your email isn't confirmed, tap
+        <strong>Resend</strong> to get a new link. Links expire after an hour.
+      </p>
+    </div>
+
+    <div class="callout">
+      <p>
+        Still stuck? Email <a href={mailto('Email confirmation problem')}>{site.supportEmail}</a>.
+      </p>
+    </div>
+  </section>
+</Base>
+
+<script>
+  // Supabase reports a failed link as error / error_code / error_description,
+  // in the fragment (implicit flow) or the query string (PKCE flow).
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const query = new URLSearchParams(window.location.search);
+  const read = (key: string) => hash.get(key) ?? query.get(key);
+
+  const error = read('error') ?? read('error_code');
+  if (error) {
+    document.querySelector<HTMLElement>('[data-state="ok"]')!.hidden = true;
+    document.querySelector<HTMLElement>('[data-state="error"]')!.hidden = false;
+
+    const code = read('error_code');
+    const reason = document.querySelector<HTMLElement>('[data-error-reason]');
+    if (reason && code && code !== 'otp_expired') {
+      // Not the usual expiry: show Supabase's own wording, as text only.
+      const description = read('error_description');
+      if (description) reason.textContent = description;
+    }
+  }
+
+  // The URL can carry a one-time code. It's useless to anyone else once
+  // Supabase has verified the link, but there's no reason to leave it in the
+  // address bar, browser history, or a screenshot someone sends to support.
+  if (window.location.search || window.location.hash) {
+    history.replaceState(null, '', window.location.pathname);
+  }
+</script>
+
+<style>
+  .page {
+    padding-block: 3rem 1rem;
+  }
+</style>

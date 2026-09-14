@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:padi_learn/config/web_links.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -124,9 +125,14 @@ class _EditTeacherProfileScreenState extends State<EditTeacherProfileScreen> {
       // 2. Avatar (if a new one was picked).
       await _uploadProfileImage(user.id);
 
-      // 3. Email (Supabase sends a confirmation link to the new address).
+      // 3. Email. Supabase emails a confirmation link (to both addresses
+      // when "Secure email change" is on), and the link lands on the website
+      // so it works whichever device the email is opened on.
       if (emailChanged) {
-        await supabase.auth.updateUser(UserAttributes(email: newEmail));
+        await supabase.auth.updateUser(
+          UserAttributes(email: newEmail),
+          emailRedirectTo: WebLinks.emailConfirmed,
+        );
       }
 
       // 4. Refresh in-memory controllers so the change shows app-wide.

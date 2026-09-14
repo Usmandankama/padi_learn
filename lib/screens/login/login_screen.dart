@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:padi_learn/screens/components/custom_textfield.dart';
+import 'package:padi_learn/screens/components/legal_consent_text.dart';
 import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/screens/components/social_sign_in.dart';
 import 'package:padi_learn/screens/register/register_screen.dart';
@@ -130,7 +131,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: _handleLogin,
                 ),
                 const SocialSignIn(),
-                SizedBox(height: 24.h),
+                SizedBox(height: 12.h),
+                // Google sign-in creates an account from here, so the consent
+                // line belongs on this screen as well as on register.
+                const LegalConsentText(),
+                SizedBox(height: 16.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[

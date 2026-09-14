@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:padi_learn/config/deep_links.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:padi_learn/screens/login/login_screen.dart';
-import 'package:padi_learn/utils/colors.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:padi_learn/config/deep_links.dart';
+import 'package:padi_learn/screens/components/primary_button.dart';
+import 'package:padi_learn/services/auth_service.dart';
 import 'package:padi_learn/services/supabase.dart';
+import 'package:padi_learn/utils/colors.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -16,6 +19,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   /// Owned by the State: as a local in `build` it was recreated on every
   /// rebuild (losing the typed text) and never disposed.
   final TextEditingController emailController = TextEditingController();
+
+  bool _sending = false;
+  String? _emailError;
 
   @override
   void dispose() {
@@ -31,86 +37,87 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return Scaffold(
       backgroundColor: AppColors.palette.surface,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Text(
-                'Forgot Password',
-                style: TextStyle(
-                  fontSize: 28.sp,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryColor,
-                ),
-              ),
-              SizedBox(height: 40.h),
-              Text(
-                'Enter your email to receive a link to reset your password.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 16.sp, color: AppColors.palette.inkSoft),
-              ),
-              SizedBox(height: 40.h),
-              _buildTextField(emailController, 'Email', Icons.email),
-              SizedBox(height: 40.h),
-              ElevatedButton(
-                onPressed: () {
-                  _resetPassword(context, emailController.text.trim());
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 80.0, vertical: 20.0),
-                ),
-                child: Text(
-                  'Send Link',
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Text(
+                  'Forgot Password',
                   style: TextStyle(
-                    fontSize: 18.sp,
-                    color: AppColors.appWhite,
-                  ),
-                ),
-              ),
-              SizedBox(height: 20.h),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const LoginScreen(),
-                    ),
-                  );
-                },
-                child: Text(
-                  'Back to Login',
-                  style: TextStyle(
+                    fontSize: 28.sp,
+                    fontWeight: FontWeight.bold,
                     color: AppColors.primaryColor,
-                    fontSize: 14.sp,
                   ),
                 ),
-              ),
-            ],
+                SizedBox(height: 40.h),
+                Text(
+                  'Enter the email you signed up with. We will send you a '
+                  'link to set a new password.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 16.sp, color: AppColors.palette.inkSoft),
+                ),
+                SizedBox(height: 40.h),
+                TextField(
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  autocorrect: false,
+                  onChanged: (_) {
+                    if (_emailError != null) {
+                      setState(() => _emailError = null);
+                    }
+                  },
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    errorText: _emailError,
+                    prefixIcon:
+                        const Icon(Icons.email, color: AppColors.primaryColor),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 32.h),
+                PrimaryButton(
+                  label: 'Send Link',
+                  isLoading: _sending,
+                  onPressed: _resetPassword,
+                ),
+                SizedBox(height: 20.h),
+                TextButton(
+                  // Pop, not push: this screen is only ever opened from the
+                  // login screen, and pushing another login stacked a copy
+                  // of it on every round trip.
+                  onPressed: () => Navigator.maybePop(context),
+                  child: Text(
+                    'Back to Login',
+                    style: TextStyle(
+                      color: AppColors.primaryColor,
+                      fontSize: 14.sp,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildTextField(
-      TextEditingController controller, String label, IconData icon) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: AppColors.primaryColor),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.0),
-        ),
-      ),
-    );
-  }
+  Future<void> _resetPassword() async {
+    final email = emailController.text.trim();
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
+      setState(() => _emailError = 'Enter a valid email address');
+      return;
+    }
 
-  Future<void> _resetPassword(BuildContext context, String email) async {
+    FocusScope.of(context).unfocus();
+    setState(() => _sending = true);
+    final messenger = ScaffoldMessenger.of(context);
+
     try {
       // Without redirectTo the mail returns to the project's site URL —
       // a web page that knows nothing about this app — so the user could
@@ -119,21 +126,35 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         email,
         redirectTo: DeepLinks.passwordReset,
       );
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      // Same wording whether or not the account exists. Supabase doesn't say
+      // either, and the app shouldn't become a way to test which emails are
+      // registered.
+      messenger.showSnackBar(
         const SnackBar(
-          content: Text('Password reset email sent. Check your inbox.'),
-          backgroundColor: Colors.green,
+          duration: Duration(seconds: 8),
+          content: Text(
+            'If that email has an account, a reset link is on its way from '
+            'PadiLearn. Open it on this phone. Check spam if it is not there '
+            'in a few minutes.',
+          ),
         ),
       );
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+    } on AuthException catch (e) {
+      messenger.showSnackBar(
         SnackBar(
-          content: Text('Error: $e'),
+          content: Text(authEmailErrorMessage(e)),
           backgroundColor: Colors.red,
         ),
       );
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Could not send the email. Check your connection.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _sending = false);
     }
   }
 }

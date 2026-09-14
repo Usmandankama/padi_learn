@@ -11,6 +11,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:padi_learn/config/supabase_config.dart';
+import 'package:padi_learn/config/web_links.dart';
 import 'package:padi_learn/screens/components/delete_account_dialog.dart';
 import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/services/supabase.dart';
@@ -33,6 +34,13 @@ Future<void> login(BuildContext context, String email, String password) async {
     );
   } on AuthException catch (e) {
     if (!context.mounted) return;
+    // Signed up but never tapped the confirmation link. The raw message
+    // ("Email not confirmed") gives no way forward, and the original link may
+    // have expired or gone to spam, so offer a fresh one right here.
+    if (e.code == 'email_not_confirmed') {
+      _offerConfirmationResend(context, email.trim());
+      return;
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(e.message), backgroundColor: Colors.red),
     );
@@ -45,6 +53,65 @@ Future<void> login(BuildContext context, String email, String password) async {
       ),
     );
   }
+}
+
+/// Tells an unconfirmed user to confirm first, with a button that emails a
+/// new confirmation link.
+void _offerConfirmationResend(BuildContext context, String email) {
+  final messenger = ScaffoldMessenger.of(context);
+  messenger.showSnackBar(
+    SnackBar(
+      duration: const Duration(seconds: 10),
+      content: const Text(
+        'Confirm your email first. Look for the link from PadiLearn, and '
+        'check spam.',
+      ),
+      action: SnackBarAction(
+        label: 'Resend',
+        onPressed: () async {
+          try {
+            await supabase.auth.resend(
+              type: OtpType.signup,
+              email: email,
+              emailRedirectTo: WebLinks.emailConfirmed,
+            );
+            messenger.showSnackBar(
+              const SnackBar(
+                content: Text('New link sent. It works for 1 hour.'),
+              ),
+            );
+          } on AuthException catch (e) {
+            messenger.showSnackBar(
+              SnackBar(
+                content: Text(authEmailErrorMessage(e)),
+                backgroundColor: Colors.red,
+              ),
+            );
+          } catch (_) {
+            messenger.showSnackBar(
+              const SnackBar(
+                content: Text('Could not send the email. Check your '
+                    'connection.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
+      ),
+    ),
+  );
+}
+
+/// Plain wording for a failed attempt to send an auth email.
+///
+/// Supabase caps how many auth emails a project sends an hour (30 by default
+/// with custom SMTP). Its own message for hitting that cap reads like a server
+/// fault, when all the user needs to do is wait.
+String authEmailErrorMessage(AuthException e) {
+  if (e.code == 'over_email_send_rate_limit' || e.statusCode == '429') {
+    return 'Too many emails sent. Wait a few minutes, then try again.';
+  }
+  return e.message;
 }
 
 /// Confirms, then signs the user out and clears local state.
@@ -230,6 +297,9 @@ Future<bool> signUp(BuildContext context, String email, String password,
       email: email.trim(),
       password: password,
       data: {'name': name, 'role': role},
+      // Without this the confirmation link lands on the project's Site URL.
+      // See WebLinks.emailConfirmed for why it's a web page, not a deep link.
+      emailRedirectTo: WebLinks.emailConfirmed,
     );
 
     if (res.session != null) {
@@ -241,8 +311,11 @@ Future<bool> signUp(BuildContext context, String email, String password,
     if (!context.mounted) return false;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content:
-            Text('Account created. Check your email to confirm, then log in.'),
+        duration: Duration(seconds: 8),
+        content: Text(
+          'Account created. We have emailed you a link from PadiLearn. Tap '
+          'it to confirm, then log in. Check spam if you cannot see it.',
+        ),
         backgroundColor: Colors.green,
       ),
     );

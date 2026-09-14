@@ -11,6 +11,7 @@ site, hosted free on Cloudflare Pages.
 | `/terms` | `src/pages/terms.md` | Terms of service |
 | `/delete-account` | `src/pages/delete-account.astro` | Play Console account-deletion URL |
 | `/payment-callback` | `src/pages/payment-callback.astro` | `PaymentService.callbackUrl`; only seen if the checkout WebView doesn't intercept it |
+| `/email-confirmed` | `src/pages/email-confirmed.astro` | `WebLinks.emailConfirmed`: where sign-up confirmation and email-change links land. Must be in Supabase's Redirect URLs |
 
 Keep the legal pages in step with the app. What `/delete-account` and `/privacy`
 say is deleted or kept must match `supabase/functions/delete-account`. The support

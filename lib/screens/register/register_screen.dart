@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:padi_learn/screens/components/custom_role_dropdown.dart';
 import 'package:padi_learn/screens/components/custom_textfield.dart';
+import 'package:padi_learn/screens/components/legal_consent_text.dart';
 import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/screens/components/social_sign_in.dart';
 import 'package:padi_learn/screens/home/home_shell.dart';
@@ -216,6 +217,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   isLoading: _isLoading,
                   onPressed: _submitForm,
                 ),
+                SizedBox(height: 12.h),
+                const LegalConsentText(),
                 const SocialSignIn(),
                 SizedBox(height: 20.h),
                 Row(

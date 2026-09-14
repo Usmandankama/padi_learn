@@ -77,8 +77,8 @@ Most of the code work in section B can happen during step 7.
 - [ ] **Reporting for user content.** *Live 2026-09-14 (`content_reports` created); not yet tested on a phone.* Report a course from its page, or a comment from its menu, into `content_reports`. **Acting on reports is manual:** check open reports in the dashboard every day during the test, and add an email alert before production.
 - [ ] **Release signing.** Release builds are currently signed with the debug key (`android/app/build.gradle`), and no keystore exists. Create an upload keystore. Keep its passwords in `android/key.properties` and make sure git ignores that file. Wire up `signingConfigs.release` and enrol in Play App Signing. **Back the keystore up somewhere other than this laptop.**
 - [ ] **Password reset, end to end.** Add `padilearn://reset-callback` under Supabase's Redirect URLs, then test the whole flow on a real phone.
-- [ ] **Help & Support.** It currently shows a "coming soon" message. Point it at a real contact; an email link is enough.
-- [ ] **Error reporting.** The app has no crash or error reporting. Play's Android vitals records native crashes and "app not responding" events, but a Dart exception doesn't crash the app, so vitals never sees it. Add Sentry (it has a free tier) or something similar before testers start, or you won't see their bugs.
+- [x] **Help & Support.** *Done 2026-09-14.* It opens an email to `hello@padilearn.com`, and copies the address if the phone has no mail app.
+- [ ] **Error reporting.** *Code done 2026-09-14.* Sentry is wired into `main.dart` and only switches on when the build passes `--dart-define=SENTRY_DSN=...`. **Still to do:** create the Sentry project, add the DSN to release builds, and name Sentry in the privacy policy and the Data safety form (crash logs).
 - [ ] **Build number.** `pubspec.yaml` has `version: 1.0.0+1`. Increase the number after `+` for every upload.
 - [ ] **Commit your work.** About 67 files from this week are still uncommitted.
 
@@ -103,8 +103,8 @@ Most of the code work in section B can happen during step 7.
 
 ## C. Supabase
 
-- [ ] Add `padilearn://reset-callback` to **Authentication → URL Configuration → Redirect URLs**.
-- [ ] Set up **custom SMTP** (Resend or Brevo). Their free tiers cover a beta, and custom SMTP is allowed on Supabase's free plan. It needs the domain from section D.
+- [ ] In **Authentication → URL Configuration**, set **Site URL** to `https://padilearn.com` and add both `padilearn://reset-callback` and `https://padilearn.com/email-confirmed` to **Redirect URLs**. A redirect that isn't listed silently falls back to the Site URL.
+- [ ] Set up **custom SMTP** with Resend. *In progress 2026-09-14:* `hello@padilearn.com` is the sender and the templates are in `supabase/templates/`. DNS is now on Cloudflare. The DKIM record is published, but Resend's `send` and `rsend` CNAME records were missing when checked. Add them in Cloudflare as **DNS only** (grey cloud), then verify the domain in Resend.
 - [ ] Turn on **leaked password protection**.
 - [ ] Decide whether signups need **email confirmation**, and test signing up with that setting.
 - [ ] **Back up the database yourself** before launch (for example with `pg_dump`). Don't count on the free plan's backups.
@@ -117,8 +117,8 @@ Most of the code work in section B can happen during step 7.
 
 - [x] **Domain.** `padilearn.com` bought 2026-09-14. The payment callback URL now uses it.
 - [x] **Website on Cloudflare Pages.** *Live 2026-09-14 at https://padilearn.com and www (Pages project `padi-learn`, production branch `feat/launch-blockers` until merged to `main`).* DNS moved from Hostinger to Cloudflare (`autumn`/`kanye.ns.cloudflare.com`). Email stays on Hostinger: its MX, SPF, DMARC, DKIM (`hostingermail-a/b/c._domainkey`) and `autodiscover`/`autoconfig` records **must stay DNS only (grey cloud)**. When proxied, DKIM signing and mail-app setup break. The three pages below are at `/privacy`, `/delete-account` and `/terms`.
-- [ ] **Privacy policy page.** *Drafted 2026-09-14 at `website/src/pages/privacy.md`. Read it through, add the operator's legal name once decided, then tick this when it is live.* Cover what you collect (see the table in section E), why, who processes it (Supabase, plus Paystack once payments exist), how long you keep it, how to delete it, and how to contact you. Write it once to satisfy both Play and Nigeria's Data Protection Act 2023.
-- [ ] **Account-deletion web page.** *Drafted 2026-09-14 at `website/src/pages/delete-account.astro`: in-app steps, email request, and what is deleted and kept.* A form, or clear instructions for requesting deletion by email.
+- [ ] **Privacy policy page.** *Live at https://padilearn.com/privacy (checked 2026-09-14). Before submitting to Play: read it through, name Sentry once crash reporting is on, and add the operator's legal name once decided.* Cover what you collect (see the table in section E), why, who processes it (Supabase, plus Paystack once payments exist), how long you keep it, how to delete it, and how to contact you. Write it once to satisfy both Play and Nigeria's Data Protection Act 2023.
+- [x] **Account-deletion web page.** *Live at https://padilearn.com/delete-account (checked 2026-09-14): in-app steps, email request, and what is deleted and kept, matching the deployed function.* A form, or clear instructions for requesting deletion by email.
 - [ ] **Terms of service.** *Drafted 2026-09-14 at `website/src/pages/terms.md`. The refunds and payouts section is a placeholder until paid courses launch.* Cover teacher-uploaded content (who owns it, what's banned, how takedowns work), refunds, and payouts.
 - [x] **A support email address.** `hello@padilearn.com`. Also use it on the Play listing and in the privacy policy.
 

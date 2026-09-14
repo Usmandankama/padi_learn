@@ -12,6 +12,63 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-09-14 — Every email the app sends has somewhere to land
+
+With padilearn.com live, the app links to the site for its legal pages, and
+each auth email now sends people somewhere that works.
+
+### Links to the site
+
+`lib/config/web_links.dart` holds every padilearn.com URL the app uses.
+`lib/utils/external_links.dart` has the two ways the app leaves itself:
+`openWebPage` (the external browser; copies the link if none opens) and
+`emailSupport` (mailto; copies the address if there's no mail app). Both
+profile screens now show Privacy Policy and Terms of Service under **Support
+& Legal**. Register and login show "By continuing, you agree to our Terms and
+Privacy Policy". Login needs it too, because Google sign-in creates an account
+from there.
+
+### Where each email lands
+
+| Email | Link goes to | Why |
+|---|---|---|
+| Password reset | `padilearn://reset-callback` (unchanged) | Setting a password needs the app's recovery session, so it has to open the app |
+| Sign-up confirmation | `https://padilearn.com/email-confirmed` | Was the project Site URL. People open these on laptops too, and a deep link does nothing there |
+| Email change | `https://padilearn.com/email-confirmed` | Same |
+
+Supabase has already confirmed the address before it redirects, so
+`/email-confirmed` only reports the result. If the URL carries
+`error_code`, it shows "This link didn't work" and tells the user to use
+**Resend**. It also clears the one-time code from the address bar.
+
+### Other fixes
+
+- **Login with an unconfirmed email** used to show Supabase's bare "Email not
+  confirmed", with no way forward. It now offers **Resend**, which sends a new
+  link to the same page.
+- **Forgot password** printed the raw exception (`Error: AuthException(...)`),
+  had no loading state so a double tap sent two emails, and its "Back to
+  Login" *pushed* another login screen. It now checks the email format, shows
+  a spinner, returns to the existing login screen, and uses the same wording
+  whether or not the account exists, so it can't be used to test which emails
+  are registered.
+- **Rate limits** get plain wording (`authEmailErrorMessage`). With custom
+  SMTP, Supabase allows 30 auth emails an hour by default, which a group of
+  testers can hit.
+
+### Needs doing in the Supabase dashboard
+
+Authentication → URL Configuration:
+
+- **Site URL:** `https://padilearn.com`
+- **Redirect URLs:** `padilearn://reset-callback` and
+  `https://padilearn.com/email-confirmed`
+
+A redirect that isn't listed is silently replaced with the Site URL, so the
+code alone doesn't make these work.
+
+---
+
 ## 2026-09-14 — padilearn.com: landing page and legal pages
 
 A static site in `website/`, for Cloudflare Pages. It has a landing page,
