@@ -1,0 +1,341 @@
+---
+import Base from '../layouts/Base.astro';
+import Device from '../components/Device.astro';
+import { site, mailto } from '../site';
+
+// Real captures from the Android app (Pixel 9 emulator, 1080×2424).
+import homeShot from '../assets/screens/home.png';
+import marketplaceShot from '../assets/screens/marketplace.png';
+import courseShot from '../assets/screens/course.png';
+
+const faqs = [
+  {
+    q: 'How much does it cost?',
+    a: 'Many courses are free. Paid courses aren’t on sale during the beta. We’ll update our terms before anything is sold.',
+  },
+  {
+    q: 'Is it on Google Play?',
+    a: 'PadiLearn is in a closed test on Google Play. Join the beta and we’ll send you the link to install it.',
+  },
+  {
+    q: 'What about iPhone?',
+    a: 'Android comes first. An iPhone version will follow once the Android app is stable.',
+  },
+  {
+    q: 'Who can teach?',
+    a: 'Anyone with something worth teaching. Sign up as a teacher in the app. Courses that break our terms are removed.',
+  },
+  {
+    q: 'How do I delete my account?',
+    a: 'In the app, open your profile and tap Delete account. You can also ask us by email.',
+    link: { href: '/delete-account', label: 'Learn more' },
+  },
+];
+---
+
+<Base>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container center">
+      <p class="product">PadiLearn</p>
+      <h1>Learn from Nigerian teachers.</h1>
+      <p class="sub">Video courses on your phone, at your own pace.</p>
+      <div class="links">
+        <a class="button" href={mailto('Join the PadiLearn beta')}>Join the beta</a>
+        <a class="more" href="#teachers">Teach on PadiLearn</a>
+      </div>
+    </div>
+    <div class="hero-devices">
+      <Device class="side" src={marketplaceShot} alt="The PadiLearn marketplace, with courses filtered by category" width={250} />
+      <Device src={homeShot} alt="The PadiLearn home screen, showing courses to continue and popular courses" width={300} eager />
+      <Device class="side" src={courseShot} alt="A course page in PadiLearn, with its description and lessons" width={250} />
+    </div>
+  </section>
+
+  <!-- Students: browse -->
+  <section id="students" class="feature alt">
+    <div class="container split">
+      <div class="copy">
+        <h2>Find the course you need.</h2>
+        <p>
+          Search by title, or browse by category, from exam prep to programming, business and design.
+          Every course is taught by someone who knows the subject.
+        </p>
+      </div>
+      <Device src={marketplaceShot} alt="Browsing courses by category in the PadiLearn marketplace" width={290} />
+    </div>
+  </section>
+
+  <!-- Students: course page -->
+  <section class="feature">
+    <div class="container split reverse">
+      <div class="copy">
+        <h2>Know what you’ll learn before you start.</h2>
+        <p>
+          Every course shows who teaches it, what it covers and each lesson inside. Preview the first lesson,
+          then pick up exactly where you stopped, on any day that suits you.
+        </p>
+      </div>
+      <Device src={courseShot} alt="A PadiLearn course page listing its lessons" width={290} />
+    </div>
+  </section>
+
+  <!-- Teachers -->
+  <section id="teachers" class="teachers alt">
+    <div class="container center">
+      <h2>Teach what you know.</h2>
+      <p class="sub">Record your lessons on your phone. PadiLearn does the rest.</p>
+      <div class="columns">
+        <div>
+          <h3>Upload</h3>
+          <p>Add video lessons, a thumbnail and a description, straight from the app.</p>
+        </div>
+        <div>
+          <h3>Stay close</h3>
+          <p>You’re notified when a student enrols or asks a question. Pin the best answers.</p>
+        </div>
+        <div>
+          <h3>Own your work</h3>
+          <p>Your courses stay yours. We host them and show them to students.</p>
+        </div>
+      </div>
+      <a class="more" href={mailto('I want to teach on PadiLearn')}>Become a beta teacher</a>
+    </div>
+  </section>
+
+  <!-- Beta -->
+  <section class="beta">
+    <div class="container center">
+      <h2>Be one of the first.</h2>
+      <p class="sub">
+        We’re inviting students and teachers to try PadiLearn on Android. Email us from your Google account
+        and we’ll send you an invite.
+      </p>
+      <div class="links">
+        <a class="button" href={mailto('Join the PadiLearn beta')}>Join the beta</a>
+        <a class="more" href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="faq alt">
+    <div class="container narrow">
+      <h2>Questions</h2>
+      {
+        faqs.map((item) => (
+          <details>
+            <summary>{item.q}</summary>
+            <p>
+              {item.a}
+              {item.link && (
+                <>
+                  {' '}
+                  <a class="more" href={item.link.href}>
+                    {item.link.label}
+                  </a>
+                </>
+              )}
+            </p>
+          </details>
+        ))
+      }
+    </div>
+  </section>
+</Base>
+
+<style>
+  section {
+    padding-block: clamp(4.5rem, 10vw, 7rem);
+  }
+
+  .alt {
+    background: var(--bg-alt);
+  }
+
+  .center {
+    text-align: center;
+  }
+
+  .narrow {
+    max-width: 44rem;
+  }
+
+  h2 {
+    font-size: clamp(2.25rem, 5.5vw, 3.5rem);
+  }
+
+  .sub {
+    font-size: clamp(1.2rem, 2.4vw, 1.5rem);
+    line-height: 1.35;
+    color: var(--text-soft);
+    max-width: 38rem;
+    margin: 1rem auto 0;
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem 2rem;
+    margin-top: 2rem;
+    font-size: 1.0625rem;
+  }
+
+  /* Hero ------------------------------------------------------------------ */
+  .hero {
+    padding-bottom: 0;
+    overflow: hidden;
+  }
+
+  .product {
+    color: var(--green-text);
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin: 0 0 0.5rem;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.75rem, 8vw, 5rem);
+  }
+
+  .hero-devices {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: clamp(1rem, 4vw, 3rem);
+    margin-top: clamp(3rem, 7vw, 4.5rem);
+    padding-inline: 1.25rem;
+    /* Let the phones run off the bottom of the section, like a product shot. */
+    max-height: clamp(26rem, 60vw, 40rem);
+    overflow: hidden;
+  }
+
+  .hero-devices :global(.side) {
+    margin-top: 4rem;
+  }
+
+  @media (max-width: 760px) {
+    .hero-devices :global(.side) {
+      display: none;
+    }
+  }
+
+  /* Feature rows ---------------------------------------------------------- */
+  .split {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: clamp(2.5rem, 8vw, 6rem);
+  }
+
+  .split.reverse .copy {
+    order: 2;
+  }
+
+  .copy h2 {
+    margin-bottom: 1.25rem;
+  }
+
+  .copy p {
+    font-size: 1.25rem;
+    line-height: 1.45;
+    color: var(--text-soft);
+    max-width: 30rem;
+  }
+
+  @media (max-width: 760px) {
+    .split {
+      grid-template-columns: 1fr;
+      justify-items: center;
+      text-align: center;
+    }
+
+    .split.reverse .copy {
+      order: 0;
+    }
+
+    .copy p {
+      margin-inline: auto;
+    }
+  }
+
+  /* Teachers -------------------------------------------------------------- */
+  .columns {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.5rem;
+    max-width: 56rem;
+    margin: 3.5rem auto 3rem;
+    text-align: left;
+  }
+
+  .columns > div {
+    border-top: 1px solid var(--line);
+    padding-top: 1.25rem;
+  }
+
+  .columns h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .columns p {
+    color: var(--text-soft);
+    margin: 0;
+  }
+
+  @media (max-width: 760px) {
+    .columns {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+  }
+
+  /* FAQ ------------------------------------------------------------------- */
+  .faq h2 {
+    margin-bottom: 2rem;
+  }
+
+  details {
+    border-top: 1px solid var(--line);
+  }
+
+  details:last-of-type {
+    border-bottom: 1px solid var(--line);
+  }
+
+  summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.25rem 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary::after {
+    content: '+';
+    font-weight: 300;
+    font-size: 1.6rem;
+    line-height: 1;
+    color: var(--text-soft);
+  }
+
+  details[open] summary::after {
+    content: '−';
+  }
+
+  details p {
+    color: var(--text-soft);
+    margin: 0 0 1.5rem;
+    max-width: 38rem;
+  }
+</style>

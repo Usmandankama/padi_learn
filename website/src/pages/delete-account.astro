@@ -1,0 +1,91 @@
+---
+// The account-deletion URL for the Play Console Data safety form. Google needs
+// a page reachable without installing the app that names the app, gives the
+// steps, and says what is deleted and what is kept.
+//
+// What is deleted / kept must match supabase/functions/delete-account and
+// migration 20260914000001. Change them together.
+import Base from '../layouts/Base.astro';
+import { site, mailto } from '../site';
+---
+
+<Base
+  title="Delete your account"
+  description="How to delete your PadiLearn account and data, and what happens when you do."
+>
+  <article class="container prose page">
+    <h1>Delete your PadiLearn account</h1>
+    <p>
+      You can delete your <strong>PadiLearn</strong> account and the data linked to it at any
+      time, from inside the app or by email.
+    </p>
+
+    <h2>Option 1: in the app</h2>
+    <ol>
+      <li>Open the PadiLearn app and sign in.</li>
+      <li>Go to your <strong>Profile</strong>.</li>
+      <li>Tap <strong>Delete account</strong>.</li>
+      <li>Type <strong>DELETE</strong> to confirm, then tap <strong>Delete account</strong>.</li>
+    </ol>
+    <p>Your account is deleted straight away and you are signed out.</p>
+
+    <h2>Option 2: by email</h2>
+    <p>
+      If you can't use the app, email <a href={mailto('Delete my PadiLearn account')}>{site.supportEmail}</a>
+      from the email address on your account, with the subject
+      <strong>"Delete my PadiLearn account"</strong>. We'll confirm the request is yours and delete the
+      account within 30 days.
+    </p>
+
+    <h2>What gets deleted</h2>
+    <ul>
+      <li>Your account, name, email address and password</li>
+      <li>Your profile photo</li>
+      <li>Your enrolments and lesson progress</li>
+      <li>Your comments, ratings and notifications</li>
+      <li>Payout bank details (teachers)</li>
+      <li>Courses you created, with their videos and thumbnails (teachers)</li>
+    </ul>
+
+    <h2>What we keep</h2>
+    <ul>
+      <li>
+        <strong>Purchase records</strong>, with your account link removed, for our financial and tax
+        records.
+      </li>
+      <li>
+        <strong>Reports you made</strong> about content, so we can finish reviewing them.
+      </li>
+      <li>
+        Copies in our hosting provider's <strong>backups</strong> for a short period, until they are
+        overwritten.
+      </li>
+    </ul>
+
+    <div class="callout">
+      <p>
+        <strong>Teachers whose students paid for a course:</strong> the app can't delete these
+        accounts automatically, because deleting your courses would remove what those students paid
+        for. Email <a href={mailto('Delete my PadiLearn teacher account')}>{site.supportEmail}</a> and
+        we'll sort out your students' access first, then delete your account.
+      </p>
+    </div>
+
+    <h2>Delete some data, not the whole account</h2>
+    <p>
+      In the app you can delete your own comments and notifications, and teachers can delete their
+      courses and payout details. For anything else, such as your profile photo, email <a href={mailto('Delete some of my PadiLearn data')}>{site.supportEmail}</a> and
+      tell us what you'd like removed.
+    </p>
+
+    <p>
+      More detail is in our <a href="/privacy">privacy policy</a>.
+    </p>
+  </article>
+</Base>
+
+<style>
+  .page {
+    padding-block: 3rem 1rem;
+  }
+</style>

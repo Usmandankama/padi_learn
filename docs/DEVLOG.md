@@ -12,6 +12,54 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-09-14 — padilearn.com: landing page and legal pages
+
+A static site in `website/`, for Cloudflare Pages. It has a landing page,
+`/privacy`, `/terms`, `/delete-account` (the web deletion URL Play requires)
+and `/payment-callback`. Not deployed yet. `website/README.md` has the steps.
+
+**Why Cloudflare Pages:** it's free with unlimited bandwidth, and its free plan
+allows commercial use. Vercel's Hobby plan doesn't, and PadiLearn sells courses.
+Moving the domain's DNS there also gives free email forwarding for
+`hello@padilearn.com` and makes the custom SMTP records easy to add.
+
+**Design, second pass (same day).** The first version, with a serif display
+font, gradient hero, drawn phone mockup and feature cards, read as generic.
+It was replaced with a plain product-page style: system fonts, white and
+light-grey sections, large centred headlines, brand green as the only accent,
+and **real app screenshots**. The three screens (home, marketplace, course page)
+were captured from the emulator with `adb exec-out screencap` and live in
+`website/src/assets/screens/`. `astro:assets` serves them as AVIF/WebP at
+about 15–60 KB each. They come from the build that was installed at the time,
+so they still show the old seeded ratings, enrolment counts and prices. Recapture
+them once the counters migration is live. The video player wasn't used: its
+only lesson is a third-party TikTok clip.
+
+**Why Astro 5, not the latest:** Astro 7 needs Node 22.12+, and this machine
+runs Node 20.16. Astro 5 builds the same static output. Upgrade both together.
+Cloudflare builds with `NODE_VERSION=22`. Tailwind was left out: five pages
+don't need it, and the colours come from `lib/utils/colors.dart` as CSS
+variables, including dark mode.
+
+**The legal pages describe real behaviour, so they are a contract.** What
+`/delete-account` and `/privacy` say is deleted or kept comes from
+`supabase/functions/delete-account` and migration `20260914000001`. That
+covers purchase records kept with the buyer removed, reports kept, and paid
+teachers refused and sent to support. Change the function and the pages
+together. The landing page shows no ratings or enrolment counts, for the same
+reason the app stopped faking them.
+
+**`/payment-callback` grants nothing.** Normally the checkout WebView
+intercepts it before it loads. If someone does reach it in a browser, it shows
+the Paystack reference and sends them back to the app, where `verify-payment`
+does the real work.
+
+**Outstanding:** deploy; add the operator's legal name to the privacy policy
+once it's decided; `assetlinks.json` once the Play signing key exists; refunds
+and payouts terms before paid courses launch.
+
+---
+
 ## 2026-09-06 — Courses you already own
 
 A student could see a course they had already bought sitting in the marketplace
