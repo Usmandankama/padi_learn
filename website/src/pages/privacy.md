@@ -26,6 +26,7 @@ PadiLearn is an online learning app where teachers publish video courses and stu
 | Learning activity | Courses you enrol in and your lesson progress | To show your courses and let you resume where you stopped |
 | Payout details (teachers only) | Bank name, account number, account name | To pay teachers once paid courses are available |
 | Purchase records | What was bought, when, the amount and the payment reference | To give you access to what you paid for, and for our financial records (only once paid courses are available) |
+| Crash and error reports | What went wrong in the app, your phone model and Android version, and your account ID | To find and fix bugs |
 
 </div>
 
@@ -49,7 +50,8 @@ We only email you about your account, such as password resets and important serv
 - **Service providers** who process data for us under contract:
   - **Supabase** hosts our database, accounts and file storage.
   - **Cloudflare** hosts this website.
-  - An **email delivery provider** sends account emails such as password resets.
+  - **Resend** sends account emails such as sign-up confirmations and password resets.
+  - **Sentry** receives crash and error reports from the app, linked to your account ID but not your name or email, so we can find and fix bugs.
   - **Paystack** will process card and bank payments once paid courses are available. We never see or store your full card details.
 - **Authorities**, where the law requires us to share information.
 
