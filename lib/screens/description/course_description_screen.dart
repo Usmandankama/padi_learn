@@ -3,8 +3,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/controller/course_controller.dart';
+import 'package:padi_learn/config/features.dart';
 import 'package:padi_learn/controller/enrollment_controller.dart';
 import 'package:padi_learn/screens/components/primary_button.dart';
+import 'package:padi_learn/screens/components/report_sheet.dart';
 import 'package:padi_learn/screens/description/components/course_header.dart';
 import 'package:padi_learn/screens/payment/paystack_checkout_screen.dart';
 import 'package:padi_learn/screens/videoplayer/videoPlayer.dart';
@@ -32,6 +34,10 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
 
   List<Lesson> _lessons = const [];
   bool _loadingLessons = true;
+
+  /// Whether this course can be acquired from here: free ones always, paid
+  /// ones only once in-app checkout is allowed (see `features.dart`).
+  bool get _canBuy => isFree || kPaidCheckoutEnabled;
 
   @override
   void initState() {
@@ -88,7 +94,18 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
     // painting the previous theme's colours when the mode flips.
     AppColors.watch(context);
     return Scaffold(
-      appBar: AppBar(), // Basic app bar
+      appBar: AppBar(
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.flag_outlined),
+            tooltip: 'Report course',
+            onPressed: () => showReportSheet(
+              context,
+              courseId: coursesController.selectedCourseId.value,
+            ),
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0),
         child: SingleChildScrollView(
@@ -137,11 +154,31 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                     ? 'Continue Learning'
                     : isFree
                         ? 'Get for Free'
-                        : 'Buy Course',
+                        : _canBuy
+                            ? 'Buy Course'
+                            : 'Not available yet',
                 isLoading: isLoading,
-                onPressed:
-                    isAlreadyEnrolled ? _continueCourse : _handleEnrollment,
+                onPressed: isAlreadyEnrolled
+                    ? _continueCourse
+                    : (isFree || _canBuy)
+                        ? _handleEnrollment
+                        : null,
               ),
+              // Deliberately says nothing about where else the course might
+              // be bought: Play's Payments policy bans steering users to an
+              // outside checkout from inside the app.
+              if (!isAlreadyEnrolled && !isFree && !_canBuy) ...[
+                SizedBox(height: 10.h),
+                Center(
+                  child: Text(
+                    "Paid courses can't be bought in the app yet. Preview "
+                    'lessons are free to watch.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 12.sp, color: AppColors.palette.inkSoft),
+                  ),
+                ),
+              ],
               SizedBox(height: 24.h + MediaQuery.of(context).padding.bottom),
             ],
           ),
@@ -152,6 +189,9 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
 
   /// Handles course enrollment (free) or purchase (paid, via Paystack).
   Future<void> _handleEnrollment() async {
+    // The button is already disabled in this case; this is the backstop, so
+    // no future caller can open the Paystack checkout while it's switched off.
+    if (!_canBuy) return;
     setState(() => isLoading = true);
 
     final courseId = coursesController.selectedCourseId.value;

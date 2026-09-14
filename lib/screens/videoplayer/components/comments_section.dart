@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:padi_learn/screens/components/report_sheet.dart';
 import 'package:padi_learn/services/comment_service.dart';
 import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/utils/colors.dart';
@@ -358,7 +359,9 @@ class _CommentsSectionState extends State<CommentsSection> {
                   ],
                 ),
               ),
-              if (canModerate || _isLecturer) _buildMenu(comment, pinned),
+              // Everyone signed in gets the menu: on other people's comments
+              // it holds Report, which Play's UGC policy requires.
+              if (canModerate || _uid != null) _buildMenu(comment, pinned),
             ],
           ),
           SizedBox(height: 8.h),
@@ -407,9 +410,24 @@ class _CommentsSectionState extends State<CommentsSection> {
           case 'delete':
             _delete(comment);
             break;
+          case 'report':
+            showReportSheet(context, commentId: comment['id'].toString());
+            break;
         }
       },
       itemBuilder: (_) => [
+        if (!isMine)
+          PopupMenuItem(
+            value: 'report',
+            child: Row(
+              children: [
+                Icon(Icons.flag_outlined,
+                    size: 16.sp, color: AppColors.palette.ink),
+                SizedBox(width: 8.w),
+                Text('Report', style: GoogleFonts.poppins(fontSize: 12.sp)),
+              ],
+            ),
+          ),
         if (_isLecturer)
           PopupMenuItem(
             value: 'pin',

@@ -116,8 +116,11 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       final price = (c['price'] as num?)?.toDouble() ?? 0;
       final matchesPrice = _priceRange == null ||
           (price >= _priceRange!.start && price <= _priceRange!.end);
-      const rating = 4.5; // placeholder until ratings exist in the data
-      final matchesRating = rating >= _minRating;
+      // An unrated course has no score to compare, so a minimum-rating filter
+      // leaves it out rather than treating "no ratings" as zero stars.
+      final rating = courseRating(c);
+      final matchesRating =
+          _minRating == 0 || (rating.count > 0 && rating.average >= _minRating);
       return matchesSearch && matchesCategory && matchesPrice && matchesRating;
     }).toList();
 
@@ -701,6 +704,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
         (course['description'] ?? 'No description available.').toString();
     final thumbnail = (course['thumbnail_url'] ?? '').toString();
     final price = (course['price'] as num?) ?? 0;
+    final rating = courseRating(course);
 
     showModalBottomSheet(
       context: context,
@@ -762,12 +766,21 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
               SizedBox(height: 12.h),
               Row(
                 children: [
-                  Icon(Icons.star_rounded,
-                      size: 16.sp, color: const Color(0xFFFFC107)),
-                  SizedBox(width: 4.w),
-                  Text('4.5',
-                      style: GoogleFonts.poppins(
-                          fontSize: 12.sp, fontWeight: FontWeight.w600)),
+                  if (rating.count > 0) ...[
+                    Icon(Icons.star_rounded,
+                        size: 16.sp, color: const Color(0xFFFFC107)),
+                    SizedBox(width: 4.w),
+                    Text(
+                        '${rating.average.toStringAsFixed(1)} '
+                        '(${rating.count})',
+                        style: GoogleFonts.poppins(
+                            fontSize: 12.sp, fontWeight: FontWeight.w600)),
+                  ] else
+                    Text('New',
+                        style: GoogleFonts.poppins(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primaryColor)),
                   const Spacer(),
                   Text(
                     formatPriceLabel(price),

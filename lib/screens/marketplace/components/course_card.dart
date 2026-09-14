@@ -5,14 +5,29 @@ import 'package:padi_learn/screens/components/course_thumbnail.dart';
 import 'package:padi_learn/utils/colors.dart';
 import 'package:padi_learn/utils/money.dart';
 
+/// A course's rating as the database records it: `rating_avg` and
+/// `rating_count`, which a trigger recomputes from `course_ratings`.
+///
+/// Numeric columns can arrive as a number from a query but as a string from
+/// the realtime stream, so both are accepted.
+({double average, int count}) courseRating(Map<String, dynamic> course) {
+  num? read(Object? v) => v is num ? v : num.tryParse('${v ?? ''}');
+  return (
+    average: read(course['rating_avg'])?.toDouble() ?? 0,
+    count: read(course['rating_count'])?.toInt() ?? 0,
+  );
+}
+
 /// A modern, tappable course card with thumbnail, category tag, rating,
 /// instructor, student count and price. Scales up on hover (web/desktop) and
 /// dips on press (mobile) for tactile feedback.
+///
+/// A course nobody has rated shows "New" rather than a star figure. Every
+/// card used to claim 4.5 stars, whatever the data said.
 class CourseCard extends StatefulWidget {
   final Map<String, dynamic> course;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
-  final double rating;
 
   /// Already enrolled — show that instead of a price they cannot pay again.
   ///
@@ -26,7 +41,6 @@ class CourseCard extends StatefulWidget {
     required this.course,
     required this.onTap,
     this.onLongPress,
-    this.rating = 4.5,
     this.isOwned = false,
   });
 
@@ -90,7 +104,7 @@ class _CourseCardState extends State<CourseCard> {
                     child: _Thumbnail(
                       url: thumbnail,
                       category: category,
-                      rating: widget.rating,
+                      rating: courseRating(course),
                     ),
                   ),
                   Expanded(
@@ -194,7 +208,7 @@ class _CourseCardState extends State<CourseCard> {
 class _Thumbnail extends StatelessWidget {
   final String url;
   final String category;
-  final double rating;
+  final ({double average, int count}) rating;
 
   const _Thumbnail({
     required this.url,
@@ -266,11 +280,13 @@ class _Thumbnail extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.star_rounded,
-                    size: 13.sp, color: const Color(0xFFFFC107)),
-                SizedBox(width: 3.w),
+                if (rating.count > 0) ...[
+                  Icon(Icons.star_rounded,
+                      size: 13.sp, color: const Color(0xFFFFC107)),
+                  SizedBox(width: 3.w),
+                ],
                 Text(
-                  rating.toStringAsFixed(1),
+                  rating.count > 0 ? rating.average.toStringAsFixed(1) : 'New',
                   style: GoogleFonts.poppins(
                     fontSize: 10.sp,
                     fontWeight: FontWeight.w600,

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:padi_learn/screens/components/settings_tile.dart';
 import 'package:padi_learn/utils/app_info.dart';
@@ -12,6 +14,33 @@ import 'package:padi_learn/utils/app_info.dart';
 class ProfileSupportSection extends StatelessWidget {
   const ProfileSupportSection({super.key});
 
+  /// Opens the user's email app addressed to support.
+  ///
+  /// Plenty of phones have no mail app set up, so when nothing handles the
+  /// link the address is copied instead — the user can always paste it into
+  /// Gmail on the web. The version goes in the subject line because the first
+  /// question support asks is which build they are on.
+  Future<void> _contactSupport(BuildContext context) async {
+    final subject = Uri.encodeComponent('$kAppName support (v$kAppVersion)');
+    final uri = Uri.parse('mailto:$kSupportEmail?subject=$subject');
+
+    var opened = false;
+    try {
+      opened = await launchUrl(uri);
+    } catch (_) {
+      // No handler — fall through to copying the address.
+    }
+    if (opened || !context.mounted) return;
+
+    await Clipboard.setData(const ClipboardData(text: kSupportEmail));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('No email app found. $kSupportEmail copied.'),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SettingsSection(
@@ -20,9 +49,8 @@ class ProfileSupportSection extends StatelessWidget {
         SettingsTile(
           icon: Icons.help_outline,
           title: 'Help & Support',
-          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Support is coming soon')),
-          ),
+          subtitle: kSupportEmail,
+          onTap: () => _contactSupport(context),
         ),
         SettingsTile(
           icon: Icons.info_outline,

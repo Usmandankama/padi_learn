@@ -50,6 +50,13 @@
     </application>
 
     <queries>
+        <!-- Lets url_launcher find an email app for Help & Support. Since
+             Android 11 an app can't see which apps handle an intent unless
+             it declares the intent here. -->
+        <intent>
+            <action android:name="android.intent.action.SENDTO"/>
+            <data android:scheme="mailto"/>
+        </intent>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>

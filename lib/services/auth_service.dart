@@ -11,6 +11,8 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:padi_learn/config/supabase_config.dart';
+import 'package:padi_learn/screens/components/delete_account_dialog.dart';
+import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/services/supabase.dart';
 import '../screens/home/home_shell.dart';
 import '../screens/login/login_screen.dart';
@@ -79,6 +81,75 @@ Future<void> signOut(BuildContext context) async {
     debugPrint('Sign-out request failed, continuing locally: $e');
   }
 
+  if (!context.mounted) return;
+  await _leaveApp(context, uid);
+}
+
+/// Permanently deletes the signed-in user's account, after a typed
+/// confirmation.
+///
+/// Google Play requires an in-app way to do this. The work happens in the
+/// `delete-account` edge function, which needs the service role to remove an
+/// auth user; see that file for what is deleted and what is kept.
+Future<void> deleteAccount(BuildContext context,
+    {required bool isTeacher}) async {
+  final confirm = await showDialog<bool>(
+    context: context,
+    builder: (_) => DeleteAccountDialog(isTeacher: isTeacher),
+  );
+  if (confirm != true || !context.mounted) return;
+
+  final uid = supabase.auth.currentUser?.id;
+  final messenger = ScaffoldMessenger.of(context);
+
+  showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => const PopScope(canPop: false, child: AppLoader()),
+  );
+
+  String? error;
+  try {
+    await supabase.functions.invoke('delete-account');
+  } on FunctionException catch (e) {
+    final details = e.details;
+    error = details is Map && details['error'] is String
+        ? details['error'] as String
+        : 'Could not delete your account. Please try again.';
+  } catch (e) {
+    debugPrint('Account deletion failed: $e');
+    error = 'Could not delete your account. Check your connection and try '
+        'again.';
+  }
+
+  if (!context.mounted) return;
+  Navigator.of(context, rootNavigator: true).pop(); // The loader.
+
+  if (error != null) {
+    messenger.showSnackBar(
+      SnackBar(content: Text(error), backgroundColor: Colors.red),
+    );
+    return;
+  }
+
+  // The user no longer exists on the server, so only the local session is
+  // left to clear; a global sign-out would just fail.
+  try {
+    await supabase.auth.signOut(scope: SignOutScope.local);
+  } catch (e) {
+    debugPrint('Local sign-out after deletion failed: $e');
+  }
+
+  if (!context.mounted) return;
+  await _leaveApp(context, uid);
+  messenger.showSnackBar(
+    const SnackBar(content: Text('Your account has been deleted.')),
+  );
+}
+
+/// Local teardown shared by sign-out and account deletion, once the session
+/// is gone: drop the user's controllers and cache, and return to login.
+Future<void> _leaveApp(BuildContext context, String? uid) async {
   // Dispose the user-scoped controllers so the next account starts clean.
   // They are registered with `fenix: true` (see `registerAppControllers`),
   // so the registrations survive and each is rebuilt on the next `Get.find`.

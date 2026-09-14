@@ -249,6 +249,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.9.3+4"
+  fixnum:
+    dependency: transitive
+    description:
+      name: fixnum
+      sha256: b6dc7065e46c974bc7c5f143080a6764ec7a4be6da1285ececdc37be96de53be
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.1"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -488,6 +496,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.2.2"
+  jni:
+    dependency: transitive
+    description:
+      name: jni
+      sha256: d2c361082d554d4593c3012e26f6b188f902acd291330f13d6427641a92b3da1
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.14.2"
   json_annotation:
     dependency: transitive
     description:
@@ -584,6 +600,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.0"
+  package_config:
+    dependency: transitive
+    description:
+      name: package_config
+      sha256: f096c55ebb7deb7e384101542bfba8c52696c1b56fca2eb62827989ef2353bbc
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.0"
   package_info_plus:
     dependency: transitive
     description:
@@ -792,6 +816,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.28.0"
+  sentry:
+    dependency: transitive
+    description:
+      name: sentry
+      sha256: bf80a571e370aad3f68b5c26d43f31cc230a084c250fb3138a83da6032ba0c01
+      url: "https://pub.dev"
+    source: hosted
+    version: "9.30.0"
+  sentry_flutter:
+    dependency: "direct main"
+    description:
+      name: sentry_flutter
+      sha256: da36fbb1581c0f66a0c8fc76f8aadb62d9ea567ba950c97eb326e959482c342a
+      url: "https://pub.dev"
+    source: hosted
+    version: "9.30.0"
   shared_preferences:
     dependency: "direct main"
     description:
@@ -974,7 +1014,7 @@ packages:
     source: hosted
     version: "2.3.1"
   url_launcher:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: url_launcher
       sha256: f6a7e5c4835bb4e3026a04793a4199ca2d14c739ec378fdfe23fc8075d0439f8
@@ -1037,6 +1077,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.5"
+  uuid:
+    dependency: transitive
+    description:
+      name: uuid
+      sha256: "9b129329f58692f6e6578329498a8fe9fbe98f090beb764ffbb8ee2eadd01dcd"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.6.0"
   vector_math:
     dependency: transitive
     description:

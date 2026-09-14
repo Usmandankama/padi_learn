@@ -71,12 +71,10 @@ Most of the code work in section B can happen during step 7.
 
 ### Must be done before the production review
 
-- [ ] **Payments.** Build whichever payment path you chose in section A.
-- [ ] **In-app account deletion.** Play requires *both* an in-app way to delete an account *and* a web link where users can ask for deletion. No deletion code exists yet. It needs an edge function, running with the service role, that deletes the user from `auth.users`. Rows that cascade from it will go too. It must also remove the user's files in storage (profile photo, and a teacher's uploaded lessons). Check what each table's foreign key does on delete. The `transactions` ledger should keep its financial history, and the privacy policy needs to say that.
-- [ ] **Remove the fake popularity numbers.** There are two separate problems:
-  - `marketplace_screen.dart:119` hardcodes `rating = 4.5`, and `CourseCard` defaults to 4.5, so every card shows 4.5 stars. Read `rating_avg` and `rating_count` instead, and show "New" when a course has no ratings.
-  - The live `courses` rows hold numbers written by the seed script: **18,140 enrolments against 10 real enrolment rows**, and **14 rated courses backed by 3 real ratings**. Recalculate the counters from the real rows, or delete the demo catalogue, before real users see it.
-- [ ] **Reporting for user content.** Comments and teacher-uploaded courses count as user-generated content. Play's User Generated Content policy expects apps like this to let users report objectionable content inside the app, and to act on reports. The app has nothing like that yet. Read the current policy wording before building it.
+- [x] **Payments, for the closed test.** Paid checkout is switched off (`kPaidCheckoutEnabled` in `lib/config/features.dart`). Paid courses show "Not available yet" and point nowhere else. Choosing the real payment path is still open in section A.
+- [ ] **In-app account deletion.** *Code done 2026-09-14; not live yet.* The `delete-account` edge function removes the user's storage files and then the auth user, and both profile screens have a "Delete account" tile. The migration keeps `transactions` (buyer set to null). A teacher with paying students is refused and sent to support. **Still to do:** apply migration `20260914000001`, deploy the function, and test it with a throwaway student and a throwaway teacher. The *web* deletion page is in section D.
+- [ ] **Remove the fake popularity numbers.** *Code done 2026-09-14; counters reset only once the migration is applied.* Cards and filters now read `rating_avg` / `rating_count` and show "New" when a course has no ratings. The migration recounts enrolments and ratings from real rows, and the seed no longer invents them.
+- [ ] **Reporting for user content.** *Code done 2026-09-14; not live yet.* Report a course from its page, or a comment from its menu, into `content_reports`. **Acting on reports is manual:** check open reports in the dashboard every day during the test, and add an email alert before production.
 - [ ] **Release signing.** Release builds are currently signed with the debug key (`android/app/build.gradle`), and no keystore exists. Create an upload keystore. Keep its passwords in `android/key.properties` and make sure git ignores that file. Wire up `signingConfigs.release` and enrol in Play App Signing. **Back the keystore up somewhere other than this laptop.**
 - [ ] **Password reset, end to end.** Add `padilearn://reset-callback` under Supabase's Redirect URLs, then test the whole flow on a real phone.
 - [ ] **Help & Support.** It currently shows a "coming soon" message. Point it at a real contact; an email link is enough.
@@ -117,11 +115,12 @@ Most of the code work in section B can happen during step 7.
 
 ## D. Web presence and legal
 
-- [ ] **Domain.** `PaymentService.callbackUrl` uses `padilearn.app`. Own that domain, or change the URL.
-- [ ] **Privacy policy page.** Cover what you collect (see the table in section E), why, who processes it (Supabase, plus Paystack once payments exist), how long you keep it, how to delete it, and how to contact you. Write it once to satisfy both Play and Nigeria's Data Protection Act 2023.
-- [ ] **Account-deletion web page.** A form, or clear instructions for requesting deletion by email.
-- [ ] **Terms of service.** Cover teacher-uploaded content (who owns it, what's banned, how takedowns work), refunds, and payouts.
-- [ ] **A support email address.**
+- [x] **Domain.** `padilearn.com` bought 2026-09-14. The payment callback URL now uses it.
+- [ ] **Website on Cloudflare Pages.** *Built 2026-09-14 in `website/` (Astro, static); not deployed yet.* Connect the repo in Cloudflare Pages (root `website`, build `npm run build`, output `dist`), move `padilearn.com` DNS to Cloudflare, and add the domain. Steps in `website/README.md`. Once live, the three pages below are at `/privacy`, `/delete-account` and `/terms`.
+- [ ] **Privacy policy page.** *Drafted 2026-09-14 at `website/src/pages/privacy.md`. Read it through, add the operator's legal name once decided, then tick this when it is live.* Cover what you collect (see the table in section E), why, who processes it (Supabase, plus Paystack once payments exist), how long you keep it, how to delete it, and how to contact you. Write it once to satisfy both Play and Nigeria's Data Protection Act 2023.
+- [ ] **Account-deletion web page.** *Drafted 2026-09-14 at `website/src/pages/delete-account.astro`: in-app steps, email request, and what is deleted and kept.* A form, or clear instructions for requesting deletion by email.
+- [ ] **Terms of service.** *Drafted 2026-09-14 at `website/src/pages/terms.md`. The refunds and payouts section is a placeholder until paid courses launch.* Cover teacher-uploaded content (who owns it, what's banned, how takedowns work), refunds, and payouts.
+- [x] **A support email address.** `hello@padilearn.com`. Also use it on the Play listing and in the privacy policy.
 
 ---
 

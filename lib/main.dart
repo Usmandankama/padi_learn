@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -31,7 +33,30 @@ Future<void> main() async {
 
   registerAppControllers();
 
-  runApp(const MyApp());
+  // Crash and error reporting. Play's Android vitals only sees native crashes
+  // and ANRs; a Dart exception doesn't crash the app, so without this nobody
+  // hears about testers' bugs. The DSN comes from the build, not the source:
+  //   flutter build appbundle --dart-define=SENTRY_DSN=https://...
+  // A build without one (every local `flutter run`) reports nothing.
+  const sentryDsn = String.fromEnvironment('SENTRY_DSN');
+  if (sentryDsn.isEmpty) {
+    runApp(const MyApp());
+    return;
+  }
+  await SentryFlutter.init(
+    (options) {
+      options.dsn = sentryDsn;
+      options.environment = kReleaseMode ? 'production' : 'development';
+      // Errors only. Performance tracing costs quota the free tier needs for
+      // errors, and answers questions we are not asking yet.
+      options.tracesSampleRate = 0;
+      // No IP addresses or request bodies. Events carry the user's id (set on
+      // sign-in below) and nothing that names them — the Data safety form
+      // declares crash logs, not personal info.
+      options.sendDefaultPii = false;
+    },
+    appRunner: () => runApp(const MyApp()),
+  );
 }
 
 /// Registers the user-scoped GetX controllers.
@@ -57,7 +82,6 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   StreamSubscription<AuthState>? _authSub;
-
   @override
   void initState() {
     super.initState();
@@ -66,6 +90,13 @@ class _MyAppState extends State<MyApp> {
     // link was followed, so without it the deep link just resolves to whatever
     // screen the session lands on — with no way to actually set a password.
     _authSub = supabase.auth.onAuthStateChange.listen((state) {
+      // Ties error reports to an account id (never a name or email), so a
+      // tester's bug report can be matched to their events. A no-op when
+      // Sentry was not initialised.
+      final uid = state.session?.user.id;
+      Sentry.configureScope(
+          (scope) => scope.setUser(uid == null ? null : SentryUser(id: uid)));
+
       if (state.event != AuthChangeEvent.passwordRecovery) return;
       if (Get.currentRoute.contains('ResetPasswordScreen')) return;
       Get.to(() => const ResetPasswordScreen());

@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
         email: user.email,
         amount: Math.round(price * 100), // NGN -> kobo
         currency: "NGN",
-        callback_url: callbackUrl ?? "https://padilearn.app/payment-callback",
+        callback_url: callbackUrl ?? "https://padilearn.com/payment-callback",
         metadata: {
           user_id: user.id,
           course_id: course.id,

@@ -14,7 +14,7 @@ class PaymentInit {
 class PaymentService {
   /// URL Paystack redirects to after checkout. It never needs to resolve — the
   /// checkout WebView just intercepts navigation to it.
-  static const String callbackUrl = 'https://padilearn.app/payment-callback';
+  static const String callbackUrl = 'https://padilearn.com/payment-callback';
 
   /// Starts a transaction for [courseId] and returns the checkout URL + ref.
   static Future<PaymentInit> initialize(String courseId) async {

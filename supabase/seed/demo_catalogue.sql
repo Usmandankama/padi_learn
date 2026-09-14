@@ -204,9 +204,13 @@ select
   c.author,
   ctx.thumb_base || c.slug || '.jpg',
   ctx.teacher_id,
-  c.enrollments,
-  c.rating_avg,
-  c.rating_count
+  -- Counters start at zero. The invented figures in `_seed_courses` used to
+  -- be written here, and real users would have read them as traction; the
+  -- 2026-09-14 migration reset them. Triggers now recount enrolments and
+  -- ratings from real rows, so these columns are never the seed's to set.
+  0,
+  0,
+  0
 from _seed_courses c cross join _seed_ctx ctx
 on conflict (id) do update set
   title         = excluded.title,
@@ -215,11 +219,8 @@ on conflict (id) do update set
   category      = excluded.category,
   author        = excluded.author,
   thumbnail_url = excluded.thumbnail_url;
-  -- enrollments / rating_avg / rating_count are deliberately NOT refreshed on
-  -- re-run. A trigger increments `courses.enrollments` when somebody actually
-  -- enrols, so overwriting it here would discard real signups every time the
-  -- seed is re-applied. The invented starting values are set once, on insert,
-  -- and the live counter takes over from there.
+  -- enrollments / rating_avg / rating_count are deliberately NOT touched on
+  -- re-run: they are derived from real rows by triggers.
 
 
 -- ------------------------------- lessons ----------------------------------

@@ -15,3 +15,9 @@ const String kAppName = 'PadiLearn';
 const String kAppVersion = '1.0.0';
 
 const String kAppLegalese = '© 2026 PadiLearn';
+
+/// Where Help & Support sends people. Also the contact address on the Play
+/// listing and in the privacy policy, so all three must match.
+///
+/// A real mailbox on padilearn.com (set up 2026-09-14).
+const String kSupportEmail = 'hello@padilearn.com';

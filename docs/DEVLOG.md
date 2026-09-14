@@ -60,6 +60,105 @@ and payouts terms before paid courses launch.
 
 ---
 
+## 2026-09-14 — Play Store blockers: deletion, reporting, honest numbers
+
+Five items from `LAUNCH_ANDROID.md` section B, done together because the
+production review would reject the app for any one of them.
+
+### Account deletion
+
+Play requires an in-app way to delete an account. It is a new edge function,
+`delete-account`, because removing an auth user needs the service role. Both
+profile screens have a "Delete account" tile that asks the user to type DELETE
+first.
+
+The function works in the order that fails safe: remove the user's storage
+files first, delete the auth user second. Storage removal can be retried. The
+other order could leave personal files behind for an account that no longer
+exists, with nobody left to ask for them to be removed.
+
+**Two schema problems had to be fixed first** (migration
+`20260914000001_account_deletion_and_reports.sql`):
+
+- `transactions.buyer_id` was `ON DELETE CASCADE`. Deleting an account would
+  have erased the record of what it paid, and taken the matching amount out
+  of the teacher's earnings. It is `SET NULL` now, like `teacher_id`. **The
+  privacy policy must say payment records are kept.**
+- `bump_course_enrollments` only ever added one. With deletion, enrolments
+  cascade away and the count would never come down. It is replaced by a
+  recount on insert and delete.
+
+**A teacher whose courses have paying students is refused**, with a 409 asking
+them to contact support. Deleting a teacher deletes their courses, so the
+students would lose what they paid for, and there is no refund flow yet.
+Everyone else goes straight through.
+
+### The fake numbers are gone
+
+Every card showed 4.5 stars from a hard-coded default, and the demo seed had
+written 18,140 enrolments against 10 real rows. The migration recounts both
+counters from the real rows, and the seed now inserts zeros. Cards read
+`rating_avg` / `rating_count` through `courseRating()` and show **New** when
+nothing is rated. The minimum-rating filter leaves unrated courses out instead
+of counting them as zero stars.
+
+`courseRating()` accepts a number or a string. A query returns numeric columns
+as numbers, but the realtime stream can return them as strings, and a plain
+cast would have thrown on the first live update.
+
+### Reporting
+
+Play's User Generated Content policy wants objectionable content reportable
+from inside the app. There is now a flag in the course page's app bar, and
+"Report" in the menu on other people's comments. Both open one shared sheet
+(`report_sheet.dart`).
+
+`content_reports` is write-only for clients. A trigger fills in the reporter,
+the status, and a snapshot of the reported text. That way a report can't be
+forged to point at someone else, and it keeps its evidence after the content
+is taken down. Every foreign key is `SET NULL` for the same reason. A unique
+index allows one report per person per item, and the app shows a second
+report as "already reported" rather than an error.
+
+**Nobody is told when a report arrives.** For the closed test, check
+`content_reports where status = 'open'` in the dashboard every day. Add an
+email alert (a database webhook) before production.
+
+### Paid checkout is switched off
+
+`kPaidCheckoutEnabled` in `lib/config/features.dart` is `false`. Paid courses
+still appear, with their price and free preview lessons, but the button reads
+"Not available yet". The note underneath deliberately doesn't say where else a
+course could be bought, because Play also bans steering users to an outside
+checkout. All the Paystack code is still there behind the flag.
+
+### Support and error reporting
+
+Help & Support opens an email to `kSupportEmail` (`hello@padilearn.com`). If
+the phone has no mail app, the address is copied instead.
+
+The domain is `padilearn.com`, bought 2026-09-14. The Paystack callback URL
+pointed at `padilearn.app`, which we never owned, so it now points at `.com`
+in both `payment_service.dart` and `initialize-payment`. Checkout is off, so
+nothing depends on this yet. `initialize-payment` needs redeploying before
+checkout is switched back on.
+
+Sentry is set up in `main.dart` and reads its DSN from
+`--dart-define=SENTRY_DSN`, so a build without one reports nothing and the key
+stays out of git. It sends errors only (no tracing, no PII). Events carry the
+user's id and never a name or email, which keeps the Data safety answer
+simple.
+
+### Outstanding
+
+- Apply the migration and deploy `delete-account` to the live project.
+- Create a Sentry project and pass its DSN in release builds.
+- Test deletion end to end on a throwaway student and a throwaway teacher.
+  Check that their storage files are gone and their transactions remain.
+- Moderation alerts, as above.
+
+---
+
 ## 2026-09-06 — Courses you already own
 
 A student could see a course they had already bought sitting in the marketplace
