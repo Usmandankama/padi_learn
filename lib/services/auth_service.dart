@@ -1,8 +1,18 @@
+import 'dart:convert';
+import 'dart:math';
+
+import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:padi_learn/config/supabase_config.dart';
+import 'package:padi_learn/screens/components/delete_account_dialog.dart';
+import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/services/supabase.dart';
 import '../screens/home/home_shell.dart';
 import '../screens/login/login_screen.dart';
@@ -71,6 +81,75 @@ Future<void> signOut(BuildContext context) async {
     debugPrint('Sign-out request failed, continuing locally: $e');
   }
 
+  if (!context.mounted) return;
+  await _leaveApp(context, uid);
+}
+
+/// Permanently deletes the signed-in user's account, after a typed
+/// confirmation.
+///
+/// Google Play requires an in-app way to do this. The work happens in the
+/// `delete-account` edge function, which needs the service role to remove an
+/// auth user; see that file for what is deleted and what is kept.
+Future<void> deleteAccount(BuildContext context,
+    {required bool isTeacher}) async {
+  final confirm = await showDialog<bool>(
+    context: context,
+    builder: (_) => DeleteAccountDialog(isTeacher: isTeacher),
+  );
+  if (confirm != true || !context.mounted) return;
+
+  final uid = supabase.auth.currentUser?.id;
+  final messenger = ScaffoldMessenger.of(context);
+
+  showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => const PopScope(canPop: false, child: AppLoader()),
+  );
+
+  String? error;
+  try {
+    await supabase.functions.invoke('delete-account');
+  } on FunctionException catch (e) {
+    final details = e.details;
+    error = details is Map && details['error'] is String
+        ? details['error'] as String
+        : 'Could not delete your account. Please try again.';
+  } catch (e) {
+    debugPrint('Account deletion failed: $e');
+    error = 'Could not delete your account. Check your connection and try '
+        'again.';
+  }
+
+  if (!context.mounted) return;
+  Navigator.of(context, rootNavigator: true).pop(); // The loader.
+
+  if (error != null) {
+    messenger.showSnackBar(
+      SnackBar(content: Text(error), backgroundColor: Colors.red),
+    );
+    return;
+  }
+
+  // The user no longer exists on the server, so only the local session is
+  // left to clear; a global sign-out would just fail.
+  try {
+    await supabase.auth.signOut(scope: SignOutScope.local);
+  } catch (e) {
+    debugPrint('Local sign-out after deletion failed: $e');
+  }
+
+  if (!context.mounted) return;
+  await _leaveApp(context, uid);
+  messenger.showSnackBar(
+    const SnackBar(content: Text('Your account has been deleted.')),
+  );
+}
+
+/// Local teardown shared by sign-out and account deletion, once the session
+/// is gone: drop the user's controllers and cache, and return to login.
+Future<void> _leaveApp(BuildContext context, String? uid) async {
   // Dispose the user-scoped controllers so the next account starts clean.
   // They are registered with `fenix: true` (see `registerAppControllers`),
   // so the registrations survive and each is rebuilt on the next `Get.find`.
@@ -86,6 +165,9 @@ Future<void> signOut(BuildContext context) async {
     (route) => false,
   );
 }
+
+/// The signed-in user's id, or null when there is no session.
+String? get currentUserId => supabase.auth.currentUser?.id;
 
 const String _kRoleKeyPrefix = 'user_role_';
 
@@ -159,7 +241,8 @@ Future<bool> signUp(BuildContext context, String email, String password,
     if (!context.mounted) return false;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Account created. Check your email to confirm, then log in.'),
+        content:
+            Text('Account created. Check your email to confirm, then log in.'),
         backgroundColor: Colors.green,
       ),
     );
@@ -173,8 +256,202 @@ Future<bool> signUp(BuildContext context, String email, String password,
   } catch (e) {
     if (!context.mounted) return false;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error signing up: $e'), backgroundColor: Colors.red),
+      SnackBar(
+          content: Text('Error signing up: $e'), backgroundColor: Colors.red),
     );
     return false;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Social sign-in
+//
+// These use the *native* flow (platform account picker → ID token →
+// `signInWithIdToken`) rather than `signInWithOAuth`, which bounces the user
+// out to a browser and back through a deep link. Besides the better UX it
+// means no custom URL scheme has to be registered for Google or Apple.
+//
+// None of them can carry a role: a provider returns an identity and nothing
+// else. The `profiles` row is therefore created with `role` null, and
+// `HomeShell` sends the user to the role picker on the strength of that. See
+// `supabase/migrations/20260803000001_role_claiming.sql`.
+// ---------------------------------------------------------------------------
+
+/// Whether the Google button has been configured enough to work.
+///
+/// Better to hide the button than to offer one that throws the moment it is
+/// tapped, which is what an unset client ID would do.
+bool get isGoogleSignInConfigured =>
+    SupabaseConfig.googleWebClientId.isNotEmpty;
+
+/// Apple requires "Sign in with Apple" on iOS whenever another social login is
+/// offered, and is unavailable everywhere else.
+bool get isAppleSignInAvailable =>
+    !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+
+bool _googleInitialized = false;
+
+/// `initialize` is required before `authenticate` in google_sign_in 7.x, and
+/// must not run twice.
+Future<void> _ensureGoogleInitialized() async {
+  if (_googleInitialized) return;
+  await GoogleSignIn.instance.initialize(
+    // Android reads `serverClientId`; iOS reads `clientId`. Passing both lets
+    // one call cover the two platforms — each ignores the one it does not use.
+    clientId: SupabaseConfig.googleIosClientId.isEmpty
+        ? null
+        : SupabaseConfig.googleIosClientId,
+    serverClientId: SupabaseConfig.googleWebClientId,
+  );
+  _googleInitialized = true;
+}
+
+/// Signs in with the device's Google account.
+///
+/// Returns `true` when a Supabase session exists afterwards. The caller is
+/// responsible for navigating — role resolution happens in `HomeShell`.
+Future<bool> signInWithGoogle(BuildContext context) async {
+  try {
+    await _ensureGoogleInitialized();
+
+    final account = await GoogleSignIn.instance.authenticate();
+    final idToken = account.authentication.idToken;
+
+    if (idToken == null) {
+      // Almost always a configuration problem: on Android the ID token is only
+      // issued when `serverClientId` matches a Web client whose SHA-1 covers
+      // the signing key in use, so debug builds fail here until the debug
+      // keystore's fingerprint is registered too.
+      if (!context.mounted) return false;
+      _showAuthError(context, 'Google sign-in did not return a token.');
+      return false;
+    }
+
+    await supabase.auth.signInWithIdToken(
+      provider: OAuthProvider.google,
+      idToken: idToken,
+    );
+    return true;
+  } on GoogleSignInException catch (e) {
+    // Backing out of the account picker is a normal thing to do, not an error
+    // worth a red snackbar.
+    if (e.code == GoogleSignInExceptionCode.canceled) return false;
+    if (!context.mounted) return false;
+    _showAuthError(context, e.description ?? 'Google sign-in failed.');
+    return false;
+  } on AuthException catch (e) {
+    if (!context.mounted) return false;
+    _showAuthError(context, e.message);
+    return false;
+  } catch (e) {
+    debugPrint('Google sign-in failed: $e');
+    if (!context.mounted) return false;
+    _showAuthError(context, 'Could not sign in with Google. Please try again.');
+    return false;
+  }
+}
+
+/// Signs in with Apple.
+///
+/// Apple only ever discloses the user's name on the *first* authorization, so
+/// it is folded into the session's metadata here; the `profiles` trigger has
+/// already run by then, so the name is written to the row directly.
+Future<bool> signInWithApple(BuildContext context) async {
+  try {
+    // Apple signs a nonce we choose, and Supabase re-derives it to prove the
+    // token was minted for this sign-in attempt. Apple sees only the hash.
+    final rawNonce = _generateNonce();
+    final credential = await SignInWithApple.getAppleIDCredential(
+      scopes: [
+        AppleIDAuthorizationScopes.email,
+        AppleIDAuthorizationScopes.fullName,
+      ],
+      nonce: sha256.convert(utf8.encode(rawNonce)).toString(),
+    );
+
+    final idToken = credential.identityToken;
+    if (idToken == null) {
+      if (!context.mounted) return false;
+      _showAuthError(context, 'Apple sign-in did not return a token.');
+      return false;
+    }
+
+    final res = await supabase.auth.signInWithIdToken(
+      provider: OAuthProvider.apple,
+      idToken: idToken,
+      nonce: rawNonce,
+    );
+
+    await _backfillAppleName(res.user?.id, credential);
+    return true;
+  } on SignInWithAppleAuthorizationException catch (e) {
+    if (e.code == AuthorizationErrorCode.canceled) return false;
+    if (!context.mounted) return false;
+    _showAuthError(context, e.message);
+    return false;
+  } on AuthException catch (e) {
+    if (!context.mounted) return false;
+    _showAuthError(context, e.message);
+    return false;
+  } catch (e) {
+    debugPrint('Apple sign-in failed: $e');
+    if (!context.mounted) return false;
+    _showAuthError(context, 'Could not sign in with Apple. Please try again.');
+    return false;
+  }
+}
+
+/// Writes the name Apple disclosed, if this is the first authorization.
+///
+/// Silent on failure: a missing display name is a cosmetic problem, and the
+/// user is already signed in by this point.
+Future<void> _backfillAppleName(
+  String? uid,
+  AuthorizationCredentialAppleID credential,
+) async {
+  if (uid == null) return;
+
+  final name = [credential.givenName, credential.familyName]
+      .whereType<String>()
+      .where((part) => part.isNotEmpty)
+      .join(' ');
+  if (name.isEmpty) return;
+
+  try {
+    // Only fill a blank — a returning user who has since edited their name
+    // should keep it, and Apple would not have sent one anyway.
+    await supabase
+        .from('profiles')
+        .update({'name': name})
+        .eq('id', uid)
+        .isFilter('name', null);
+  } catch (e) {
+    debugPrint('Could not save the name Apple provided: $e');
+  }
+}
+
+/// A cryptographically random string for use as an OAuth nonce.
+String _generateNonce([int length = 32]) {
+  const chars =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._';
+  final random = Random.secure();
+  return List.generate(length, (_) => chars[random.nextInt(chars.length)])
+      .join();
+}
+
+/// Claims [role] for the signed-in user, returning the role now in force.
+///
+/// Goes through the `claim_role` function rather than updating `profiles`
+/// directly because clients no longer hold an UPDATE grant on that column —
+/// the point being that this can only ever fill a blank, never overwrite an
+/// existing role. Throws on failure so the caller can keep the picker open.
+Future<String> claimRole(String role) async {
+  final result = await supabase.rpc('claim_role', params: {'p_role': role});
+  return result as String;
+}
+
+void _showAuthError(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(message), backgroundColor: Colors.red),
+  );
 }

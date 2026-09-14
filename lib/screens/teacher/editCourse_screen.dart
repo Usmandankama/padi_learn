@@ -7,6 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:padi_learn/screens/components/primary_button.dart';
+import 'package:padi_learn/screens/teacher/components/category_picker.dart';
+import 'package:padi_learn/screens/teacher/components/earnings_hint.dart';
 import 'package:padi_learn/screens/teacher/components/upload_progress_card.dart';
 import 'package:padi_learn/services/course_service.dart';
 import 'package:padi_learn/services/supabase.dart';
@@ -50,14 +52,6 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
   bool _saving = false;
   UploadProgress? _progress;
 
-  static const List<String> _categories = [
-    'Programming',
-    'Design',
-    'Marketing',
-    'Business',
-    'Data Science',
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -69,8 +63,11 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
         text: ((data['price'] as num?)?.toDouble() ?? 0).toStringAsFixed(0));
     _author = TextEditingController(text: (data['author'] ?? '').toString());
 
+    // Kept as-is even if it is no longer an approved category — the picker
+    // folds an unrecognised current value into its list rather than dropping
+    // it, so editing a course can't silently clear its category.
     final category = (data['category'] ?? '').toString();
-    _category = _categories.contains(category) ? category : null;
+    _category = category.isEmpty ? null : category;
   }
 
   @override
@@ -200,14 +197,17 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: AppColors.palette.ground,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F8FA),
+        backgroundColor: AppColors.palette.ground,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: AppColors.richBlack),
+        iconTheme: IconThemeData(color: AppColors.palette.ink),
         title: Text(
           'Edit Course',
           style: GoogleFonts.poppins(
@@ -258,16 +258,11 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
             _section(
               title: 'Category & price',
               children: [
-                DropdownButtonFormField<String>(
-                  initialValue: _category,
-                  isExpanded: true,
+                CategoryPicker(
+                  value: _category,
+                  enabled: !_saving,
                   decoration: _decoration('Category', Icons.category_outlined),
-                  items: _categories
-                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                      .toList(),
                   onChanged: (value) => setState(() => _category = value),
-                  validator: (v) =>
-                      (v == null || v.isEmpty) ? 'Please pick a category' : null,
                 ),
                 SizedBox(height: 14.h),
                 _field(
@@ -276,6 +271,8 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
                   icon: Icons.sell_outlined,
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  // Rebuild so the earnings estimate tracks what they type.
+                  onChanged: (_) => setState(() {}),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return 'Enter a price';
                     if (double.tryParse(v.trim()) == null) {
@@ -284,6 +281,8 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
                     return null;
                   },
                 ),
+                SizedBox(height: 10.h),
+                EarningsHint(priceText: _price.text),
               ],
             ),
             SizedBox(height: 14.h),
@@ -297,13 +296,13 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
                 Row(
                   children: [
                     Icon(Icons.info_outline,
-                        size: 15.sp, color: AppColors.fontGrey),
+                        size: 15.sp, color: AppColors.palette.inkSoft),
                     SizedBox(width: 6.w),
                     Expanded(
                       child: Text(
                         'Lesson videos are managed in the Lessons tab.',
                         style: GoogleFonts.poppins(
-                            fontSize: 11.sp, color: AppColors.fontGrey),
+                            fontSize: 11.sp, color: AppColors.palette.inkSoft),
                       ),
                     ),
                   ],
@@ -336,7 +335,7 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
           style: GoogleFonts.poppins(
             fontSize: 12.5.sp,
             fontWeight: FontWeight.w600,
-            color: AppColors.richBlack,
+            color: AppColors.palette.ink,
           ),
         ),
         SizedBox(height: 8.h),
@@ -354,7 +353,7 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
                         errorBuilder: (_, __, ___) => Container(
                           color: AppColors.primaryAccent,
                           child: Icon(Icons.image_not_supported,
-                              color: AppColors.fontGrey, size: 26.sp),
+                              color: AppColors.palette.inkSoft, size: 26.sp),
                         ),
                       ),
           ),
@@ -378,7 +377,7 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
                   'New · ${formatBytes(_newThumbnailBytes)}',
                   textAlign: TextAlign.right,
                   style: GoogleFonts.poppins(
-                      fontSize: 11.sp, color: AppColors.fontGrey),
+                      fontSize: 11.sp, color: AppColors.palette.inkSoft),
                 ),
               ),
           ],
@@ -391,7 +390,7 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.appWhite,
+        color: AppColors.palette.surface,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
@@ -409,7 +408,7 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
             style: GoogleFonts.poppins(
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
-              color: AppColors.richBlack,
+              color: AppColors.palette.ink,
             ),
           ),
           SizedBox(height: 14.h),
@@ -422,11 +421,11 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
   InputDecoration _decoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
-      labelStyle:
-          GoogleFonts.poppins(fontSize: 13.sp, color: AppColors.fontGrey),
+      labelStyle: GoogleFonts.poppins(
+          fontSize: 13.sp, color: AppColors.palette.inkSoft),
       prefixIcon: Icon(icon, size: 20.sp, color: AppColors.primaryColor),
       filled: true,
-      fillColor: const Color(0xFFF7F8FA),
+      fillColor: AppColors.palette.ground,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12.r),
         borderSide: BorderSide.none,
@@ -441,6 +440,7 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
     int maxLines = 1,
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
+    ValueChanged<String>? onChanged,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
@@ -449,6 +449,7 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
       enabled: !_saving,
+      onChanged: onChanged,
       style: GoogleFonts.poppins(fontSize: 13.sp),
       decoration: _decoration(label, icon),
       validator: validator,

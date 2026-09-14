@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:padi_learn/screens/components/custom_textfield.dart';
 import 'package:padi_learn/screens/components/primary_button.dart';
+import 'package:padi_learn/screens/components/social_sign_in.dart';
 import 'package:padi_learn/screens/register/register_screen.dart';
 import 'package:padi_learn/screens/forgot_password/forgot_password_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
@@ -37,9 +38,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: AppColors.appWhite,
+      backgroundColor: AppColors.palette.surface,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -79,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   'Sign in to continue learning',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: AppColors.fontGrey,
+                    color: AppColors.palette.inkSoft,
                     fontSize: 14.sp,
                   ),
                 ),
@@ -125,6 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   isLoading: _isLoading,
                   onPressed: _handleLogin,
                 ),
+                const SocialSignIn(),
                 SizedBox(height: 24.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -132,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       'Don\'t have an account?',
                       style: TextStyle(
-                        color: AppColors.fontGrey,
+                        color: AppColors.palette.inkSoft,
                         fontSize: 13.sp,
                       ),
                     ),

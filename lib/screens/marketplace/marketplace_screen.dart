@@ -9,11 +9,32 @@ import 'package:padi_learn/controller/course_controller.dart';
 import 'package:padi_learn/controller/marketplace_controller.dart';
 import 'package:padi_learn/screens/description/course_description_screen.dart';
 import 'package:padi_learn/screens/marketplace/components/course_card.dart';
+import 'package:padi_learn/services/category_service.dart';
 import 'package:padi_learn/utils/colors.dart';
+import 'package:padi_learn/utils/money.dart';
+import 'package:padi_learn/controller/ongoing_courses_controller.dart';
 
 /// Spacing scale used across the screen.
 const double _kGap16 = 16;
 const double _kGap24 = 24;
+
+/// Which courses the marketplace should list.
+///
+/// Browsing hides courses the student already owns — the shelf is for things
+/// they can still buy. An explicit search does **not**: typing a course's name
+/// and getting nothing back reads as "we don't have it", not "you already own
+/// it", which is the more confusing of the two. Owned results that come back
+/// from a search carry the card's `isOwned` badge instead.
+List<Map<String, dynamic>> visibleCourses({
+  required List<Map<String, dynamic>> catalogue,
+  required Set<String> owned,
+  required bool isSearching,
+}) {
+  if (isSearching || owned.isEmpty) return catalogue;
+  return catalogue
+      .where((c) => !owned.contains((c['id'] ?? '').toString()))
+      .toList();
+}
 
 class MarketplaceScreen extends StatefulWidget {
   final String userRole;
@@ -27,14 +48,10 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   final MarketplaceController _controller = Get.find<MarketplaceController>();
   final TextEditingController _searchController = TextEditingController();
 
-  static const List<String> _categories = [
-    'All',
-    'Programming',
-    'Design',
-    'Marketing',
-    'Business',
-    'Data Science',
-  ];
+  /// Browse filters, loaded from the database so the catalogue can be widened
+  /// without shipping a release. Only approved categories appear here — a
+  /// teacher's pending suggestion must not become a chip everyone sees.
+  List<String> _categories = const ['All'];
 
   // Local (presentation-only) filter state.
   String _selectedCategory = 'All';
@@ -47,11 +64,21 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   @override
   void initState() {
     super.initState();
+    _loadCategories();
     // Show the shimmer briefly; if no data arrives we fall through to the
     // empty state instead of spinning forever.
     Timer(const Duration(milliseconds: 1200), () {
       if (mounted) setState(() => _showShimmer = false);
     });
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final names = await CategoryService.forBrowse();
+      if (mounted) setState(() => _categories = ['All', ...names]);
+    } catch (_) {
+      // Keep 'All' only — browsing still works, just unfiltered.
+    }
   }
 
   @override
@@ -78,8 +105,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     return max < 1000 ? 1000 : (max / 1000).ceil() * 1000;
   }
 
-  List<Map<String, dynamic>> _applyFilters(
-      List<Map<String, dynamic>> courses) {
+  List<Map<String, dynamic>> _applyFilters(List<Map<String, dynamic>> courses) {
     final query = _searchController.text.trim().toLowerCase();
 
     final list = courses.where((c) {
@@ -90,8 +116,11 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       final price = (c['price'] as num?)?.toDouble() ?? 0;
       final matchesPrice = _priceRange == null ||
           (price >= _priceRange!.start && price <= _priceRange!.end);
-      const rating = 4.5; // placeholder until ratings exist in the data
-      final matchesRating = rating >= _minRating;
+      // An unrated course has no score to compare, so a minimum-rating filter
+      // leaves it out rather than treating "no ratings" as zero stars.
+      final rating = courseRating(c);
+      final matchesRating =
+          _minRating == 0 || (rating.count > 0 && rating.average >= _minRating);
       return matchesSearch && matchesCategory && matchesPrice && matchesRating;
     }).toList();
 
@@ -130,10 +159,13 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: AppColors.palette.ground,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F8FA),
+        backgroundColor: AppColors.palette.ground,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
@@ -157,7 +189,14 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
               color: AppColors.primaryColor,
               onRefresh: _controller.reload,
               child: Obx(() {
-                final all = _controller.courses.toList();
+                final owned =
+                    OngoingCoursesController.forCurrentUser()?.ownedIds.value ??
+                        <String>{};
+                final all = visibleCourses(
+                  catalogue: _controller.courses.toList(),
+                  owned: owned,
+                  isSearching: _searchController.text.trim().isNotEmpty,
+                );
 
                 if (all.isEmpty && _showShimmer) {
                   return _buildGrid(
@@ -177,6 +216,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                     final course = filtered[i];
                     return CourseCard(
                       course: course,
+                      isOwned: owned.contains((course['id'] ?? '').toString()),
                       onTap: () => _openCourse(course),
                       onLongPress: () => _showQuickPreview(course),
                     );
@@ -202,7 +242,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: AppColors.appWhite,
+                color: AppColors.palette.surface,
                 borderRadius: BorderRadius.circular(14.r),
                 boxShadow: [
                   BoxShadow(
@@ -219,14 +259,14 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                 decoration: InputDecoration(
                   hintText: 'Search courses',
                   hintStyle: GoogleFonts.poppins(
-                      fontSize: 13.sp, color: AppColors.fontGrey),
-                  prefixIcon: const Icon(Icons.search,
-                      color: AppColors.primaryColor),
+                      fontSize: 13.sp, color: AppColors.palette.inkSoft),
+                  prefixIcon:
+                      const Icon(Icons.search, color: AppColors.primaryColor),
                   suffixIcon: _searchController.text.isEmpty
                       ? null
                       : IconButton(
                           icon: Icon(Icons.close,
-                              size: 18.sp, color: AppColors.fontGrey),
+                              size: 18.sp, color: AppColors.palette.inkSoft),
                           onPressed: () =>
                               setState(() => _searchController.clear()),
                         ),
@@ -314,7 +354,9 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
               padding: EdgeInsets.symmetric(horizontal: 18.w),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primaryColor : AppColors.appWhite,
+                color: isSelected
+                    ? AppColors.primaryColor
+                    : AppColors.palette.surface,
                 borderRadius: BorderRadius.circular(20.r),
                 border: Border.all(
                   color: isSelected
@@ -327,7 +369,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w500,
-                  color: isSelected ? Colors.white : AppColors.richBlack,
+                  color: isSelected ? Colors.white : AppColors.palette.ink,
                 ),
               ),
             ),
@@ -374,63 +416,68 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
         child: ConstrainedBox(
           constraints: BoxConstraints(minHeight: constraints.maxHeight),
           child: Center(
-      child: Padding(
-        padding: EdgeInsets.all(_kGap24.w),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 110.w,
-              height: 110.w,
-              decoration: const BoxDecoration(
-                color: AppColors.primaryAccent,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                hasCourses ? Icons.search_off_rounded : Icons.school_outlined,
-                size: 52.sp,
-                color: AppColors.primaryColor,
-              ),
-            ),
-            SizedBox(height: _kGap24.h),
-            Text(
-              hasCourses ? 'No courses match your filters' : 'No courses yet',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600,
-                color: AppColors.richBlack,
-              ),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              hasCourses
-                  ? 'Try adjusting your search or filters.'
-                  : 'Check back soon for new courses.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                fontSize: 13.sp,
-                color: AppColors.fontGrey,
-              ),
-            ),
-            if (hasCourses && _activeFilterCount > 0 ||
-                _searchController.text.isNotEmpty) ...[
-              SizedBox(height: _kGap16.h),
-              TextButton.icon(
-                onPressed: _clearFilters,
-                icon: const Icon(Icons.refresh, color: AppColors.primaryColor),
-                label: Text(
-                  'Clear filters',
-                  style: GoogleFonts.poppins(
-                    color: AppColors.primaryColor,
-                    fontWeight: FontWeight.w600,
+            child: Padding(
+              padding: EdgeInsets.all(_kGap24.w),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 110.w,
+                    height: 110.w,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primaryAccent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      hasCourses
+                          ? Icons.search_off_rounded
+                          : Icons.school_outlined,
+                      size: 52.sp,
+                      color: AppColors.primaryColor,
+                    ),
                   ),
-                ),
+                  SizedBox(height: _kGap24.h),
+                  Text(
+                    hasCourses
+                        ? 'No courses match your filters'
+                        : 'No courses yet',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.palette.ink,
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  Text(
+                    hasCourses
+                        ? 'Try adjusting your search or filters.'
+                        : 'Check back soon for new courses.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13.sp,
+                      color: AppColors.palette.inkSoft,
+                    ),
+                  ),
+                  if (hasCourses && _activeFilterCount > 0 ||
+                      _searchController.text.isNotEmpty) ...[
+                    SizedBox(height: _kGap16.h),
+                    TextButton.icon(
+                      onPressed: _clearFilters,
+                      icon: const Icon(Icons.refresh,
+                          color: AppColors.primaryColor),
+                      label: Text(
+                        'Clear filters',
+                        style: GoogleFonts.poppins(
+                          color: AppColors.primaryColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
-            ],
-          ],
-        ),
-      ),
+            ),
           ),
         ),
       ),
@@ -452,7 +499,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.appWhite,
+      backgroundColor: AppColors.palette.surface,
       isScrollControlled: true,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
@@ -467,7 +514,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                     style: GoogleFonts.poppins(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.richBlack,
+                      color: AppColors.palette.ink,
                     ),
                   ),
                 );
@@ -481,7 +528,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                     decoration: BoxDecoration(
                       color: selected
                           ? AppColors.primaryColor
-                          : AppColors.appWhite,
+                          : AppColors.palette.surface,
                       borderRadius: BorderRadius.circular(20.r),
                       border: Border.all(
                         color: selected
@@ -494,15 +541,23 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                       style: GoogleFonts.poppins(
                         fontSize: 12.sp,
                         fontWeight: FontWeight.w500,
-                        color: selected ? Colors.white : AppColors.richBlack,
+                        color: selected ? Colors.white : AppColors.palette.ink,
                       ),
                     ),
                   ),
                 );
 
             return Padding(
-              padding: EdgeInsets.fromLTRB(_kGap24.w, 12.h, _kGap24.w,
-                  MediaQuery.of(context).viewInsets.bottom + _kGap24.h),
+              // viewInsets keeps the sheet above the keyboard; padding keeps
+              // its buttons above the device's navigation bar (and collapses to
+              // zero while the keyboard covers that bar).
+              padding: EdgeInsets.fromLTRB(
+                  _kGap24.w,
+                  12.h,
+                  _kGap24.w,
+                  MediaQuery.of(context).viewInsets.bottom +
+                      MediaQuery.of(context).padding.bottom +
+                      _kGap24.h),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -526,7 +581,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                         style: GoogleFonts.poppins(
                           fontSize: 18.sp,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.richBlack,
+                          color: AppColors.palette.ink,
                         ),
                       ),
                       TextButton(
@@ -539,7 +594,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                         child: Text(
                           'Clear all',
                           style: GoogleFonts.poppins(
-                            color: AppColors.fontGrey,
+                            color: AppColors.palette.inkSoft,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -603,10 +658,10 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                       onPressed: () {
                         setState(() {
                           _selectedCategory = tempCategory;
-                          _priceRange =
-                              (tempRange.start == 0 && tempRange.end == maxPrice)
-                                  ? null
-                                  : tempRange;
+                          _priceRange = (tempRange.start == 0 &&
+                                  tempRange.end == maxPrice)
+                              ? null
+                              : tempRange;
                           _minRating = tempRating;
                           _sort = tempSort;
                         });
@@ -649,17 +704,19 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
         (course['description'] ?? 'No description available.').toString();
     final thumbnail = (course['thumbnail_url'] ?? '').toString();
     final price = (course['price'] as num?) ?? 0;
+    final rating = courseRating(course);
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.appWhite,
+      backgroundColor: AppColors.palette.surface,
       isScrollControlled: true,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
       builder: (context) {
         return Padding(
-          padding: EdgeInsets.fromLTRB(_kGap24.w, 12.h, _kGap24.w, _kGap24.h),
+          padding: EdgeInsets.fromLTRB(_kGap24.w, 12.h, _kGap24.w,
+              _kGap24.h + MediaQuery.of(context).padding.bottom),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -695,7 +752,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.richBlack,
+                  color: AppColors.palette.ink,
                 ),
               ),
               SizedBox(height: 4.h),
@@ -703,18 +760,27 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                 'By $author',
                 style: GoogleFonts.poppins(
                   fontSize: 12.sp,
-                  color: AppColors.fontGrey,
+                  color: AppColors.palette.inkSoft,
                 ),
               ),
               SizedBox(height: 12.h),
               Row(
                 children: [
-                  Icon(Icons.star_rounded,
-                      size: 16.sp, color: const Color(0xFFFFC107)),
-                  SizedBox(width: 4.w),
-                  Text('4.5',
-                      style: GoogleFonts.poppins(
-                          fontSize: 12.sp, fontWeight: FontWeight.w600)),
+                  if (rating.count > 0) ...[
+                    Icon(Icons.star_rounded,
+                        size: 16.sp, color: const Color(0xFFFFC107)),
+                    SizedBox(width: 4.w),
+                    Text(
+                        '${rating.average.toStringAsFixed(1)} '
+                        '(${rating.count})',
+                        style: GoogleFonts.poppins(
+                            fontSize: 12.sp, fontWeight: FontWeight.w600)),
+                  ] else
+                    Text('New',
+                        style: GoogleFonts.poppins(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primaryColor)),
                   const Spacer(),
                   Text(
                     formatPriceLabel(price),
@@ -735,7 +801,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
                     style: GoogleFonts.poppins(
                       fontSize: 13.sp,
                       height: 1.5,
-                      color: AppColors.fontGrey,
+                      color: AppColors.palette.inkSoft,
                     ),
                   ),
                 ),

@@ -9,10 +9,13 @@ class AuthorTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Container(
       height: 40.h,
       decoration: BoxDecoration(
-        color: AppColors.appWhite,
+        color: AppColors.palette.surface,
         boxShadow: [BoxShadow(blurRadius: .5, color: Colors.black26)],
         borderRadius: BorderRadius.circular(30.r),
       ),

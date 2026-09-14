@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:padi_learn/screens/components/custom_role_dropdown.dart';
 import 'package:padi_learn/screens/components/custom_textfield.dart';
 import 'package:padi_learn/screens/components/primary_button.dart';
+import 'package:padi_learn/screens/components/social_sign_in.dart';
 import 'package:padi_learn/screens/home/home_shell.dart';
 import 'package:padi_learn/screens/login/login_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
@@ -113,11 +114,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(), // Dismiss keyboard on tap
       child: Scaffold(
         resizeToAvoidBottomInset: true,
-        backgroundColor: AppColors.appWhite,
+        backgroundColor: AppColors.palette.surface,
         body: SafeArea(
           child: SingleChildScrollView(
             padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
@@ -155,7 +159,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   'Join PadiLearn and start learning',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: AppColors.fontGrey,
+                    color: AppColors.palette.inkSoft,
                     fontSize: 14.sp,
                   ),
                 ),
@@ -212,6 +216,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   isLoading: _isLoading,
                   onPressed: _submitForm,
                 ),
+                const SocialSignIn(),
                 SizedBox(height: 20.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -219,7 +224,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Text(
                       'Already have an account?',
                       style: TextStyle(
-                        color: AppColors.fontGrey,
+                        color: AppColors.palette.inkSoft,
                         fontSize: 13.sp,
                       ),
                     ),

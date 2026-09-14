@@ -7,6 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:padi_learn/screens/components/primary_button.dart';
+import 'package:padi_learn/screens/teacher/components/category_picker.dart';
+import 'package:padi_learn/screens/teacher/components/earnings_hint.dart';
 import 'package:padi_learn/screens/teacher/components/upload_progress_card.dart';
 import 'package:padi_learn/screens/teacher/course_detail_screen.dart';
 import 'package:padi_learn/services/lesson_service.dart';
@@ -47,14 +49,6 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
   bool _saving = false;
   UploadProgress? _progress;
-
-  static const List<String> _categories = [
-    'Programming',
-    'Design',
-    'Marketing',
-    'Business',
-    'Data Science',
-  ];
 
   @override
   void initState() {
@@ -262,14 +256,17 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: AppColors.palette.ground,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F8FA),
+        backgroundColor: AppColors.palette.ground,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: AppColors.richBlack),
+        iconTheme: IconThemeData(color: AppColors.palette.ink),
         title: Text(
           'New Course',
           style: GoogleFonts.poppins(
@@ -320,17 +317,11 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
             _section(
               title: 'Category & price',
               children: [
-                DropdownButtonFormField<String>(
-                  initialValue: _category,
-                  isExpanded: true,
+                CategoryPicker(
+                  value: _category,
+                  enabled: !_saving,
                   decoration: _decoration('Category', Icons.category_outlined),
-                  items: _categories
-                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                      .toList(),
-                  onChanged:
-                      _saving ? null : (v) => setState(() => _category = v),
-                  validator: (v) =>
-                      (v == null || v.isEmpty) ? 'Please pick a category' : null,
+                  onChanged: (v) => setState(() => _category = v),
                 ),
                 SizedBox(height: 14.h),
                 _field(
@@ -339,6 +330,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                   icon: Icons.sell_outlined,
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  // Rebuild so the earnings estimate tracks what they type.
+                  onChanged: (_) => setState(() {}),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return 'Enter a price';
                     if (double.tryParse(v.trim()) == null) {
@@ -347,6 +340,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                     return null;
                   },
                 ),
+                SizedBox(height: 10.h),
+                EarningsHint(priceText: _price.text),
               ],
             ),
             SizedBox(height: 14.h),
@@ -413,7 +408,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                         Text(
                           'No cover chosen',
                           style: GoogleFonts.poppins(
-                              fontSize: 11.5.sp, color: AppColors.fontGrey),
+                              fontSize: 11.5.sp,
+                              color: AppColors.palette.inkSoft),
                         ),
                       ],
                     ),
@@ -438,7 +434,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
               Text(
                 formatBytes(_thumbnailBytes),
                 style: GoogleFonts.poppins(
-                    fontSize: 11.sp, color: AppColors.fontGrey),
+                    fontSize: 11.sp, color: AppColors.palette.inkSoft),
               ),
           ],
         ),
@@ -453,7 +449,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
         Container(
           padding: EdgeInsets.all(12.w),
           decoration: BoxDecoration(
-            color: const Color(0xFFF7F8FA),
+            color: AppColors.palette.ground,
             borderRadius: BorderRadius.circular(12.r),
           ),
           child: Row(
@@ -472,8 +468,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 12.sp,
                     color: _video == null
-                        ? AppColors.fontGrey
-                        : AppColors.richBlack,
+                        ? AppColors.palette.inkSoft
+                        : AppColors.palette.ink,
                   ),
                 ),
               ),
@@ -512,7 +508,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                   isPreview: false,
                 ).durationLabel!,
                 style: GoogleFonts.poppins(
-                    fontSize: 11.5.sp, color: AppColors.fontGrey),
+                    fontSize: 11.5.sp, color: AppColors.palette.inkSoft),
               ),
           ],
         ),
@@ -532,7 +528,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 13.sp,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.richBlack,
+                  color: AppColors.palette.ink,
                 ),
               ),
               SizedBox(height: 2.h),
@@ -540,7 +536,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                 'Let anyone watch this lesson before buying. The most reliable '
                 'way to sell a paid course.',
                 style: GoogleFonts.poppins(
-                    fontSize: 11.sp, color: AppColors.fontGrey),
+                    fontSize: 11.sp, color: AppColors.palette.inkSoft),
               ),
             ],
           ),
@@ -563,7 +559,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.appWhite,
+        color: AppColors.palette.surface,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
@@ -581,7 +577,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
             style: GoogleFonts.poppins(
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
-              color: AppColors.richBlack,
+              color: AppColors.palette.ink,
             ),
           ),
           if (subtitle != null) ...[
@@ -589,7 +585,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
             Text(
               subtitle,
               style: GoogleFonts.poppins(
-                  fontSize: 11.5.sp, color: AppColors.fontGrey),
+                  fontSize: 11.5.sp, color: AppColors.palette.inkSoft),
             ),
           ],
           SizedBox(height: 14.h),
@@ -602,11 +598,11 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   InputDecoration _decoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
-      labelStyle:
-          GoogleFonts.poppins(fontSize: 13.sp, color: AppColors.fontGrey),
+      labelStyle: GoogleFonts.poppins(
+          fontSize: 13.sp, color: AppColors.palette.inkSoft),
       prefixIcon: Icon(icon, size: 20.sp, color: AppColors.primaryColor),
       filled: true,
-      fillColor: const Color(0xFFF7F8FA),
+      fillColor: AppColors.palette.ground,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12.r),
         borderSide: BorderSide.none,
@@ -621,6 +617,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     int maxLines = 1,
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
+    ValueChanged<String>? onChanged,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
@@ -629,6 +626,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
       enabled: !_saving,
+      onChanged: onChanged,
       style: GoogleFonts.poppins(fontSize: 13.sp),
       decoration: _decoration(label, icon),
       validator: validator,

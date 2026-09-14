@@ -48,8 +48,7 @@ class PrimaryButton extends StatelessWidget {
                 height: 22.w,
                 child: const CircularProgressIndicator(
                   strokeWidth: 2.5,
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(AppColors.appWhite),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.appWhite),
                 ),
               )
             : Row(

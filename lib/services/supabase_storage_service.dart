@@ -201,7 +201,8 @@ class StoredObject {
     if (RegExp(r'^https?://', caseSensitive: false).hasMatch(stored)) {
       return null;
     }
-    return StoredObject(fallbackBucket, stored.replaceFirst(RegExp(r'^/+'), ''));
+    return StoredObject(
+        fallbackBucket, stored.replaceFirst(RegExp(r'^/+'), ''));
   }
 }
 
@@ -270,7 +271,8 @@ Future<MediaUploadResult> uploadCourseMedia({
     videoBytes = videoFile == null ? 0 : await videoFile.length();
     thumbnailBytes = thumbnailFile == null ? 0 : await thumbnailFile.length();
   } on FileSystemException catch (e) {
-    return MediaUploadResult.failure('Could not read the selected files: ${e.message}');
+    return MediaUploadResult.failure(
+        'Could not read the selected files: ${e.message}');
   }
 
   final sizeError = validateCourseMedia(
@@ -369,7 +371,9 @@ Future<MediaUploadResult> uploadCourseMedia({
 class _UploadOutcome {
   final bool ok;
   final String? error;
-  const _UploadOutcome.success() : ok = true, error = null;
+  const _UploadOutcome.success()
+      : ok = true,
+        error = null;
   const _UploadOutcome.failure(this.error) : ok = false;
 }
 

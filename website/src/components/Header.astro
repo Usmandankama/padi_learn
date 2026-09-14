@@ -1,0 +1,84 @@
+---
+import { mailto } from '../site';
+
+// Section links point back to the home page from the other pages.
+const base = Astro.url.pathname === '/' ? '' : '/';
+---
+
+<header class="site-header">
+  <div class="container bar">
+    <a class="brand" href="/" aria-label="PadiLearn home">
+      <img src="/favicon.svg" alt="" width="24" height="24" />
+      <span>PadiLearn</span>
+    </a>
+    <nav aria-label="Main">
+      <a class="hide-sm" href={`${base}#students`}>Students</a>
+      <a class="hide-sm" href={`${base}#teachers`}>Teachers</a>
+      <a class="hide-sm" href={`${base}#faq`}>FAQ</a>
+      <a class="join" href={mailto('Join the PadiLearn beta')}>Join the beta</a>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: color-mix(in srgb, var(--bg) 80%, transparent);
+    backdrop-filter: saturate(1.8) blur(20px);
+    -webkit-backdrop-filter: saturate(1.8) blur(20px);
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 3rem;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text);
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  .brand:hover {
+    text-decoration: none;
+  }
+
+  .brand img {
+    border-radius: 6px;
+  }
+
+  nav {
+    display: flex;
+    align-items: center;
+    gap: 1.75rem;
+    font-size: 0.8125rem;
+  }
+
+  nav a {
+    color: var(--text-soft);
+  }
+
+  nav a:hover {
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  nav .join {
+    color: var(--green-text);
+    font-weight: 500;
+  }
+
+  @media (max-width: 640px) {
+    .hide-sm {
+      display: none;
+    }
+  }
+</style>

@@ -45,10 +45,8 @@ class CourseService {
   /// Students who already enrolled keep the course — the SELECT policy still
   /// resolves it for them — which is why this exists instead of deleting.
   static Future<void> archive(String courseId) async {
-    await supabase
-        .from('courses')
-        .update({'archived_at': DateTime.now().toIso8601String()})
-        .eq('id', courseId);
+    await supabase.from('courses').update(
+        {'archived_at': DateTime.now().toIso8601String()}).eq('id', courseId);
   }
 
   /// Puts an archived course back on the marketplace.

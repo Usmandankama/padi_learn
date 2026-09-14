@@ -6,26 +6,28 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:padi_learn/controller/settings_controller.dart';
 import 'package:padi_learn/screens/components/settings_tile.dart';
-import 'package:padi_learn/screens/teacher/editprofile_screen.dart';
-import 'package:padi_learn/services/auth_service.dart';
 import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/utils/colors.dart';
+import 'package:padi_learn/utils/app_info.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     final settings = Get.find<SettingsController>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: AppColors.palette.ground,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F8FA),
+        backgroundColor: AppColors.palette.ground,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: AppColors.richBlack),
+        iconTheme: IconThemeData(color: AppColors.palette.ink),
         title: Text(
           'Settings',
           style: GoogleFonts.poppins(
@@ -38,19 +40,12 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 32.h),
         children: [
+          // Just the password here. Editing your name and photo is the button
+          // under the name card on the Profile screen, beside the things it
+          // changes — and account actions keep one home rather than two.
           SettingsSection(
             title: 'ACCOUNT',
             children: [
-              SettingsTile(
-                icon: Icons.person_outline,
-                title: 'Edit Profile',
-                subtitle: 'Name, photo and email',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const EditTeacherProfileScreen()),
-                ),
-              ),
               SettingsTile(
                 icon: Icons.lock_outline,
                 title: 'Change Password',
@@ -90,35 +85,12 @@ class SettingsScreen extends StatelessWidget {
             ],
           ),
           SizedBox(height: 24.h),
-          SettingsSection(
-            title: 'GENERAL',
-            children: [
-              SettingsTile(
-                icon: Icons.info_outline,
-                title: 'About',
-                onTap: () => showAboutDialog(
-                  context: context,
-                  applicationName: 'PadiLearn',
-                  applicationVersion: '1.0.0',
-                  applicationLegalese: '© 2026 PadiLearn',
-                ),
-              ),
-              SettingsTile(
-                icon: Icons.logout,
-                title: 'Logout',
-                iconColor: Colors.red,
-                titleColor: Colors.red,
-                trailing: const SizedBox.shrink(),
-                onTap: () => signOut(context),
-              ),
-            ],
-          ),
           SizedBox(height: 32.h),
           Center(
             child: Text(
-              'Version 1.0.0',
+              'Version $kAppVersion',
               style: GoogleFonts.poppins(
-                color: AppColors.fontGrey,
+                color: AppColors.palette.inkSoft,
                 fontSize: 12.sp,
               ),
             ),
@@ -143,7 +115,11 @@ class SettingsScreen extends StatelessWidget {
           padding: EdgeInsets.only(
               bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
           child: Container(
-            padding: EdgeInsets.fromLTRB(24.w, 12.h, 24.w, 24.h),
+            // Keeps Save clear of the device navigation bar. `padding` (not
+            // `viewPadding`) so it collapses when the keyboard covers that bar,
+            // which the outer viewInsets padding is already accounting for.
+            padding: EdgeInsets.fromLTRB(24.w, 12.h, 24.w,
+                24.h + MediaQuery.of(sheetContext).padding.bottom),
             decoration: BoxDecoration(
               color: Theme.of(sheetContext).scaffoldBackgroundColor,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
@@ -218,7 +194,8 @@ class SettingsScreen extends StatelessWidget {
                                       snackPosition: SnackPosition.BOTTOM);
                                 } catch (e) {
                                   isSaving.value = false;
-                                  Get.snackbar('Error', 'Could not update password.',
+                                  Get.snackbar(
+                                      'Error', 'Could not update password.',
                                       snackPosition: SnackPosition.BOTTOM);
                                 }
                               },

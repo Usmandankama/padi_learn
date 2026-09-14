@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:padi_learn/screens/components/report_sheet.dart';
 import 'package:padi_learn/services/comment_service.dart';
 import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/utils/colors.dart';
@@ -119,20 +120,23 @@ class _CommentsSectionState extends State<CommentsSection> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
             Icon(Icons.forum_outlined,
-                size: 18.sp, color: AppColors.richBlack),
+                size: 18.sp, color: AppColors.palette.ink),
             SizedBox(width: 8.w),
             Text(
               'Comments',
               style: GoogleFonts.poppins(
                 fontSize: 15.sp,
                 fontWeight: FontWeight.w600,
-                color: AppColors.richBlack,
+                color: AppColors.palette.ink,
               ),
             ),
             SizedBox(width: 6.w),
@@ -141,7 +145,7 @@ class _CommentsSectionState extends State<CommentsSection> {
                 '(${_comments.length})',
                 style: GoogleFonts.poppins(
                   fontSize: 13.sp,
-                  color: AppColors.fontGrey,
+                  color: AppColors.palette.inkSoft,
                 ),
               ),
           ],
@@ -182,9 +186,9 @@ class _CommentsSectionState extends State<CommentsSection> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
       decoration: BoxDecoration(
-        color: AppColors.appWhite,
+        color: AppColors.palette.surface,
         borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(color: AppColors.lightGrey),
+        border: Border.all(color: AppColors.palette.hairline),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -198,7 +202,7 @@ class _CommentsSectionState extends State<CommentsSection> {
               textCapitalization: TextCapitalization.sentences,
               style: GoogleFonts.poppins(
                 fontSize: 13.sp,
-                color: AppColors.richBlack,
+                color: AppColors.palette.ink,
               ),
               decoration: InputDecoration(
                 hintText: _isLecturer
@@ -206,7 +210,7 @@ class _CommentsSectionState extends State<CommentsSection> {
                     : 'Ask a question or share a thought…',
                 hintStyle: GoogleFonts.poppins(
                   fontSize: 13.sp,
-                  color: AppColors.fontGrey,
+                  color: AppColors.palette.inkSoft,
                 ),
                 border: InputBorder.none,
                 contentPadding:
@@ -241,13 +245,13 @@ class _CommentsSectionState extends State<CommentsSection> {
         child: Column(
           children: [
             Icon(Icons.chat_bubble_outline,
-                size: 34.sp, color: AppColors.lightGrey),
+                size: 34.sp, color: AppColors.palette.hairline),
             SizedBox(height: 8.h),
             Text(
               'No comments yet — be the first to ask.',
               style: GoogleFonts.poppins(
                 fontSize: 13.sp,
-                color: AppColors.fontGrey,
+                color: AppColors.palette.inkSoft,
               ),
             ),
           ],
@@ -271,10 +275,12 @@ class _CommentsSectionState extends State<CommentsSection> {
     return Container(
       padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: pinned ? AppColors.primaryAccent : AppColors.appWhite,
+        color: pinned ? AppColors.primaryAccent : AppColors.palette.surface,
         borderRadius: BorderRadius.circular(14.r),
         border: Border.all(
-          color: pinned ? AppColors.primaryColor.withOpacity(0.35) : AppColors.lightGrey,
+          color: pinned
+              ? AppColors.primaryColor.withOpacity(0.35)
+              : AppColors.palette.hairline,
         ),
       ),
       child: Column(
@@ -283,7 +289,8 @@ class _CommentsSectionState extends State<CommentsSection> {
           if (pinned) ...[
             Row(
               children: [
-                Icon(Icons.push_pin, size: 13.sp, color: AppColors.primaryColor),
+                Icon(Icons.push_pin,
+                    size: 13.sp, color: AppColors.primaryColor),
                 SizedBox(width: 4.w),
                 Text(
                   'Pinned by lecturer',
@@ -303,7 +310,8 @@ class _CommentsSectionState extends State<CommentsSection> {
               CircleAvatar(
                 radius: 16.r,
                 backgroundColor: AppColors.primaryAccent,
-                backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
+                backgroundImage:
+                    avatar.isNotEmpty ? NetworkImage(avatar) : null,
                 child: avatar.isEmpty
                     ? Text(
                         name.isNotEmpty ? name[0].toUpperCase() : '?',
@@ -330,7 +338,7 @@ class _CommentsSectionState extends State<CommentsSection> {
                             style: GoogleFonts.poppins(
                               fontSize: 13.sp,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.richBlack,
+                              color: AppColors.palette.ink,
                             ),
                           ),
                         ),
@@ -345,13 +353,15 @@ class _CommentsSectionState extends State<CommentsSection> {
                       _timeAgo(comment['created_at']),
                       style: GoogleFonts.poppins(
                         fontSize: 10.sp,
-                        color: AppColors.fontGrey,
+                        color: AppColors.palette.inkSoft,
                       ),
                     ),
                   ],
                 ),
               ),
-              if (canModerate || _isLecturer) _buildMenu(comment, pinned),
+              // Everyone signed in gets the menu: on other people's comments
+              // it holds Report, which Play's UGC policy requires.
+              if (canModerate || _uid != null) _buildMenu(comment, pinned),
             ],
           ),
           SizedBox(height: 8.h),
@@ -360,7 +370,7 @@ class _CommentsSectionState extends State<CommentsSection> {
             style: GoogleFonts.poppins(
               fontSize: 13.sp,
               height: 1.5,
-              color: AppColors.richBlack,
+              color: AppColors.palette.ink,
             ),
           ),
         ],
@@ -389,7 +399,8 @@ class _CommentsSectionState extends State<CommentsSection> {
   Widget _buildMenu(Map<String, dynamic> comment, bool pinned) {
     final isMine = comment['user_id'] == _uid;
     return PopupMenuButton<String>(
-      icon: Icon(Icons.more_vert, size: 18.sp, color: AppColors.fontGrey),
+      icon:
+          Icon(Icons.more_vert, size: 18.sp, color: AppColors.palette.inkSoft),
       padding: EdgeInsets.zero,
       onSelected: (value) {
         switch (value) {
@@ -399,16 +410,31 @@ class _CommentsSectionState extends State<CommentsSection> {
           case 'delete':
             _delete(comment);
             break;
+          case 'report':
+            showReportSheet(context, commentId: comment['id'].toString());
+            break;
         }
       },
       itemBuilder: (_) => [
+        if (!isMine)
+          PopupMenuItem(
+            value: 'report',
+            child: Row(
+              children: [
+                Icon(Icons.flag_outlined,
+                    size: 16.sp, color: AppColors.palette.ink),
+                SizedBox(width: 8.w),
+                Text('Report', style: GoogleFonts.poppins(fontSize: 12.sp)),
+              ],
+            ),
+          ),
         if (_isLecturer)
           PopupMenuItem(
             value: 'pin',
             child: Row(
               children: [
                 Icon(pinned ? Icons.push_pin_outlined : Icons.push_pin,
-                    size: 16.sp, color: AppColors.richBlack),
+                    size: 16.sp, color: AppColors.palette.ink),
                 SizedBox(width: 8.w),
                 Text(pinned ? 'Unpin' : 'Pin comment',
                     style: GoogleFonts.poppins(fontSize: 12.sp)),

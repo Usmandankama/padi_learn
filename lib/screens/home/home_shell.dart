@@ -8,11 +8,14 @@ import 'package:padi_learn/screens/home/components/bottom_nav_bar.dart';
 import 'package:padi_learn/screens/marketplace/marketplace_screen.dart';
 import 'package:padi_learn/screens/student/student_dashboard.dart';
 import 'package:padi_learn/screens/login/login_screen.dart';
+import 'package:padi_learn/screens/onboarding/role_selection_screen.dart';
 import 'package:padi_learn/screens/teacher/my_courses.dart';
 import 'package:padi_learn/utils/colors.dart';
 import '../student/student_profile_screen.dart';
 import '../teacher/teacher_dashboard.dart';
 import '../teacher/teacher_profle.dart';
+import 'package:padi_learn/controller/ongoing_courses_controller.dart';
+import 'package:get/get.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -65,9 +68,18 @@ class _HomeShellState extends State<HomeShell> {
       // The request succeeded and there is genuinely no profile row (an
       // orphaned session, or a signup whose profile was never created). That
       // is a real dead session, so clear it.
-      if (data == null || data['role'] == null) {
+      if (data == null) {
         await supabase.auth.signOut();
         _goToLogin();
+        return;
+      }
+
+      // A row with no role is not a dead session — it is a Google/Apple signup
+      // that has not been asked yet, since those providers return an identity
+      // and no role. Signing them out here (as this used to) trapped them in a
+      // loop: every social sign-in landed straight back on the login screen.
+      if (data['role'] == null) {
+        _goToRoleSelection();
         return;
       }
 
@@ -92,6 +104,16 @@ class _HomeShellState extends State<HomeShell> {
 
     setState(() {
       isStudent = role == 'Student';
+      if (isStudent) {
+        // Registered here, not wherever it is first read. The marketplace and
+        // the dashboard both need enrolment state, and leaving it to whichever
+        // tab built first made the marketplace's behaviour depend on tab order.
+        Get.put(
+          OngoingCoursesController(userId: user.id),
+          tag: user.id,
+          permanent: false,
+        );
+      }
       _screens = isStudent
           ? [
               const StudentDashboard(),
@@ -121,6 +143,15 @@ class _HomeShellState extends State<HomeShell> {
     }
   }
 
+  void _goToRoleSelection() {
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const RoleSelectionScreen()),
+      (route) => false,
+    );
+  }
+
   void _goToLogin() {
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
@@ -138,10 +169,13 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     final ready = _status == _ShellStatus.ready && _screens.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: AppColors.appWhite,
+      backgroundColor: AppColors.palette.surface,
       body: _buildBody(ready),
       // The bar is only meaningful once there are screens behind it.
       bottomNavigationBar: ready
@@ -155,9 +189,17 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   Widget _buildBody(bool ready) {
-    if (ready) return _screens[_selectedIndex];
-    if (_status == _ShellStatus.offline) return _buildOffline();
-    return const AppLoader();
+    if (!ready) {
+      if (_status == _ShellStatus.offline) return _buildOffline();
+      return const AppLoader();
+    }
+
+    // IndexedStack, not `_screens[_selectedIndex]`. Swapping the body child
+    // disposed the outgoing tab's State, so every tab switch tore down and
+    // rebuilt its realtime subscriptions (the teacher's course stream, the
+    // activity feed) and threw away scroll position and search text. The tabs
+    // now stay alive behind the one on screen.
+    return IndexedStack(index: _selectedIndex, children: _screens);
   }
 
   Widget _buildOffline() {
@@ -167,14 +209,15 @@ class _HomeShellState extends State<HomeShell> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.wifi_off_rounded, size: 48.sp, color: AppColors.lightGrey),
+            Icon(Icons.wifi_off_rounded,
+                size: 48.sp, color: AppColors.palette.hairline),
             SizedBox(height: 16.h),
             Text(
               "You're offline",
               style: GoogleFonts.poppins(
                 fontSize: 17.sp,
                 fontWeight: FontWeight.w700,
-                color: AppColors.richBlack,
+                color: AppColors.palette.ink,
               ),
             ),
             SizedBox(height: 8.h),
@@ -184,7 +227,7 @@ class _HomeShellState extends State<HomeShell> {
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 12.5.sp,
-                color: AppColors.fontGrey,
+                color: AppColors.palette.inkSoft,
               ),
             ),
             SizedBox(height: 24.h),
@@ -194,8 +237,7 @@ class _HomeShellState extends State<HomeShell> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryColor,
                 foregroundColor: AppColors.appWhite,
-                padding:
-                    EdgeInsets.symmetric(horizontal: 28.w, vertical: 12.h),
+                padding: EdgeInsets.symmetric(horizontal: 28.w, vertical: 12.h),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12.r),
                 ),
@@ -215,7 +257,7 @@ class _HomeShellState extends State<HomeShell> {
                 'Sign out',
                 style: GoogleFonts.poppins(
                   fontSize: 12.5.sp,
-                  color: AppColors.fontGrey,
+                  color: AppColors.palette.inkSoft,
                 ),
               ),
             ),

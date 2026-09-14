@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:padi_learn/screens/components/course_thumbnail.dart';
 import 'package:padi_learn/utils/colors.dart';
+import 'package:padi_learn/utils/money.dart';
 
 /// A row in the teacher's course list.
 ///
@@ -22,6 +23,9 @@ class TeacherCourseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     final title = (course['title'] ?? 'Untitled course').toString();
     final thumbnail = (course['thumbnail_url'] ?? '').toString();
     final price = (course['price'] as num?)?.toDouble() ?? 0;
@@ -35,7 +39,7 @@ class TeacherCourseCard extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.all(10.w),
         decoration: BoxDecoration(
-          color: AppColors.appWhite,
+          color: AppColors.palette.surface,
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
@@ -64,7 +68,7 @@ class TeacherCourseCard extends StatelessWidget {
                           style: GoogleFonts.poppins(
                             fontSize: 14.sp,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.richBlack,
+                            color: AppColors.palette.ink,
                           ),
                         ),
                       ),
@@ -76,7 +80,7 @@ class TeacherCourseCard extends StatelessWidget {
                   ),
                   SizedBox(height: 6.h),
                   Text(
-                    price == 0 ? 'Free' : 'NGN ${price.toStringAsFixed(0)}',
+                    formatPriceLabel(price),
                     style: GoogleFonts.poppins(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w700,
@@ -101,7 +105,7 @@ class TeacherCourseCard extends StatelessWidget {
               ),
             ),
             Icon(Icons.chevron_right_rounded,
-                color: AppColors.fontGrey, size: 22.sp),
+                color: AppColors.palette.inkSoft, size: 22.sp),
           ],
         ),
       ),
@@ -123,13 +127,13 @@ class TeacherCourseCard extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 15.sp, color: color ?? AppColors.fontGrey),
+        Icon(icon, size: 15.sp, color: color ?? AppColors.palette.inkSoft),
         SizedBox(width: 4.w),
         Text(
           value,
           style: GoogleFonts.poppins(
             fontSize: 11.5.sp,
-            color: AppColors.fontGrey,
+            color: AppColors.palette.inkSoft,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -145,7 +149,10 @@ class CourseStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = archived ? AppColors.fontGrey : AppColors.primaryColor;
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
+    final color = archived ? AppColors.palette.inkSoft : AppColors.primaryColor;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
       decoration: BoxDecoration(

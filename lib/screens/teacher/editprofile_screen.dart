@@ -74,8 +74,8 @@ class _EditTeacherProfileScreenState extends State<EditTeacherProfileScreen> {
   }
 
   Future<void> _pickImage() async {
-    final picked =
-        await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
+    final picked = await ImagePicker()
+        .pickImage(source: ImageSource.gallery, imageQuality: 80);
     if (picked != null) {
       setState(() => _image = File(picked.path));
     }
@@ -87,9 +87,11 @@ class _EditTeacherProfileScreenState extends State<EditTeacherProfileScreen> {
     await supabase.storage.from('profile-images').upload(
           path,
           _image!,
-          fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
+          fileOptions:
+              const FileOptions(contentType: 'image/jpeg', upsert: true),
         );
-    final publicUrl = supabase.storage.from('profile-images').getPublicUrl(path);
+    final publicUrl =
+        supabase.storage.from('profile-images').getPublicUrl(path);
     final bustedUrl = '$publicUrl?v=${DateTime.now().millisecondsSinceEpoch}';
     await supabase
         .from('profiles')
@@ -160,14 +162,17 @@ class _EditTeacherProfileScreenState extends State<EditTeacherProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: AppColors.palette.ground,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F8FA),
+        backgroundColor: AppColors.palette.ground,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: AppColors.richBlack),
+        iconTheme: IconThemeData(color: AppColors.palette.ink),
         title: Text(
           'Edit Profile',
           style: GoogleFonts.poppins(
@@ -204,7 +209,7 @@ class _EditTeacherProfileScreenState extends State<EditTeacherProfileScreen> {
                       'Changing your email requires confirmation via a link sent to the new address.',
                       style: GoogleFonts.poppins(
                         fontSize: 10.5.sp,
-                        color: AppColors.fontGrey,
+                        color: AppColors.palette.inkSoft,
                       ),
                     ),
                   ),
@@ -241,7 +246,9 @@ class _EditTeacherProfileScreenState extends State<EditTeacherProfileScreen> {
             color: AppColors.primaryAccent,
             shape: BoxShape.circle,
             border: Border.all(color: AppColors.primaryColor, width: 2),
-            image: bg != null ? DecorationImage(image: bg, fit: BoxFit.cover) : null,
+            image: bg != null
+                ? DecorationImage(image: bg, fit: BoxFit.cover)
+                : null,
           ),
           child: bg != null
               ? null
@@ -265,7 +272,7 @@ class _EditTeacherProfileScreenState extends State<EditTeacherProfileScreen> {
               decoration: BoxDecoration(
                 color: AppColors.primaryColor,
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFF7F8FA), width: 3),
+                border: Border.all(color: AppColors.palette.ground, width: 3),
               ),
               child: Icon(Icons.camera_alt, color: Colors.white, size: 18.sp),
             ),

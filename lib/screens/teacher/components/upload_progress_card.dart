@@ -15,6 +15,9 @@ class UploadProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     final progress = this.progress;
     // Before the first chunk lands (and while the row is being written) there
     // is nothing meaningful to measure, so the bar runs indeterminate.
@@ -26,7 +29,7 @@ class UploadProgressCard extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.lightGrey,
+        color: AppColors.palette.hairline,
         borderRadius: BorderRadius.circular(12.r),
       ),
       child: Column(
@@ -71,7 +74,7 @@ class UploadProgressCard extends StatelessWidget {
             child: LinearProgressIndicator(
               value: indeterminate ? null : progress.fraction,
               minHeight: 6.h,
-              backgroundColor: AppColors.appWhite,
+              backgroundColor: AppColors.palette.surface,
               valueColor:
                   const AlwaysStoppedAnimation<Color>(AppColors.primaryColor),
             ),
@@ -82,12 +85,12 @@ class UploadProgressCard extends StatelessWidget {
               if (progress != null && !indeterminate) progress.sizeLabel,
               if (remaining != null) remaining,
             ].join(' · '),
-            style: TextStyle(color: AppColors.fontGrey, fontSize: 12.sp),
+            style: TextStyle(color: AppColors.palette.inkSoft, fontSize: 12.sp),
           ),
           SizedBox(height: 4.h),
           Text(
             'Keep this screen open until the upload finishes.',
-            style: TextStyle(color: AppColors.fontGrey, fontSize: 11.sp),
+            style: TextStyle(color: AppColors.palette.inkSoft, fontSize: 11.sp),
           ),
         ],
       ),

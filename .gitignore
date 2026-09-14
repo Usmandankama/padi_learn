@@ -49,5 +49,17 @@ lib/config/supabase_config.dart
 firebase.json
 android/app/google-services.json
 google-services.json
-supabase/migrations/20260801000004_course_archiving.sql
-/supabase
+
+# Supabase: migrations and edge functions ARE the schema and belong in the
+# repo. Only the CLI's local scratch state is ignored — `/supabase` used to be
+# ignored wholesale, which left the database's shape recorded nowhere but the
+# remote project.
+supabase/.branches/
+supabase/.temp/
+supabase/**/.env
+
+# Remotion video workspace: source is tracked, dependencies and renders are not.
+video/node_modules/
+video/out/
+
+# Downloaded audio beds are tracked — they are small and the render needs them.

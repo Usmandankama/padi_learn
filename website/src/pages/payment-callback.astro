@@ -1,0 +1,59 @@
+---
+// Paystack redirects here after checkout (PaymentService.callbackUrl).
+// Normally nobody sees this page: the in-app checkout WebView intercepts the
+// navigation before it loads. It only shows if checkout was finished in a
+// real browser, so its one job is to send the person back to the app.
+//
+// It does not verify anything. Enrolment is granted by the verify-payment edge
+// function, never by landing here.
+import Base from '../layouts/Base.astro';
+import { site, mailto } from '../site';
+---
+
+<Base title="Payment" noindex>
+  <section class="container prose page">
+    <h1>Go back to the PadiLearn app</h1>
+    <p>
+      Your payment has been passed back to PadiLearn. Return to the app to finish. Your course will
+      appear once the payment is confirmed.
+    </p>
+
+    <p class="ref" data-ref hidden>
+      Payment reference: <code data-ref-value></code>
+    </p>
+
+    <div class="callout">
+      <p>
+        If the course doesn't appear within a few minutes, email
+        <a href={mailto('Payment issue')}>{site.supportEmail}</a> with the payment reference above.
+        Don't pay again.
+      </p>
+    </div>
+  </section>
+</Base>
+
+<script>
+  // Paystack appends ?reference=…&trxref=… Show it so support can look it up.
+  const params = new URLSearchParams(window.location.search);
+  const reference = params.get('reference') ?? params.get('trxref');
+  const wrap = document.querySelector<HTMLElement>('[data-ref]');
+  const value = document.querySelector<HTMLElement>('[data-ref-value]');
+  if (reference && wrap && value) {
+    value.textContent = reference;
+    wrap.hidden = false;
+  }
+</script>
+
+<style>
+  .page {
+    padding-block: 3rem 1rem;
+  }
+
+  code {
+    font-size: 0.95em;
+    background: var(--bg-alt);
+    padding: 0.15rem 0.4rem;
+    border-radius: 6px;
+    word-break: break-all;
+  }
+</style>

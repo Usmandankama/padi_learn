@@ -27,8 +27,9 @@ class _NotificationBellState extends State<NotificationBell> {
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: _notifications,
       builder: (context, snapshot) {
-        final unread =
-            (snapshot.data ?? const []).where((n) => n['is_read'] != true).length;
+        final unread = (snapshot.data ?? const [])
+            .where((n) => n['is_read'] != true)
+            .length;
 
         return Stack(
           clipBehavior: Clip.none,

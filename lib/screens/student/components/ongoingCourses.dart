@@ -15,6 +15,9 @@ class OngoingCoursesWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     if (userId.isEmpty) {
       return _emptyHint('Sign in to see the courses you are taking.');
     }
@@ -55,7 +58,8 @@ class OngoingCoursesWidget extends StatelessWidget {
               title: title,
               progress: progress,
               onTap: () => Get.to(
-                () => VideoPlayerPage(courseId: (course['id'] ?? '').toString()),
+                () =>
+                    VideoPlayerPage(courseId: (course['id'] ?? '').toString()),
               ),
             );
           },
@@ -69,7 +73,7 @@ class OngoingCoursesWidget extends StatelessWidget {
       width: double.infinity,
       padding: EdgeInsets.symmetric(vertical: 28.h, horizontal: 16.w),
       decoration: BoxDecoration(
-        color: AppColors.appWhite,
+        color: AppColors.palette.surface,
         borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: Colors.black.withOpacity(0.05)),
       ),
@@ -83,7 +87,7 @@ class OngoingCoursesWidget extends StatelessWidget {
             textAlign: TextAlign.center,
             style: GoogleFonts.poppins(
               fontSize: 12.sp,
-              color: AppColors.fontGrey,
+              color: AppColors.palette.inkSoft,
             ),
           ),
         ],
@@ -107,13 +111,16 @@ class _OngoingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 230.w,
         padding: EdgeInsets.all(10.w),
         decoration: BoxDecoration(
-          color: AppColors.appWhite,
+          color: AppColors.palette.surface,
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
@@ -146,7 +153,7 @@ class _OngoingCard extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 12.5.sp,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.richBlack,
+                      color: AppColors.palette.ink,
                     ),
                   ),
                   SizedBox(height: 10.h),
@@ -156,8 +163,8 @@ class _OngoingCard extends StatelessWidget {
                       value: (progress.clamp(0, 100)) / 100,
                       minHeight: 6.h,
                       backgroundColor: AppColors.primaryAccent,
-                      valueColor: const AlwaysStoppedAnimation(
-                          AppColors.primaryColor),
+                      valueColor:
+                          const AlwaysStoppedAnimation(AppColors.primaryColor),
                     ),
                   ),
                   SizedBox(height: 6.h),
@@ -165,7 +172,7 @@ class _OngoingCard extends StatelessWidget {
                     '$progress% complete',
                     style: GoogleFonts.poppins(
                       fontSize: 10.sp,
-                      color: AppColors.fontGrey,
+                      color: AppColors.palette.inkSoft,
                     ),
                   ),
                 ],

@@ -7,16 +7,16 @@ import 'package:padi_learn/screens/description/components/price_tag.dart';
 class CourseHeader extends StatelessWidget {
   final String imageUrl;
   final String author;
-  final bool isFree;
-  final String price;
+  final num price;
+  final bool isOwned;
 
   const CourseHeader({
-    Key? key,
+    super.key,
     required this.imageUrl,
     required this.author,
-    required this.isFree,
     required this.price,
-  }) : super(key: key);
+    this.isOwned = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +42,7 @@ class CourseHeader extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               AuthorTag(authorName: author),
-              PriceTag(isFree: isFree, price: price),
+              PriceTag(price: price, isOwned: isOwned),
             ],
           ),
         ),

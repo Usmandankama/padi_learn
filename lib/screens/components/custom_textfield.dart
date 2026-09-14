@@ -40,8 +40,12 @@ class _CustomTextfieldState extends State<CustomTextfield> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     final bool hasError = widget.borderColor != null;
-    final Color accent = hasError ? widget.borderColor! : AppColors.primaryColor;
+    final Color accent =
+        hasError ? widget.borderColor! : AppColors.primaryColor;
 
     return TextField(
       controller: widget.controller,
@@ -50,7 +54,8 @@ class _CustomTextfieldState extends State<CustomTextfield> {
       style: TextStyle(fontSize: 15.sp, color: AppColors.appBlack),
       decoration: InputDecoration(
         labelText: widget.label,
-        labelStyle: TextStyle(color: AppColors.fontGrey, fontSize: 14.sp),
+        labelStyle:
+            TextStyle(color: AppColors.palette.inkSoft, fontSize: 14.sp),
         filled: true,
         fillColor: const Color(0xFFF4F6F5),
         prefixIcon: Icon(widget.icon, color: accent, size: 20.sp),
@@ -61,7 +66,7 @@ class _CustomTextfieldState extends State<CustomTextfield> {
                   _obscured
                       ? Icons.visibility_off_outlined
                       : Icons.visibility_outlined,
-                  color: AppColors.fontGrey,
+                  color: AppColors.palette.inkSoft,
                   size: 20.sp,
                 ),
                 onPressed: () => setState(() => _obscured = !_obscured),

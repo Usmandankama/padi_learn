@@ -15,6 +15,7 @@ import 'package:padi_learn/services/lesson_service.dart';
 import 'package:padi_learn/services/supabase_storage_service.dart';
 import 'package:padi_learn/services/transaction_service.dart';
 import 'package:padi_learn/utils/colors.dart';
+import 'package:padi_learn/utils/money.dart';
 
 /// Everything a teacher does with one course: see how it is performing, read
 /// and moderate what students are asking, edit it, take it down.
@@ -207,6 +208,9 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     final course = _course;
     final archived = course?['archived_at'] != null;
     final students = (course?['enrollments'] as num?)?.toInt() ?? 0;
@@ -214,18 +218,18 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF7F8FA),
+        backgroundColor: AppColors.palette.ground,
         appBar: AppBar(
-          backgroundColor: const Color(0xFFF7F8FA),
+          backgroundColor: AppColors.palette.ground,
           elevation: 0,
           scrolledUnderElevation: 0,
-          iconTheme: const IconThemeData(color: AppColors.richBlack),
+          iconTheme: IconThemeData(color: AppColors.palette.ink),
           title: Text(
             (course?['title'] ?? 'Course').toString(),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: GoogleFonts.poppins(
-              color: AppColors.richBlack,
+              color: AppColors.palette.ink,
               fontSize: 16.sp,
               fontWeight: FontWeight.w600,
             ),
@@ -234,7 +238,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             if (course != null)
               PopupMenuButton<String>(
                 enabled: !_busy,
-                icon: const Icon(Icons.more_vert, color: AppColors.richBlack),
+                icon: Icon(Icons.more_vert, color: AppColors.palette.ink),
                 onSelected: (value) {
                   switch (value) {
                     case 'edit':
@@ -249,7 +253,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   }
                 },
                 itemBuilder: (_) => [
-                  const PopupMenuItem(value: 'edit', child: Text('Edit course')),
+                  const PopupMenuItem(
+                      value: 'edit', child: Text('Edit course')),
                   PopupMenuItem(
                     value: 'archive',
                     child: Text(archived ? 'Make it live again' : 'Archive'),
@@ -259,14 +264,15 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   if (students == 0)
                     const PopupMenuItem(
                       value: 'delete',
-                      child: Text('Delete', style: TextStyle(color: Colors.red)),
+                      child:
+                          Text('Delete', style: TextStyle(color: Colors.red)),
                     ),
                 ],
               ),
           ],
           bottom: TabBar(
             labelColor: AppColors.primaryColor,
-            unselectedLabelColor: AppColors.fontGrey,
+            unselectedLabelColor: AppColors.palette.inkSoft,
             indicatorColor: AppColors.primaryColor,
             labelStyle: GoogleFonts.poppins(
               fontSize: 13.sp,
@@ -274,7 +280,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             ),
             tabs: [
               const Tab(text: 'Overview'),
-              Tab(text: _lessons.isEmpty ? 'Lessons' : 'Lessons (${_lessons.length})'),
+              Tab(
+                  text: _lessons.isEmpty
+                      ? 'Lessons'
+                      : 'Lessons (${_lessons.length})'),
               const Tab(text: 'Q&A'),
             ],
           ),
@@ -301,12 +310,13 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.cloud_off, size: 40.sp, color: AppColors.lightGrey),
+            Icon(Icons.cloud_off,
+                size: 40.sp, color: AppColors.palette.hairline),
             SizedBox(height: 12.h),
             Text(
               'Could not load this course.',
               style: GoogleFonts.poppins(
-                  fontSize: 13.sp, color: AppColors.fontGrey),
+                  fontSize: 13.sp, color: AppColors.palette.inkSoft),
             ),
             SizedBox(height: 16.h),
             TextButton(onPressed: _load, child: const Text('Try again')),
@@ -349,10 +359,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
               Expanded(
                 child: _statTile(
                   Icons.payments_outlined,
-                  _salesCount == 1 ? 'Earned · 1 sale' : 'Earned · $_salesCount sales',
-                  _revenue == null
-                      ? '—'
-                      : 'NGN ${_revenue!.toStringAsFixed(0)}',
+                  _salesCount == 1
+                      ? 'Earned · 1 sale'
+                      : 'Earned · $_salesCount sales',
+                  _revenue == null ? '—' : formatNaira(_revenue!),
                 ),
               ),
             ],
@@ -374,7 +384,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                 child: _statTile(
                   Icons.sell_outlined,
                   'Price',
-                  price == 0 ? 'Free' : 'NGN ${price.toStringAsFixed(0)}',
+                  formatPriceLabel(price),
                 ),
               ),
             ],
@@ -387,7 +397,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
               style: GoogleFonts.poppins(
                 fontSize: 13.sp,
                 height: 1.6,
-                color: AppColors.fontGrey,
+                color: AppColors.palette.inkSoft,
               ),
             ),
           ),
@@ -423,13 +433,13 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             icon: Icon(
               archived ? Icons.unarchive_outlined : Icons.archive_outlined,
               size: 18.sp,
-              color: AppColors.fontGrey,
+              color: AppColors.palette.inkSoft,
             ),
             label: Text(
               archived ? 'Make it live again' : 'Archive this course',
               style: GoogleFonts.poppins(
                 fontSize: 13.sp,
-                color: AppColors.fontGrey,
+                color: AppColors.palette.inkSoft,
               ),
             ),
           ),
@@ -442,7 +452,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
                   fontSize: 11.sp,
-                  color: AppColors.fontGrey,
+                  color: AppColors.palette.inkSoft,
                 ),
               ),
             ),
@@ -475,7 +485,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 12.w),
       decoration: BoxDecoration(
-        color: AppColors.appWhite,
+        color: AppColors.palette.surface,
         borderRadius: BorderRadius.circular(14.r),
         boxShadow: [
           BoxShadow(
@@ -497,7 +507,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             style: GoogleFonts.poppins(
               fontSize: 15.sp,
               fontWeight: FontWeight.w700,
-              color: AppColors.richBlack,
+              color: AppColors.palette.ink,
             ),
           ),
           SizedBox(height: 2.h),
@@ -505,7 +515,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             label,
             style: GoogleFonts.poppins(
               fontSize: 11.sp,
-              color: AppColors.fontGrey,
+              color: AppColors.palette.inkSoft,
             ),
           ),
         ],
@@ -518,7 +528,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
       width: double.infinity,
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.appWhite,
+        color: AppColors.palette.surface,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
@@ -536,7 +546,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             style: GoogleFonts.poppins(
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
-              color: AppColors.richBlack,
+              color: AppColors.palette.ink,
             ),
           ),
           SizedBox(height: 10.h),
@@ -556,7 +566,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             label,
             style: GoogleFonts.poppins(
               fontSize: 12.5.sp,
-              color: AppColors.fontGrey,
+              color: AppColors.palette.inkSoft,
             ),
           ),
           const Spacer(),
@@ -567,7 +577,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
               style: GoogleFonts.poppins(
                 fontSize: 12.5.sp,
                 fontWeight: FontWeight.w600,
-                color: AppColors.richBlack,
+                color: AppColors.palette.ink,
               ),
             ),
           ),
@@ -670,14 +680,14 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.playlist_add,
-                  size: 48.sp, color: AppColors.lightGrey),
+                  size: 48.sp, color: AppColors.palette.hairline),
               SizedBox(height: 14.h),
               Text(
                 'No lessons yet',
                 style: GoogleFonts.poppins(
                   fontSize: 15.sp,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.richBlack,
+                  color: AppColors.palette.ink,
                 ),
               ),
               SizedBox(height: 6.h),
@@ -686,7 +696,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                 'anything out of it.',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
-                    fontSize: 12.5.sp, color: AppColors.fontGrey),
+                    fontSize: 12.5.sp, color: AppColors.palette.inkSoft),
               ),
               SizedBox(height: 20.h),
               PrimaryButton(
@@ -712,7 +722,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
               child: Text(
                 'Drag to reorder',
                 style: GoogleFonts.poppins(
-                    fontSize: 11.5.sp, color: AppColors.fontGrey),
+                    fontSize: 11.5.sp, color: AppColors.palette.inkSoft),
               ),
             ),
             TextButton.icon(
@@ -745,7 +755,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
       decoration: BoxDecoration(
-        color: AppColors.appWhite,
+        color: AppColors.palette.surface,
         borderRadius: BorderRadius.circular(14.r),
         boxShadow: [
           BoxShadow(
@@ -786,7 +796,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 12.5.sp,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.richBlack,
+                    color: AppColors.palette.ink,
                   ),
                 ),
                 SizedBox(height: 2.h),
@@ -802,7 +812,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                       Text(
                         lesson.durationLabel ?? 'Video ready',
                         style: GoogleFonts.poppins(
-                            fontSize: 10.5.sp, color: AppColors.fontGrey),
+                            fontSize: 10.5.sp,
+                            color: AppColors.palette.inkSoft),
                       ),
                     if (lesson.isPreview) ...[
                       SizedBox(width: 8.w),
@@ -821,7 +832,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             ),
           ),
           PopupMenuButton<String>(
-            icon: Icon(Icons.more_vert, size: 18.sp, color: AppColors.fontGrey),
+            icon: Icon(Icons.more_vert,
+                size: 18.sp, color: AppColors.palette.inkSoft),
             onSelected: (value) {
               if (value == 'edit') _editLesson(lesson);
               if (value == 'delete') _deleteLesson(lesson);

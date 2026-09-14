@@ -3,8 +3,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/controller/course_controller.dart';
+import 'package:padi_learn/config/features.dart';
 import 'package:padi_learn/controller/enrollment_controller.dart';
 import 'package:padi_learn/screens/components/primary_button.dart';
+import 'package:padi_learn/screens/components/report_sheet.dart';
 import 'package:padi_learn/screens/description/components/course_header.dart';
 import 'package:padi_learn/screens/payment/paystack_checkout_screen.dart';
 import 'package:padi_learn/screens/videoplayer/videoPlayer.dart';
@@ -15,7 +17,8 @@ import 'package:padi_learn/utils/colors.dart';
 /// Screen that displays full course details with the option to enroll or continue learning.
 class CourseDescriptionScreen extends StatefulWidget {
   @override
-  State<CourseDescriptionScreen> createState() => _CourseDescriptionScreenState();
+  State<CourseDescriptionScreen> createState() =>
+      _CourseDescriptionScreenState();
 }
 
 class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
@@ -31,6 +34,10 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
 
   List<Lesson> _lessons = const [];
   bool _loadingLessons = true;
+
+  /// Whether this course can be acquired from here: free ones always, paid
+  /// ones only once in-app checkout is allowed (see `features.dart`).
+  bool get _canBuy => isFree || kPaidCheckoutEnabled;
 
   @override
   void initState() {
@@ -83,31 +90,44 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Scaffold(
-      appBar: AppBar(), // Basic app bar
+      appBar: AppBar(
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.flag_outlined),
+            tooltip: 'Report course',
+            onPressed: () => showReportSheet(
+              context,
+              courseId: coursesController.selectedCourseId.value,
+            ),
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               /// Course image, author, and price tag (modular component)
               Obx(() => CourseHeader(
-                imageUrl: coursesController.selectedCourseImage.value,
-                author: coursesController.selectedCourseAuthor.value,
-                isFree: isFree,
-                price: coursesController.selectedCoursePrice.value
-                    .toStringAsFixed(0),
-              )),
+                    imageUrl: coursesController.selectedCourseImage.value,
+                    author: coursesController.selectedCourseAuthor.value,
+                    price: coursesController.selectedCoursePrice.value,
+                    isOwned: isAlreadyEnrolled,
+                  )),
 
               SizedBox(height: 20.h),
 
               /// Course Title
               Obx(() => Text(
-                coursesController.selectedCourseTitle.value,
-                style: TextStyle(fontSize: 28.sp, fontWeight: FontWeight.bold),
-              )),
+                    coursesController.selectedCourseTitle.value,
+                    style:
+                        TextStyle(fontSize: 28.sp, fontWeight: FontWeight.bold),
+                  )),
 
               SizedBox(height: 10.h),
 
@@ -116,9 +136,10 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
 
               /// Course Description
               Obx(() => Text(
-                coursesController.selectedCourseDescription.value,
-                style: TextStyle(fontSize: 16.sp, color: AppColors.fontGrey),
-              )),
+                    coursesController.selectedCourseDescription.value,
+                    style: TextStyle(
+                        fontSize: 16.sp, color: AppColors.palette.inkSoft),
+                  )),
 
               SizedBox(height: 24.h),
 
@@ -133,12 +154,32 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                     ? 'Continue Learning'
                     : isFree
                         ? 'Get for Free'
-                        : 'Buy Course',
+                        : _canBuy
+                            ? 'Buy Course'
+                            : 'Not available yet',
                 isLoading: isLoading,
-                onPressed:
-                    isAlreadyEnrolled ? _continueCourse : _handleEnrollment,
+                onPressed: isAlreadyEnrolled
+                    ? _continueCourse
+                    : (isFree || _canBuy)
+                        ? _handleEnrollment
+                        : null,
               ),
-              SizedBox(height: 24.h),
+              // Deliberately says nothing about where else the course might
+              // be bought: Play's Payments policy bans steering users to an
+              // outside checkout from inside the app.
+              if (!isAlreadyEnrolled && !isFree && !_canBuy) ...[
+                SizedBox(height: 10.h),
+                Center(
+                  child: Text(
+                    "Paid courses can't be bought in the app yet. Preview "
+                    'lessons are free to watch.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 12.sp, color: AppColors.palette.inkSoft),
+                  ),
+                ),
+              ],
+              SizedBox(height: 24.h + MediaQuery.of(context).padding.bottom),
             ],
           ),
         ),
@@ -148,6 +189,9 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
 
   /// Handles course enrollment (free) or purchase (paid, via Paystack).
   Future<void> _handleEnrollment() async {
+    // The button is already disabled in this case; this is the backstop, so
+    // no future caller can open the Paystack checkout while it's switched off.
+    if (!_canBuy) return;
     setState(() => isLoading = true);
 
     final courseId = coursesController.selectedCourseId.value;
@@ -247,7 +291,8 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                 '${_lessons.length} lesson${_lessons.length == 1 ? '' : 's'}',
                 if (total != null) total,
               ].join(' · '),
-              style: TextStyle(fontSize: 12.sp, color: AppColors.fontGrey),
+              style:
+                  TextStyle(fontSize: 12.sp, color: AppColors.palette.inkSoft),
             ),
           ],
         ),
@@ -272,7 +317,8 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
             Icon(
               unlocked ? Icons.play_circle_outline : Icons.lock_outline,
               size: 20.sp,
-              color: unlocked ? AppColors.primaryColor : AppColors.fontGrey,
+              color:
+                  unlocked ? AppColors.primaryColor : AppColors.palette.inkSoft,
             ),
             SizedBox(width: 12.w),
             Expanded(
@@ -282,7 +328,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 14.sp,
-                  color: AppColors.richBlack,
+                  color: AppColors.palette.ink,
                 ),
               ),
             ),
@@ -305,7 +351,8 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
             else if (lesson.durationLabel != null)
               Text(
                 lesson.durationLabel!,
-                style: TextStyle(fontSize: 12.sp, color: AppColors.fontGrey),
+                style: TextStyle(
+                    fontSize: 12.sp, color: AppColors.palette.inkSoft),
               ),
           ],
         ),
@@ -315,6 +362,7 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
 
   /// Navigates the user to the course video player screen
   void _continueCourse() {
-    Get.to(() => VideoPlayerPage(courseId: coursesController.selectedCourseId.value));
+    Get.to(() =>
+        VideoPlayerPage(courseId: coursesController.selectedCourseId.value));
   }
 }

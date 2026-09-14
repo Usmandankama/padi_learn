@@ -1,0 +1,214 @@
+/*
+ * Quiet, product-first styling: system type, lots of space, neutral surfaces,
+ * and one colour. The brand green is AppColors.primaryColor in
+ * lib/utils/colors.dart. It is the only accent, so it always means "you can act on this".
+ */
+:root {
+  --green: #32936f;
+  --green-hover: #2b8061;
+  /* Green for small text: darker than the brand, so it meets contrast on white. */
+  --green-text: #217a59;
+
+  --bg: #ffffff;
+  --bg-alt: #f5f5f7;
+  --text: #1d1d1f;
+  --text-soft: #6e6e73;
+  --line: #d2d2d7;
+  --device: #1d1d1f;
+
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+
+  --max: 64rem;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --green-text: #4cc195;
+    --bg: #000000;
+    --bg-alt: #111113;
+    --text: #f5f5f7;
+    --text-soft: #a1a1a6;
+    --line: #38383d;
+    --device: #2c2c2e;
+    color-scheme: dark;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  letter-spacing: -0.011em;
+  -webkit-font-smoothing: antialiased;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+p {
+  margin: 0 0 1em;
+}
+
+a {
+  color: var(--green-text);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--max);
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+
+/* Buttons: one filled pill, and plain text links with a chevron. */
+.button {
+  display: inline-block;
+  padding: 0.7rem 1.35rem;
+  border-radius: 980px;
+  background: var(--green);
+  color: #ffffff;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.button:hover {
+  background: var(--green-hover);
+  text-decoration: none;
+}
+
+.more::after {
+  content: ' ›';
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 100;
+  padding: 0.5rem 1rem;
+  background: var(--green);
+  color: #ffffff;
+  border-radius: 8px;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* Long-form pages: privacy, terms, account deletion. */
+.prose {
+  max-width: 42rem;
+  padding-block: 4rem 2rem;
+}
+
+.prose h1 {
+  font-size: clamp(2.25rem, 6vw, 3rem);
+  margin-bottom: 0.5rem;
+}
+
+.prose h2 {
+  font-size: 1.5rem;
+  margin: 2.5rem 0 0.75rem;
+}
+
+.prose h3 {
+  font-size: 1.15rem;
+  margin: 1.5rem 0 0.5rem;
+}
+
+.prose p,
+.prose li {
+  color: var(--text);
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.25rem;
+  margin: 0 0 1em;
+}
+
+.prose li {
+  margin-bottom: 0.4em;
+}
+
+.prose a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.prose table {
+  display: block;
+  overflow-x: auto;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.prose th,
+.prose td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.65rem 0.75rem 0.65rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.prose th {
+  font-weight: 600;
+}
+
+.prose .updated {
+  color: var(--text-soft);
+  font-size: 0.95rem;
+  margin-bottom: 2rem;
+}
+
+.callout {
+  background: var(--bg-alt);
+  border-radius: 14px;
+  padding: 1.1rem 1.35rem;
+  margin: 1.75rem 0;
+}
+
+.callout > :last-child {
+  margin-bottom: 0;
+}

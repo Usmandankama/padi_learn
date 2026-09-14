@@ -189,14 +189,17 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: AppColors.palette.ground,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F8FA),
+        backgroundColor: AppColors.palette.ground,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: AppColors.richBlack),
+        iconTheme: IconThemeData(color: AppColors.palette.ink),
         title: Text(
           widget.isEditing ? 'Edit Lesson' : 'Add Lesson',
           style: GoogleFonts.poppins(
@@ -219,11 +222,11 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
                 decoration: InputDecoration(
                   labelText: 'Lesson title',
                   labelStyle: GoogleFonts.poppins(
-                      fontSize: 13.sp, color: AppColors.fontGrey),
+                      fontSize: 13.sp, color: AppColors.palette.inkSoft),
                   prefixIcon: Icon(Icons.title,
                       size: 20.sp, color: AppColors.primaryColor),
                   filled: true,
-                  fillColor: const Color(0xFFF7F8FA),
+                  fillColor: AppColors.palette.ground,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.r),
                     borderSide: BorderSide.none,
@@ -277,14 +280,14 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
           style: GoogleFonts.poppins(
             fontSize: 12.5.sp,
             fontWeight: FontWeight.w600,
-            color: AppColors.richBlack,
+            color: AppColors.palette.ink,
           ),
         ),
         SizedBox(height: 8.h),
         Container(
           padding: EdgeInsets.all(12.w),
           decoration: BoxDecoration(
-            color: const Color(0xFFF7F8FA),
+            color: AppColors.palette.ground,
             borderRadius: BorderRadius.circular(12.r),
           ),
           child: Row(
@@ -305,8 +308,8 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 12.sp,
                     color: _video != null
-                        ? AppColors.richBlack
-                        : AppColors.fontGrey,
+                        ? AppColors.palette.ink
+                        : AppColors.palette.inkSoft,
                   ),
                 ),
               ),
@@ -321,7 +324,9 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
               icon: Icon(Icons.upload_outlined,
                   size: 18.sp, color: AppColors.primaryColor),
               label: Text(
-                hasExisting || _video != null ? 'Replace video' : 'Choose video',
+                hasExisting || _video != null
+                    ? 'Replace video'
+                    : 'Choose video',
                 style: GoogleFonts.poppins(
                     fontSize: 12.5.sp, color: AppColors.primaryColor),
               ),
@@ -337,7 +342,7 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
               Text(
                 durationLabel,
                 style: GoogleFonts.poppins(
-                    fontSize: 11.5.sp, color: AppColors.fontGrey),
+                    fontSize: 11.5.sp, color: AppColors.palette.inkSoft),
               ),
           ],
         ),
@@ -357,7 +362,7 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
                 style: GoogleFonts.poppins(
                   fontSize: 13.sp,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.richBlack,
+                  color: AppColors.palette.ink,
                 ),
               ),
               SizedBox(height: 2.h),
@@ -365,7 +370,7 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
                 'Anyone can watch this lesson without buying the course. '
                 'A good hook for lesson one.',
                 style: GoogleFonts.poppins(
-                    fontSize: 11.sp, color: AppColors.fontGrey),
+                    fontSize: 11.sp, color: AppColors.palette.inkSoft),
               ),
             ],
           ),
@@ -383,7 +388,7 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: AppColors.appWhite,
+        color: AppColors.palette.surface,
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(

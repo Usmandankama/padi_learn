@@ -1,0 +1,52 @@
+---
+import { site } from '../site';
+---
+
+<footer class="site-footer">
+  <div class="container">
+    <nav aria-label="Footer">
+      <a href="/privacy">Privacy Policy</a>
+      <a href="/terms">Terms of Service</a>
+      <a href="/delete-account">Delete Your Account</a>
+      <a href={`mailto:${site.supportEmail}`}>Contact</a>
+    </nav>
+    <p>Copyright © 2026 PadiLearn. All rights reserved.</p>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    background: var(--bg-alt);
+    color: var(--text-soft);
+    font-size: 0.75rem;
+    padding-block: 1.25rem 2rem;
+  }
+
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 0;
+    padding-bottom: 0.9rem;
+    margin-bottom: 0.9rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  nav a {
+    color: var(--text-soft);
+    padding-right: 0.75rem;
+    margin-right: 0.75rem;
+    border-right: 1px solid var(--line);
+  }
+
+  nav a:last-child {
+    border-right: 0;
+  }
+
+  nav a:hover {
+    color: var(--text);
+  }
+
+  p {
+    margin: 0;
+  }
+</style>

@@ -58,15 +58,19 @@ class _StudentDashboardState extends State<StudentDashboard> {
       _marketController.reload(),
       _userController.fetchUserInfo(),
       // Matches the tag OngoingCoursesWidget registers under.
-      if (uid.isNotEmpty && Get.isRegistered<OngoingCoursesController>(tag: uid))
+      if (uid.isNotEmpty &&
+          Get.isRegistered<OngoingCoursesController>(tag: uid))
         Get.find<OngoingCoursesController>(tag: uid).reload(),
     ]);
   }
 
   @override
   Widget build(BuildContext context) {
+    // Subscribes to theme changes; without this the screen keeps
+    // painting the previous theme's colours when the mode flips.
+    AppColors.watch(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: AppColors.palette.ground,
       body: SafeArea(
         child: RefreshIndicator(
           color: AppColors.primaryColor,
@@ -75,31 +79,32 @@ class _StudentDashboardState extends State<StudentDashboard> {
             physics: const AlwaysScrollableScrollPhysics(),
             padding: EdgeInsets.only(bottom: _kGap24.h),
             child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(),
-              SizedBox(height: _kGap16.h),
-              _buildSearchBar(),
-              SizedBox(height: _kGap16.h),
-              _buildFeaturedBanner(),
-              SizedBox(height: _kGap24.h),
-              _buildSectionHeader('Continue Learning'),
-              SizedBox(height: 12.h),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: _kGap16.w),
-                // Obx so the widget picks the id up when the profile resolves,
-                // rather than being built once with an empty one.
-                child: Obx(
-                  () => OngoingCoursesWidget(
-                    userId: _userController.userId.value,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(),
+                SizedBox(height: _kGap16.h),
+                _buildSearchBar(),
+                SizedBox(height: _kGap16.h),
+                _buildFeaturedBanner(),
+                SizedBox(height: _kGap24.h),
+                _buildSectionHeader('Continue Learning'),
+                SizedBox(height: 12.h),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: _kGap16.w),
+                  // Obx so the widget picks the id up when the profile resolves,
+                  // rather than being built once with an empty one.
+                  child: Obx(
+                    () => OngoingCoursesWidget(
+                      userId: _userController.userId.value,
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(height: _kGap24.h),
-              _buildSectionHeader('Popular Courses', onSeeAll: _goToMarketplace),
-              SizedBox(height: 12.h),
-              _buildPopularGrid(),
-            ],
+                SizedBox(height: _kGap24.h),
+                _buildSectionHeader('Popular Courses',
+                    onSeeAll: _goToMarketplace),
+                SizedBox(height: 12.h),
+                _buildPopularGrid(),
+              ],
             ),
           ),
         ),
@@ -122,7 +127,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   _greeting,
                   style: GoogleFonts.poppins(
                     fontSize: 13.sp,
-                    color: AppColors.fontGrey,
+                    color: AppColors.palette.inkSoft,
                   ),
                 ),
                 SizedBox(height: 2.h),
@@ -134,7 +139,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                     style: GoogleFonts.poppins(
                       fontSize: 20.sp,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.richBlack,
+                      color: AppColors.palette.ink,
                     ),
                   ),
                 ),
@@ -155,7 +160,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       height: 44.w,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: AppColors.appWhite,
+        color: AppColors.palette.surface,
         borderRadius: BorderRadius.circular(14.r),
         boxShadow: [
           BoxShadow(
@@ -167,7 +172,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       ),
       // The real bell: opens the inbox and shows a live unread count. This was
       // a static icon with a permanently-lit red dot.
-      child: const NotificationBell(iconColor: AppColors.richBlack),
+      child: NotificationBell(iconColor: AppColors.palette.ink),
     );
   }
 
@@ -212,7 +217,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
           height: 50.h,
           padding: EdgeInsets.symmetric(horizontal: 16.w),
           decoration: BoxDecoration(
-            color: AppColors.appWhite,
+            color: AppColors.palette.surface,
             borderRadius: BorderRadius.circular(14.r),
             boxShadow: [
               BoxShadow(
@@ -230,7 +235,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 'Search courses',
                 style: GoogleFonts.poppins(
                   fontSize: 13.sp,
-                  color: AppColors.fontGrey,
+                  color: AppColors.palette.inkSoft,
                 ),
               ),
             ],
@@ -287,8 +292,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   GestureDetector(
                     onTap: _goToMarketplace,
                     child: Container(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 16.w, vertical: 8.h),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12.r),
@@ -326,7 +331,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
             style: GoogleFonts.poppins(
               fontSize: 17.sp,
               fontWeight: FontWeight.w700,
-              color: AppColors.richBlack,
+              color: AppColors.palette.ink,
             ),
           ),
           if (onSeeAll != null)
@@ -351,6 +356,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
       padding: EdgeInsets.symmetric(horizontal: _kGap16.w),
       child: Obx(() {
         final courses = _marketController.courses.toList();
+        final owned =
+            OngoingCoursesController.forCurrentUser()?.ownedIds.value ??
+                <String>{};
 
         if (courses.isEmpty) {
           return GridView.builder(
@@ -376,6 +384,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
             final course = popular[i];
             return CourseCard(
               course: course,
+              isOwned: owned.contains((course['id'] ?? '').toString()),
               onTap: () => _openCourse(course),
             );
           },
