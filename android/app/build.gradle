@@ -23,8 +23,30 @@ if (flutterVersionName == null) {
     flutterVersionName = "1.0"
 }
 
+// Release signing. The keystore path and its passwords live in
+// `android/key.properties`, which is git-ignored — copy `key.properties.example`
+// and fill it in. Keep the .jks itself outside this repo.
+//
+// Without that file `assembleRelease` falls back to the debug key, so
+// `flutter run --release` still works on a fresh clone. `bundleRelease` refuses,
+// because an .aab exists only to be uploaded.
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("key.properties")
+def hasReleaseKeystore = keystorePropertiesFile.exists()
+if (hasReleaseKeystore) {
+    keystorePropertiesFile.withReader("UTF-8") { reader ->
+        keystoreProperties.load(reader)
+    }
+} else if (gradle.startParameter.taskNames.any { it.toLowerCase().contains("bundlerelease") }) {
+    // Fail now with something readable, rather than letting Play reject a
+    // debug-signed bundle after a 27-minute build and an upload.
+    throw new GradleException("""Cannot build a release bundle: android/key.properties not found.
+Copy android/key.properties.example, fill it in, and point storeFile at your upload keystore.
+See docs/LAUNCH_ANDROID.md, section B, 'Release signing'.""")
+}
+
 android {
-    namespace = "com.dankamaInnoHu.padiLearn"
+    namespace = "com.padilearn.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -38,8 +60,8 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.dankamaInnoHu.padiLearn"
+        // Frozen by Google Play at first upload — see the 2026-09-16 dev log entry.
+        applicationId = "com.padilearn.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
         minSdkVersion = flutter.minSdkVersion
@@ -48,11 +70,20 @@ android {
         versionName = flutterVersionName
     }
 
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            release {
+                storeFile = file(keystoreProperties["storeFile"])
+                storePassword = keystoreProperties["storePassword"]
+                keyAlias = keystoreProperties["keyAlias"]
+                keyPassword = keystoreProperties["keyPassword"]
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
+            signingConfig = hasReleaseKeystore ? signingConfigs.release : signingConfigs.debug
         }
     }
 }

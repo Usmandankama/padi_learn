@@ -48,6 +48,13 @@ lib/config/secrets.dart
 lib/config/supabase_config.dart
 firebase.json
 android/app/google-services.json
+
+# Android release signing. Losing these locks you out of updating the app
+# forever; leaking them lets someone else ship one. The .jks belongs outside
+# this repo entirely — key.properties.example shows the shape.
+android/key.properties
+*.jks
+*.keystore
 google-services.json
 
 # Supabase: migrations and edge functions ARE the schema and belong in the

@@ -19,13 +19,48 @@ WebView or message. `course_description_screen.dart` opens
 `PaystackCheckoutScreen` for paid courses, which breaks both rules. Apple's
 Guideline 3.1.1 says the same, so this isn't only an Android problem.
 
+**Why Glovo and Bolt can use Paystack and PadiLearn cannot.** The policy covers
+only digital content consumed inside the app. Physical goods and real-world
+services are exempt, which accounts for every Nigerian app that looks like a
+counter-example: Glovo and Jumia deliver goods, Bolt sells an actual car
+journey, Kuda and PiggyVest are financial services. PadiLearn sells video
+watched in the app, so the right comparison is Netflix and Spotify — neither
+of which lets you subscribe inside their Android app at all. They removed the
+purchase rather than pay the fee, and they do not link out either, because
+that is banned too.
+
+Enforcement is uneven, so you will find Nigerian edtech apps seemingly taking
+card payments for digital courses. Some are exempt for reasons not visible from
+outside, some sell in-person tutoring, and some are in breach and have not been
+caught. It is enforced on report, on review of an update, or once you are big
+enough to notice — not by audit. "They got away with it" is not a defence when
+it is your account being terminated.
+
+**And why Spotify and Netflix now show a "See plans" link.** That link-out is
+recent and rests on two things PadiLearn does not have. First, jurisdiction:
+the April 2025 Epic v. Apple injunction stopped Apple charging commission on
+external links **in the US**, the EU's DMA forced the same there, and Epic v.
+Google did it to Play. Nigeria is covered by neither remedy, and storefronts
+differ by region, so a US build is no guide. Second, Apple's **reader app**
+entitlement, a global carve-out for apps that exist to consume content bought
+elsewhere — books, music, video. Netflix and Spotify are its archetype;
+a marketplace with uploads, comments and progress tracking is a stretch, the
+entitlement must be applied for, and **Google has no equivalent**, so it would
+not help on Android at all.
+
+Check the live policy text before building against any of this: it is moving
+quickly, appeals are outstanding, and a competitor's app is evidence of their
+legal position, not of what is permitted to you. Two things worth confirming:
+whether Google's user-choice billing (a reduced fee, not 15%) covers Nigeria
+yet, and whether Play's anti-steering rules still apply here in full.
+
 The fix is a business decision, not a code change:
 
 | Option | What it means | What you keep on a NGN 5,000 sale | Work |
 |---|---|---|---|
 | **1. Free courses only for the beta** | Paid courses aren't sold in the app yet. No billing, no Paystack, no company registration needed. | NGN 0 (nothing is sold) | Hide the Buy button on paid courses |
 | **2. App for watching only, buying on the web** | Students buy on a website and watch in the app. The app shows no price, Buy button or link to the website's checkout. | ~NGN 724 (unchanged) | Build a web checkout. It doesn't exist yet. |
-| **3. Google Play Billing** | Purchases go through Google. Google charges a service fee (15% on your first USD 1M a year; check the current rate). | ~NGN 149 if teacher payouts stay the same | Fixed-price products, a separate way to reconcile Google's payouts with teacher earnings, and a new commission model |
+| **3. Google Play Billing** | Purchases go through Google. Google charges a service fee (15% on your first USD 1M a year; check the current rate). **Confirm first that Nigeria is a supported merchant country for Play payouts** — if a payments profile cannot be opened from Nigeria, this option is closed regardless of the fee. | ~NGN 149 if teacher payouts stay the same | Fixed-price products, a separate way to reconcile Google's payouts with teacher earnings, and a new commission model |
 
 **Recommended: run option 1 for the closed test.** The test is there to find out
 whether teachers will publish and students will watch, and it doesn't need
@@ -63,7 +98,7 @@ Most of the code work in section B can happen during step 7.
 
 - [ ] **Payment path for Android** (see above). Recommended: free courses only for the closed test.
 - [ ] **Personal or organisation Play account.** A personal account is available now, and the 14-day rule applies to it. An organisation account needs a D-U-N-S number, which in turn needs the registered company. If you are thinking of waiting for an organisation account to avoid the test, first check whether the test rule really exempts it.
-- [ ] **Confirm the package name is final:** `com.dankamaInnoHu.padiLearn`. It can never be changed after the first upload.
+- [x] **Package name is final:** `com.padilearn.app`. *Changed 2026-09-16 from `com.dankamaInnoHu.padiLearn`, before any upload.* It can never be changed after the first upload. The tester opt-in URL is `play.google.com/apps/testing/com.padilearn.app`.
 
 ---
 
@@ -75,7 +110,7 @@ Most of the code work in section B can happen during step 7.
 - [ ] **In-app account deletion.** *Live 2026-09-14: migration applied, function deployed with JWT verification on; not yet tested on a phone.* The `delete-account` edge function removes the user's storage files and then the auth user, and both profile screens have a "Delete account" tile. The migration keeps `transactions` (buyer set to null). A teacher with paying students is refused and sent to support. **Still to do:** test it with a throwaway student and a throwaway teacher. The *web* deletion page is in section D.
 - [x] **Remove the fake popularity numbers.** *Done 2026-09-14: migration applied, counters now match the real rows (10 enrolments, 3 rated courses).* Cards and filters now read `rating_avg` / `rating_count` and show "New" when a course has no ratings. The migration recounts enrolments and ratings from real rows, and the seed no longer invents them.
 - [ ] **Reporting for user content.** *Live 2026-09-14 (`content_reports` created); not yet tested on a phone.* Report a course from its page, or a comment from its menu, into `content_reports`. **Acting on reports is manual:** check open reports in the dashboard every day during the test, and add an email alert before production.
-- [ ] **Release signing.** Release builds are currently signed with the debug key (`android/app/build.gradle`), and no keystore exists. Create an upload keystore. Keep its passwords in `android/key.properties` and make sure git ignores that file. Wire up `signingConfigs.release` and enrol in Play App Signing. **Back the keystore up somewhere other than this laptop.**
+- [ ] **Release signing.** *Gradle side done 2026-09-16:* `signingConfigs.release` reads `android/key.properties`, which is git-ignored (as are `*.jks` / `*.keystore`); `key.properties.example` shows the shape. Without that file the build still falls back to the debug key and says so, so a fresh clone keeps working. **Still to do:** run `keytool` to create the upload keystore, write the real `key.properties`, and enrol in Play App Signing. **Back the keystore up somewhere other than this laptop** — lose it and the app can never be updated again.
 - [ ] **Password reset, end to end.** Add `padilearn://reset-callback` under Supabase's Redirect URLs, then test the whole flow on a real phone.
 - [x] **Help & Support.** *Done 2026-09-14.* It opens an email to `hello@padilearn.com`, and copies the address if the phone has no mail app.
 - [ ] **Error reporting.** *Code done 2026-09-14.* Sentry is wired into `main.dart` and only switches on when the build passes `--dart-define=SENTRY_DSN=...`. **Still to do:** create the Sentry project, add the DSN to release builds, and name Sentry in the privacy policy and the Data safety form (crash logs).
@@ -84,7 +119,7 @@ Most of the code work in section B can happen during step 7.
 
 ### Before taking real money (not needed for a free-only beta)
 
-- [ ] **Paystack webhook** for `charge.success`. Today, if the app dies after a student pays but before it calls `verify-payment`, Paystack keeps the money and the student gets no enrolment.
+- [ ] **Paystack webhook** for `charge.success`. *Written 2026-09-17, not deployed and not type-checked* (no Deno or Supabase CLI on this machine). `supabase/functions/paystack-webhook` verifies Paystack's HMAC SHA-512 signature in constant time, re-asks Paystack what happened, then fulfils through the new `supabase/functions/_shared/paystack.ts`, which `verify-payment` now calls too — one copy of the fee split, so the two paths cannot drift. Both writes stay idempotent, so app and webhook may race or repeat safely. A 500 asks Paystack to redeliver, a 200 closes cases retrying could never fix. **Still to do:** `supabase functions deploy paystack-webhook --no-verify-jwt` (Paystack holds no JWT, so the signature check is the only authentication — deploying it *with* JWT verification silently breaks every delivery), redeploy `verify-payment` since it changed, set the webhook URL in Paystack's dashboard to `https://<project>.supabase.co/functions/v1/paystack-webhook`, then test with a real payment and with a deliberately killed app. Note the shared directory means these must go up with the CLI, not pasted into the dashboard editor.
 - [ ] **Check Paystack's current fees** against `lib/utils/pricing.dart` and `verify-payment`, and update both together.
 
 ### Build and test on real phones
@@ -103,13 +138,22 @@ Most of the code work in section B can happen during step 7.
 
 ## C. Supabase
 
-- [ ] In **Authentication → URL Configuration**, set **Site URL** to `https://padilearn.com` and add both `padilearn://reset-callback` and `https://padilearn.com/email-confirmed` to **Redirect URLs**. A redirect that isn't listed silently falls back to the Site URL.
-- [ ] Set up **custom SMTP** with Resend. *In progress 2026-09-14:* `hello@padilearn.com` is the sender and the templates are in `supabase/templates/`. DNS is now on Cloudflare. The DKIM record is published, but Resend's `send` and `rsend` CNAME records were missing when checked. Add them in Cloudflare as **DNS only** (grey cloud), then verify the domain in Resend.
+- [x] **Authentication → URL Configuration.** *Done 2026-09-16:* Site URL is `https://padilearn.com`, and both `padilearn://reset-callback` and `https://padilearn.com/email-confirmed` are in the Redirect URLs allow list. Verified against the code — those are the only two the app asks for (`deep_links.dart`, `web_links.dart`), the Android intent filter matches the scheme and host, and all four site pages return 200. A redirect that isn't listed silently falls back to the Site URL.
+- [ ] Set up **custom SMTP** with Resend. *DNS complete 2026-09-16:* `send` and `rsend` now resolve to Resend (`forge.rmta.net`), DKIM is published at `resend._domainkey` with `d=padilearn.com` so DMARC aligns on DKIM, and `send.padilearn.com` carries Resend's SPF — the root SPF correctly still lists only Hostinger, because Resend's envelope sender is the `send` subdomain. MX is untouched, so inbound mail to `hello@padilearn.com` still goes to Hostinger. **Still to do:** confirm the domain shows Verified in Resend, point Supabase Auth's SMTP settings at Resend, and send a real reset and a real signup to prove it end to end — correct DNS does not mean Supabase is using it.
 - [ ] Turn on **leaked password protection**.
 - [ ] Decide whether signups need **email confirmation**, and test signing up with that setting.
 - [ ] **Back up the database yourself** before launch (for example with `pg_dump`). Don't count on the free plan's backups.
 - [ ] Stay on the **free plan** for the closed test. Move to **Pro** before real students stream video.
 - [ ] Not needed for the beta, but needed before growth: rewrite the RLS policies to use `(select auth.uid())`, and add the missing foreign-key indexes.
+
+### Google sign-in
+
+- [ ] **On Supabase's Google provider page, only "Client IDs" matters.** The app uses the **native** flow (`GoogleSignIn.authenticate()` → `signInWithIdToken`, `auth_service.dart`), never the web redirect, so leave **Client Secret** and **Callback URL** alone — both belong to `signInWithOAuth`. Leave **Skip nonce checks** off (`google_sign_in` puts no nonce in the token, so the check passes; turn it on only if iOS later fails with a nonce error) and **Allow users without an email** off. Supabase validates the token's `aud` claim against the Client IDs list: on Android `aud` is the **Web** client ID, because Android passes it as `serverClientId`; on iOS it is the **iOS** client ID. The Android client ID is never listed there.
+- [ ] **A plain Google Cloud project — not Firebase.** Nothing runs on Google Cloud: no hosting, no database, no billing account. The only artifact is an OAuth client, which is a registration record saying an app with this package and this signing certificate may ask Google for ID tokens. Firebase is a layer over the same Google Cloud project and would create the same clients, which is why every tutorial reaches for it, but it would also drag `google-services.json` and the Firebase Gradle plugin back into a build that has been free of both since the move to Supabase. Use console.cloud.google.com → APIs & Services → Credentials. **The project already exists:** `padilearn`, created by Firebase in 2024 and orphaned by the move to Supabase. Reuse it — it holds no OAuth clients, so there is nothing to collide with. Its three leftover Firebase API keys are referenced by no code in this repo (the string `AIza` appears nowhere) and can be deleted once sign-in works; Credentials → Restore deleted credentials undoes that for 30 days. The `firebase-adminsdk` service account still has admin rights to the old project, so revoke any JSON key ever downloaded for it.
+- [ ] **Configure the OAuth consent screen first** (newer consoles call it Google Auth Platform → Branding); no client can be created until it exists. App name, support email, and `padilearn.com` as the authorised domain. **Then publish it.** Left in *Testing*, only manually-added test users can sign in at all and their refresh tokens expire after seven days — a slow failure that looks like a bug in the app. The app asks only for `email`, `profile` and `openid`, which Google treats as non-sensitive, so publishing to production is instant and needs no verification review.
+- [ ] **Three OAuth clients in Google Cloud Console.** **Web** — its ID goes both in Supabase's Client IDs and in `googleWebClientId` in the git-ignored `lib/config/supabase_config.dart`, which is empty today, which is why the button is hidden rather than broken (`isGoogleSignInConfigured`). **Android** — package `com.padilearn.app`, no secret, never listed in Supabase, but without it Google issues no ID token at all. **iOS** — later; its ID goes in the Supabase list and in `googleIosClientId`. **Any client created before 2026-09-16 under `com.dankamaInnoHu.padiLearn` is void**, because the package rename orphaned it.
+- [ ] **The Android client needs every signing certificate, not just this laptop's.** Debug SHA-1 here is `17:B5:FB:AD:FC:1B:CC:9C:01:70:15:D4:D2:4E:7B:6E:CD:DB:77:7F` (valid to 2054); register it or sign-in fails in development. The upload keystore does not exist yet — see **Release signing** in section B — so its fingerprint cannot be added until it does. **The one that catches people:** under Play App Signing the build testers install is re-signed with *Google's* key, not the upload key. And **an Android OAuth client holds exactly one package name plus one SHA-1** — unlike Firebase, where one app carried a list of fingerprints — so every certificate needs a client of its own: name them `PadiLearn Android (debug)`, `(upload)` and `(Play App Signing)` or you will be guessing later. Take the third fingerprint from Play Console (Test and release → Setup → App signing, shown in newer consoles as Protected with Play → Play Store protection → Manage Play app signing). Miss it and Google sign-in works on every build you make by hand and fails for all 15 testers.
+- [ ] **Two loose ends in the app itself.** `assets/branding/google_logo.png` is absent — the button falls back to text, which ships fine but breaks Google's branding rules. `ios/Runner/Info.plist` has no `CFBundleURLTypes` block, so iOS sign-in cannot return to the app until the reversed iOS client ID (`com.googleusercontent.apps.…`) is registered as a URL scheme.
 
 ---
 

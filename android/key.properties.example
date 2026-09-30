@@ -1,0 +1,13 @@
+# Copy this file to `android/key.properties` and fill in the real values.
+#
+# The real file is git-ignored and must STAY that way — anyone with the keystore
+# and these passwords can publish an update that Google will accept as genuinely
+# from you.
+#
+# storeFile: an absolute path to the .jks, kept OUTSIDE this repo so it can never
+# be swept into a commit. Forward slashes, even on Windows.
+
+storePassword=
+keyPassword=
+keyAlias=upload
+storeFile=C:/path/to/padilearn-upload.jks

@@ -47,19 +47,20 @@ class EarningsHint extends StatelessWidget {
       children: [
         _line(
           Icons.account_balance_wallet_outlined,
-          'You earn about ${formatNaira(breakdown.teacherEarning)} per sale '
-          '(~${breakdown.teacherShareOfList.round()}% of ${formatNaira(price)}). '
-          'PadiLearn takes ${kPlatformFeePercent.round()}% after card fees.',
+          'You earn ${formatNaira(breakdown.teacherEarning)} per sale — '
+          '${breakdown.teacherShareOfList.round()}% of ${formatNaira(price)}. '
+          'Students pay ${formatNaira(breakdown.customerTotal)}; the card fee '
+          'is added at checkout, not taken out of your share.',
           emphasis: true,
         ),
-        if (breakdown.isInFeeDeadZone) ...[
+        if (breakdown.crossesFlatFeeThreshold) ...[
           SizedBox(height: 6.h),
           _line(
             Icons.lightbulb_outline,
             'Pricing at '
-            '${formatNaira(PriceBreakdown.suggestedPriceBelowThreshold)} '
-            'would earn you more — the card fee jumps by NGN 100 from '
-            'NGN 2,500.',
+            '${formatNaira(PriceBreakdown.suggestedListPriceBelowThreshold)} '
+            'keeps what students pay under NGN 2,500 — one naira more adds '
+            'about NGN 100 to their total, not to your earnings.',
             warning: true,
           ),
         ],

@@ -12,6 +12,275 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-09-29 — The card fee moved from the teacher to the student
+
+A teacher's price used to be what the student paid, so Paystack's cut came out
+of the teacher's share and their earnings moved with a fee they never agreed
+to. It now works the other way: **the list price is what settles**, and the fee
+is grossed up on top at checkout. The platform still keeps 15%.
+
+On a NGN 5,000 course the student pays NGN 5,178 and the teacher earns
+NGN 4,250 — previously they earned about NGN 4,100, and how much depended on
+which side of Paystack's flat-fee threshold the price fell.
+
+### The threshold trap is gone
+
+The old model had a band where raising a price *lowered* what the teacher
+earned: crossing NGN 2,500 added Paystack's NGN 100 flat fee to a price the
+teacher absorbed. `pricing.dart` carried an `isInFeeDeadZone` warning for it.
+Teacher earnings are now a flat 85% of the list price at every price, and
+`test/pricing_test.dart` asserts that earnings rise monotonically — that is the
+regression guard for the whole change.
+
+The cliff still exists, but it moved to the student's total, so the warning was
+reframed rather than deleted: one naira over the threshold adds about NGN 100
+to what the student pays, which is still worth telling a teacher before they
+price.
+
+### Grossing up is not "add the fee"
+
+Paystack's fee is a percentage of the amount *charged*, so adding a fee to a
+price grows the fee and lands short. `customerTotalFor` solves for the total
+instead, picking between three regimes — flat fee waived, flat fee applied, fee
+capped — and only accepting a regime's answer if that regime still holds at the
+resulting total. Rounding up is what makes the check order matter: the ceiling
+can nudge a total across NGN 2,500, silently re-introducing the flat fee and
+underpaying the teacher on every sale. The first draft did exactly that, and
+the test caught it.
+
+It is duplicated deliberately in `lib/utils/pricing.dart` and
+`supabase/functions/_shared/paystack.ts` — Dart cannot run in an edge function
+— and the two must agree exactly, because `initialize-payment` charges the
+total and `grantEntitlement` rejects anything under it. A divergence would
+reject real payments. Both files say so.
+
+### What the student sees
+
+Browsing still shows the teacher's price. The fee appears itemised in a
+confirmation sheet before Paystack opens, because Paystack renders its own
+checkout in a WebView and cannot be asked to explain our fee — so without that
+sheet its page would be the first place the real number appeared. Grossed-up
+prices in the catalogue were considered and rejected: it turns every
+deliberate NGN 5,000 into NGN 5,178 and makes the marketplace look unfinished.
+
+### Notes
+
+The server still computes the split from what genuinely settles rather than
+from the list price, so if Paystack's real fee differs from our estimate the
+split follows the money. Existing prices need no migration: paid checkout has
+never been enabled, so no sale has been made under the old split, and any
+historical `transactions` row keeps the split it was written with.
+
+---
+
+## 2026-09-17 — A payment no longer depends on the buyer's phone surviving
+
+Until now the only thing joining a payment to an enrolment was the handset
+holding the checkout screen. `verify-payment` ran when the app asked it to, so
+if the app was killed, the network dropped or the battery died between Paystack
+taking the money and that call being made, Paystack kept the money and the
+student got nothing. Nobody would have noticed except the student.
+
+`supabase/functions/paystack-webhook` closes that window. Paystack delivers
+`charge.success` independently of the buyer's device and retries for days, so
+fulfilment survives the app dying.
+
+### Why the logic moved to `_shared`
+
+The webhook and `verify-payment` must reach an identical outcome, and the fee
+split is where that would quietly fail. Paystack deducts its fee before
+settlement, so the platform's 15% is taken on what *arrives*, not on the list
+price — get that wrong on a cheap course and the teacher is paid more than was
+received. Two hand-maintained copies would have drifted within months, and the
+symptom would be a teacher's balance that depends on whether their student's
+phone stayed awake. `_shared/paystack.ts` now holds one copy; both entry points
+call it.
+
+`fetchTransaction` re-asks Paystack rather than trusting the webhook payload's
+own numbers. A signed payload is authentic but not necessarily current, and the
+webhook's `data` is not shaped quite like a verify response — `fees` in
+particular is not always present.
+
+### Authentication, and the deployment that breaks it
+
+The webhook is public: Paystack has no Supabase JWT. It must be deployed with
+`--no-verify-jwt`, which makes the HMAC SHA-512 signature check the *only* thing
+standing between a stranger and a free course. The comparison is constant-time,
+because `===` on a hex digest leaks how many bytes were right and lets a
+signature be forged a byte at a time.
+
+Deploying it *with* JWT verification does not fail loudly — it silently rejects
+every delivery, which looks exactly like Paystack not sending anything.
+
+### Retry semantics
+
+A 500 asks Paystack to deliver again; a 200 ends it. So a database blip retries
+and missing metadata or a deleted course does not, because redelivering those
+would fail identically forever. That is what `retry` on the `Fulfilment` type
+carries.
+
+### Outstanding
+
+Nothing here has been deployed, and none of it has been type-checked — this
+machine has neither Deno nor the Supabase CLI. `verify-payment` changed too and
+must be redeployed. The webhook URL still has to be set in Paystack's dashboard,
+and the `_shared` import means both functions have to go up through the CLI
+rather than the dashboard editor. Then it needs testing with a real payment,
+and with the app deliberately killed straight after paying.
+
+---
+
+## 2026-09-16 — Google sign-in: which certificate Google actually checks
+
+The code for Google sign-in has been finished for a while; none of it works yet,
+because the setup lives outside the repo and nobody had written down what has to
+match what. `docs/LAUNCH_ANDROID.md` section C now records it.
+
+### Why the Supabase dialog is mostly decoration
+
+The app signs in **natively** — `GoogleSignIn.authenticate()` hands an ID token
+to `signInWithIdToken` (`auth_service.dart`). It never calls `signInWithOAuth`,
+so the provider page's **Client Secret** and **Callback URL** are unused, and
+so is "Skip nonce checks" (`google_sign_in` mints no nonce, so there is nothing
+to skip). Only **Client IDs** does anything: Supabase matches the token's `aud`
+claim against that list.
+
+Which ID lands in `aud` is the part that reads backwards. On Android it is the
+**Web** client ID, because Android passes it as `serverClientId` — the Android
+client ID never appears in `aud` and so is never listed in Supabase, even
+though Google refuses to issue a token without that client existing. On iOS
+`aud` is the iOS client ID.
+
+### The failure that only shows up in front of testers
+
+Google ties the Android client to a **signing certificate**, and under Play App
+Signing the bundle you upload is re-signed with *Google's* key before it reaches
+anyone. So the fingerprint on every build made by hand is not the fingerprint on
+the build testers install. Register only the debug and upload SHA-1s and
+sign-in passes every check you can run yourself, then fails for all 15 closed
+testers at once. The **App signing key** SHA-1 from Play Console has to go in
+too.
+
+Debug SHA-1 on the owner's laptop is
+`17:B5:FB:AD:FC:1B:CC:9C:01:70:15:D4:D2:4E:7B:6E:CD:DB:77:7F`. These are public
+certificate fingerprints, not secrets — the keystores and their passwords stay
+out of the repo as before.
+
+### Outstanding
+
+No OAuth clients exist yet, and anything created earlier under
+`com.dankamaInnoHu.padiLearn` died with the package rename. `googleWebClientId`
+in the git-ignored `lib/config/supabase_config.dart` is still empty, which is
+the one mercy here: `isGoogleSignInConfigured` hides the button rather than
+shipping one that fails. The upload keystore still does not exist, so its
+fingerprint cannot be registered. `assets/branding/google_logo.png` is missing,
+and `ios/Runner/Info.plist` has no `CFBundleURLTypes` block for the reversed
+iOS client ID.
+
+---
+
+## 2026-09-16 — Release signing, without the secrets
+
+`android/app/build.gradle` had shipped the Flutter template's placeholder since
+day one: release builds signed with the **debug** key, under a TODO. That build
+installs and runs perfectly on a phone, which is exactly why it is dangerous —
+nothing goes wrong until Play rejects the upload.
+
+### How it works now
+
+`signingConfigs.release` reads `android/key.properties`: store path, store
+password, key alias, key password. That file is git-ignored (so are `*.jks` and
+`*.keystore`), and `android/key.properties.example` records the shape without
+any values.
+
+**The fallback is deliberate, but it stops at the bundle.** When
+`key.properties` is absent, `assembleRelease` still signs with the debug key, so
+`flutter run --release` and `flutter build apk --release` work on a clone that
+has no keystore. `bundleRelease` does not: it fails at configuration with a
+message naming the file to create. An `.aab` is only ever built in order to
+upload it, so a missing keystore there is a mistake rather than a convenience.
+
+The first attempt at this was a `logger.lifecycle` warning on the fallback path.
+A test build proved it worthless — `flutter build` filters Gradle's lifecycle
+output, so the warning never appeared and the debug-signed bundle was produced
+in silence. Verified by `keytool -printcert -jarfile`, which reported
+`CN=Android Debug`. A warning nobody sees is not a safeguard; failing the one
+task that matters is.
+
+The keystore itself is not created here and its passwords are not in this repo
+or known to anyone but the owner. It lives outside the repo by instruction in
+`key.properties.example`, because a `.jks` sitting in the working tree is one
+`git add -A` away from being public.
+
+### Why this one is unforgiving
+
+The upload key is the only proof that an update comes from the same author.
+Lose it and the app can never be updated — not recovered, not reset, a new
+listing and every install starts from zero. Leak it and someone else can sign
+something Google will accept as genuinely yours. Play App Signing softens the
+first risk once enrolled, but the upload key still has to survive.
+
+### Still outstanding
+
+- Run `keytool`, write the real `key.properties`, enrol in Play App Signing.
+- Back the keystore up somewhere that is not this laptop.
+- The Google OAuth Android client must be registered against the **release**
+  key's SHA-1 as well as the debug key's, or social sign-in fails in exactly
+  the build the testers get.
+
+---
+
+## 2026-09-16 — The app is com.padilearn.app
+
+The package name moved from `com.dankamaInnoHu.padiLearn` to `com.padilearn.app`
+so the app identifies itself by the product's own domain rather than a
+workspace name that no student will recognise.
+
+**This had to happen now or never.** Google Play freezes the package name at the
+first upload and there is no way to change it afterwards — a different name
+means a different app, a different listing and a fresh start on installs and
+reviews. Nothing has been uploaded yet, so the change cost nothing today and
+would have cost everything in a fortnight.
+
+`com.padilearn.app` rather than bare `com.padilearn`: three segments keep
+native plugins that assume the conventional shape happy, and leave room for a
+sibling app under the same domain later.
+
+### What it touched
+
+- `android/app/build.gradle` — `namespace` and `applicationId`
+- `android/app/src/main/AndroidManifest.xml` — the stale `package=` attribute is
+  **gone**, not renamed. AGP 8.9 takes the namespace from Gradle; the manifest
+  attribute has been unsupported since AGP 8, and leaving it behind would have
+  meant two sources of truth disagreeing after the rename
+- `MainActivity.kt` — package declaration, and the directory tree under it
+  (`kotlin/com/padilearn/app/`)
+- `ios/Runner.xcodeproj/project.pbxproj` — six bundle identifiers, app and
+  `RunnerTests`
+- `android/app/google-services.json` — **deleted.** A leftover from the removed
+  Firebase; no `google-services` plugin is applied anywhere in the Gradle
+  files, so nothing read it. It carried the old package name
+
+Nothing in `lib/`, the website or Supabase referenced the package name. The
+`padilearn://reset-callback` deep link is a custom URL scheme and is unaffected.
+
+This also settles the "Noticed, not fixed" item from the 2026-08-24 entry: only
+`build.gradle` remains, so there is no longer a second file declaring a rival
+`applicationId`.
+
+### Still outstanding
+
+- The Google and Apple OAuth clients don't exist yet, which is *why* this was
+  cheap — Android OAuth clients are registered against package name plus
+  SHA-1. Create them against `com.padilearn.app` and the release keystore's
+  fingerprint, never the old name.
+- `flutter clean` before the next build; `build/` still holds artifacts under
+  the old name.
+- The release keystore is still unmade and release builds are still signed with
+  the debug key.
+
+---
+
 ## 2026-09-14 — Every email the app sends has somewhere to land
 
 With padilearn.com live, the app links to the site for its legal pages, and

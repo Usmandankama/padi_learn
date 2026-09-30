@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { customerTotalNaira } from "../_shared/paystack.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -54,6 +55,11 @@ Deno.serve(async (req) => {
     const price = Number(course.price ?? 0);
     if (price <= 0) return json({ error: "This course is free." }, 400);
 
+    // The student covers Paystack's fee, so the charge is grossed up and the
+    // teacher's list price settles in full. `grantEntitlement` re-derives this
+    // identically and rejects anything short, so the two must never diverge.
+    const chargeNaira = customerTotalNaira(price);
+
     const initRes = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
       headers: {
@@ -62,13 +68,16 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         email: user.email,
-        amount: Math.round(price * 100), // NGN -> kobo
+        amount: Math.round(chargeNaira * 100), // NGN -> kobo
         currency: "NGN",
         callback_url: callbackUrl ?? "https://padilearn.com/payment-callback",
         metadata: {
           user_id: user.id,
           course_id: course.id,
           course_title: course.title,
+          // Recorded so support can see what was added on top, and why.
+          list_price_kobo: Math.round(price * 100),
+          card_fee_kobo: Math.round((chargeNaira - price) * 100),
         },
       }),
     });
