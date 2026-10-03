@@ -67,9 +67,12 @@ deliberate NGN 5,000 into NGN 5,178 and makes the marketplace look unfinished.
 
 The server still computes the split from what genuinely settles rather than
 from the list price, so if Paystack's real fee differs from our estimate the
-split follows the money. Existing prices need no migration: paid checkout has
-never been enabled, so no sale has been made under the old split, and any
-historical `transactions` row keeps the split it was written with.
+split follows the money. Existing prices need no migration: the only sales on
+record are four Paystack test-mode transactions from development accounts,
+made while in-app checkout was still switched on. They carry the old split —
+NGN 4,101 to the teacher on a NGN 5,000 course, against NGN 4,250 now — and
+they keep it, because a ledger row records what was actually paid, not what
+today's rules would have paid.
 
 ---
 

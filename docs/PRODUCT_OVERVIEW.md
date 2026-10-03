@@ -16,8 +16,10 @@ Mobile-first by choice: the audience is on Android phones in Nigeria, on data
 they pay for. The website exists for legal pages and, soon, for buying.
 
 **Stage: pre-launch.** The app works end to end but has never been on a store.
-Real usage is roughly 10 enrolments and 3 rated courses — seed-level numbers,
-not traction. Nothing has ever been sold.
+The catalogue holds 17 courses and 49 lessons, but against only 4 accounts
+(2 teachers, 2 students) and 11 enrolments — development data, not traction.
+Four transactions exist, all Paystack **test mode** from development accounts;
+no real sale has been made.
 
 ---
 
@@ -177,6 +179,9 @@ It needs: a release keystore (does not exist yet), a Play account with identity
 verification, and one uploaded build. Nothing else shortens it, and most
 remaining work can happen during the 14-day wait.
 
-The quieter risk: with 3 courses in the catalogue, 12 testers will open the app
-and find nothing to browse. Getting teachers to publish is probably the real
-constraint on whether the test produces any signal at all.
+The quieter risk is not an empty catalogue — there are 17 courses and 49
+lessons. It is that **16 of those 17 belong to one development account**, so
+the shelf is self-authored rather than evidence that teachers will publish.
+The closed test is meant to answer whether they will, and seeded content
+cannot answer it. Recruiting teachers who are not you is the real constraint
+on whether those 14 days produce any signal.
