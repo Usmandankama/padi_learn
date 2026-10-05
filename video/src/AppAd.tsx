@@ -16,6 +16,7 @@ import {colors, script} from './theme';
 import {Phone} from './components/Phone';
 import {MarketplaceMock} from './components/MarketplaceMock';
 import {LessonMock} from './components/LessonMock';
+import {LessonReel, REEL_DURATION} from './components/LessonReel';
 import {LogoMark} from './components/LogoMark';
 
 const {fontFamily: poppins} = loadPoppins();
@@ -28,16 +29,51 @@ const {fontFamily: playfair} = loadPlayfair();
  * ad means editing five numbers, and so the total duration is derived from the
  * scenes instead of being a constant that drifts out of sync with them.
  */
-export const SCENES = {
-  hook: {from: 0, duration: 105},
-  browse: {from: 105, duration: 165},
-  learn: {from: 270, duration: 165},
-  teach: {from: 435, duration: 150},
-  cta: {from: 585, duration: 135},
+const DURATIONS = {
+  hook: 90,
+  browse: 135,
+  // However long the reel's clips add up to, so retiming a beat in
+  // `LessonReel` cannot leave this table claiming otherwise.
+  lesson: REEL_DURATION,
+  learn: 105,
+  // Carries the remainder that keeps the cut at exactly 720 frames. If you
+  // lengthen another scene, take it out of this one.
+  teach: 106,
+  cta: 120,
 } as const;
 
+/**
+ * The scene order, and the only place it is written down. Everything that
+ * walks the ad — the notes overlay included — reads this rather than
+ * restating it, so a scene cannot be added in one place and missed in another.
+ */
+export const SCENE_ORDER = Object.keys(DURATIONS) as (keyof typeof DURATIONS)[];
+
+/**
+ * Scene boundaries, in frames at 30fps.
+ *
+ * Only durations are declared; each scene's start is accumulated from the ones
+ * before it. Retiming the ad is then editing one number, with nothing to keep
+ * in sync by hand.
+ */
+export const SCENES = (() => {
+  let at = 0;
+  const table = {} as Record<
+    keyof typeof DURATIONS,
+    {from: number; duration: number}
+  >;
+  for (const key of SCENE_ORDER) {
+    table[key] = {from: at, duration: DURATIONS[key]};
+    at += DURATIONS[key];
+  }
+  return table;
+})();
+
 /** 720 frames — 24s at 30fps. */
-export const AD_DURATION = SCENES.cta.from + SCENES.cta.duration;
+export const AD_DURATION = SCENE_ORDER.reduce(
+  (total, key) => total + DURATIONS[key],
+  0,
+);
 
 /** True when the composition is taller than it is wide. */
 const useIsVertical = () => {
@@ -412,8 +448,24 @@ export const AppAd: React.FC = () => {
           <PhoneScene
             title={script.browse.title}
             sub={script.browse.sub}
-            screen={<MarketplaceMock poppins={poppins} playfair={playfair} />}
+            screen={
+              <MarketplaceMock
+                poppins={poppins}
+                playfair={playfair}
+                scrollOver={SCENES.browse.duration}
+              />
+            }
           />
+        </SceneFade>
+      </Sequence>
+
+      {/* The proof beat: a lesson, at a size you can read. */}
+      <Sequence
+        from={SCENES.lesson.from}
+        durationInFrames={SCENES.lesson.duration}
+      >
+        <SceneFade duration={SCENES.lesson.duration}>
+          <LessonReel poppins={poppins} playfair={playfair} />
         </SceneFade>
       </Sequence>
 

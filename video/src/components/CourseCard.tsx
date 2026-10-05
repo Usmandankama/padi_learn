@@ -1,24 +1,21 @@
 import React from 'react';
+import {Img, staticFile} from 'remotion';
 import {colors} from '../theme';
+import {Course, DEMO_ENROLMENTS, priceLabel, studentCount} from '../catalogue';
 
-export type Course = {
-  title: string;
-  author: string;
-  category: string;
-  price: number;
-  students: number;
-  rating: number;
-  /** Two-stop gradient standing in for the thumbnail image. */
-  thumb: [string, string];
-};
-
-/** Mirrors `formatPriceLabel` in course_card.dart. */
-const priceLabel = (price: number) =>
-  price <= 0 ? 'Free' : `NGN ${Math.round(price)}`;
-
-/** Mirrors `formatStudentCount` in course_card.dart. */
-const studentCount = (value: number) =>
-  value >= 1000 ? `${(value / 1000).toFixed(1)}k` : String(Math.round(value));
+/**
+ * A React recreation of the app's `CourseCard`.
+ *
+ * Follows `course_card.dart` as closely as a mock can: 18px radius, the 11:10
+ * thumbnail-to-body split, Poppins 13.5 w600 for the title, and the real
+ * widget's chrome — category pill top-left in brand green on white, rating
+ * pill bottom-left over a bottom-weighted scrim, price always in green.
+ *
+ * Three of those were wrong in the previous cut (the rating pill sat top-right
+ * in navy, the category pill printed in ink rather than green, and a paid
+ * course's price printed in ink instead of green), which is the failure mode
+ * the README warns about: the mock drifting from the screen it claims to show.
+ */
 
 const initials = (name: string) =>
   name
@@ -28,13 +25,6 @@ const initials = (name: string) =>
     .map((part) => part[0]?.toUpperCase() ?? '')
     .join('');
 
-/**
- * A React recreation of the app's `CourseCard`.
- *
- * Proportions follow the Flutter widget — 18px radius, the 11:10 thumbnail to
- * body split, Poppins 13.5 at w600 for the title — so footage of "the app"
- * matches what actually ships rather than an idealised redraw of it.
- */
 export const CourseCard: React.FC<{course: Course; poppins: string}> = ({
   course,
   poppins,
@@ -53,46 +43,67 @@ export const CourseCard: React.FC<{course: Course; poppins: string}> = ({
         fontFamily: poppins,
       }}
     >
-      <div
-        style={{
-          flex: 11,
-          position: 'relative',
-          background: `linear-gradient(135deg, ${course.thumb[0]}, ${course.thumb[1]})`,
-        }}
-      >
-        <div
+      <div style={{flex: 11, position: 'relative', overflow: 'hidden'}}>
+        {/* The real thumbnail the seeded catalogue points at, not a gradient
+            standing in for one: `course-thumbnails/demo/<slug>.jpg` and
+            `video/public/thumbs/<slug>.jpg` are the same image. */}
+        <Img
+          src={staticFile(`thumbs/${course.slug}.jpg`)}
           style={{
             position: 'absolute',
-            top: 8,
-            left: 8,
-            background: 'rgba(255,255,255,0.92)',
-            color: colors.richBlack,
-            fontSize: 8.5,
-            fontWeight: 600,
-            padding: '3px 7px',
-            borderRadius: 999,
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
           }}
-        >
-          {course.category}
-        </div>
+        />
+        {/* Bottom scrim, for the rating pill's legibility. */}
         <div
           style={{
             position: 'absolute',
-            top: 8,
-            right: 8,
+            inset: 0,
+            background:
+              'linear-gradient(to bottom, transparent 55%, rgba(0,0,0,0.45) 100%)',
+          }}
+        />
+        {course.category ? (
+          <div
+            style={{
+              position: 'absolute',
+              top: 10,
+              left: 10,
+              background: 'rgba(255,255,255,0.88)',
+              color: colors.primary,
+              fontSize: 9.5,
+              fontWeight: 600,
+              padding: '4px 10px',
+              borderRadius: 20,
+            }}
+          >
+            {course.category}
+          </div>
+        ) : null}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 10,
+            left: 10,
             display: 'flex',
             alignItems: 'center',
             gap: 3,
-            background: 'rgba(13,27,42,0.72)',
+            background: 'rgba(0,0,0,0.55)',
             color: colors.appWhite,
-            fontSize: 8.5,
+            fontSize: 10,
             fontWeight: 600,
-            padding: '3px 7px',
-            borderRadius: 999,
+            padding: '3px 8px',
+            borderRadius: 20,
           }}
         >
-          <span style={{fontSize: 9, lineHeight: 1}}>★</span>
-          {course.rating.toFixed(1)}
+          {/* No star, and the word "New": that is what every seeded course
+              shows, because `rating_count` is trigger-derived and the seed
+              leaves it at zero. The star only appears once a course has a
+              real rating to print. */}
+          New
         </div>
       </div>
 
@@ -133,13 +144,14 @@ export const CourseCard: React.FC<{course: Course; poppins: string}> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              flexShrink: 0,
             }}
           >
             {initials(course.author)}
           </div>
           <div
             style={{
-              fontSize: 10,
+              fontSize: 11,
               color: colors.fontGrey,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
@@ -158,16 +170,36 @@ export const CourseCard: React.FC<{course: Course; poppins: string}> = ({
             justifyContent: 'space-between',
           }}
         >
-          <div style={{fontSize: 9.5, color: colors.fontGrey}}>
-            {studentCount(course.students)} students
-          </div>
           <div
             style={{
-              fontSize: 11.5,
-              fontWeight: 700,
-              color: course.price <= 0 ? colors.primary : colors.richBlack,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 3,
+              fontSize: 11,
+              color: colors.fontGrey,
             }}
           >
+            {/* Stands in for Icons.people_alt_outlined. */}
+            <svg width={12} height={12} viewBox="0 0 24 24" fill="none">
+              <circle cx={9} cy={8} r={3.2} stroke={colors.fontGrey} strokeWidth={1.8} />
+              <path
+                d="M3.4 19c0-3 2.5-4.6 5.6-4.6s5.6 1.6 5.6 4.6"
+                stroke={colors.fontGrey}
+                strokeWidth={1.8}
+                strokeLinecap="round"
+              />
+              <path
+                d="M16.4 6.2a3 3 0 0 1 0 5.6M17.4 14.8c2.1.5 3.4 1.9 3.4 4.2"
+                stroke={colors.fontGrey}
+                strokeWidth={1.8}
+                strokeLinecap="round"
+              />
+            </svg>
+            {studentCount(DEMO_ENROLMENTS)}
+          </div>
+          {/* Green whether the course is free or paid — the real widget only
+              changes this colour for a course you already own. */}
+          <div style={{fontSize: 13, fontWeight: 700, color: colors.primary}}>
             {priceLabel(course.price)}
           </div>
         </div>
@@ -175,61 +207,3 @@ export const CourseCard: React.FC<{course: Course; poppins: string}> = ({
     </div>
   );
 };
-
-/** Stand-in catalogue. Swap for your real seed data once it exists. */
-export const demoCourses: Course[] = [
-  {
-    title: 'JAMB Mathematics: Past Questions Solved',
-    author: 'Ibrahim Yusuf',
-    category: 'Exam Prep',
-    price: 3500,
-    students: 1240,
-    rating: 4.8,
-    thumb: ['#32936F', '#1F6B4F'],
-  },
-  {
-    title: 'Flutter for Beginners',
-    author: 'Amaka Obi',
-    category: 'Programming',
-    price: 7500,
-    students: 860,
-    rating: 4.7,
-    thumb: ['#0D1B2A', '#25405C'],
-  },
-  {
-    title: 'Start a Small Business in Nigeria',
-    author: 'Tunde Bakare',
-    category: 'Business',
-    price: 0,
-    students: 3120,
-    rating: 4.6,
-    thumb: ['#C9822F', '#8A5418'],
-  },
-  {
-    title: 'Tailoring: From Measurement to Finish',
-    author: 'Grace Eze',
-    category: 'Fashion & Tailoring',
-    price: 5000,
-    students: 640,
-    rating: 4.9,
-    thumb: ['#7B4B94', '#4A2C59'],
-  },
-  {
-    title: 'Excel for Office Work',
-    author: 'Musa Danladi',
-    category: 'Business',
-    price: 2500,
-    students: 1980,
-    rating: 4.5,
-    thumb: ['#1D6F42', '#0F3D24'],
-  },
-  {
-    title: 'Digital Marketing with WhatsApp',
-    author: 'Chioma Nwosu',
-    category: 'Marketing',
-    price: 4000,
-    students: 1450,
-    rating: 4.7,
-    thumb: ['#2B6CB0', '#1A4272'],
-  },
-];

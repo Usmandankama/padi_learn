@@ -39,7 +39,14 @@ export const script = {
   },
   browse: {
     title: 'Find your course',
-    sub: 'Exam prep, coding, business, fashion — from teachers like you.',
+    // The categories the seeded catalogue actually has. Trades and farming
+    // are in there because they are in there, and they are the two nobody
+    // expects from a learning app.
+    sub: 'Exam prep, trades, business, farming — from teachers like you.',
+  },
+  lesson: {
+    title: 'See it worked out',
+    sub: 'Not slides. The figure, the formula, and why it is true.',
   },
   learn: {
     title: 'Learn at your pace',
@@ -77,6 +84,12 @@ export const directions = {
       'Music enters HERE, not earlier. Mid-tempo, warm, Afrobeats-adjacent but understated. Soft UI tick per card as it lands — six of them, ~2 frames apart, low in the mix.',
     vibe: 'Bright and curious. This is the widest the world gets; let it feel like a lot of choice.',
   },
+  lesson: {
+    vo: '"See it worked out. Not slides — the figure, the formula, and why it is true."',
+    sound:
+      'Music drops to almost nothing for the first clip: let the picture carry it. A single soft pencil-on-paper or chalk texture under each figure as it draws, no more than that. Music returns under the second clip as the takeaway lands.',
+    vibe: 'The proof beat. Everything before this is a claim about the product; this is the product. Hold your nerve and let it play — the instinct to cut away early is the one to resist.',
+  },
   learn: {
     vo: '"Learn at your pace. Download once, pick up exactly where you stopped."',
     sound:
@@ -101,6 +114,7 @@ export const directions = {
 export const globalDirections = [
   'Music must be licensed or original. Avoiding a rights problem is the reason this was built rather than assembled from clips — do not reintroduce one at the last step.',
   'Burn captions for anything going to social. Most of it is watched muted, and the VO carries the argument.',
-  'Total runtime 24s. If a 15s cut is needed, drop the "Learn at your pace" scene — it is the most self-contained, and browse → teach still tells the whole story.',
+  'Total runtime 24s. If a 15s cut is needed, drop "Learn at your pace" and the second lesson clip. Browse → one lesson → teach still tells the whole story; the lesson beat is the one thing that cannot go, because it is the only proof in the cut.',
   'The naira figure in the teach scene is illustrative. Replace it with a real number or reword the label before this goes anywhere public.',
+  'The lesson footage is generated placeholder, correct in every figure but taught by nobody. It is here so the catalogue is not visibly empty for the first testers. The moment a real teacher records a real lesson, that clip replaces one of these — a shaky phone recording of someone who knows their subject outsells an animation on a marketplace, because the buyer is buying the teacher.',
 ] as const;
