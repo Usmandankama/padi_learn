@@ -28,12 +28,37 @@ things from a web server, which is the other reason to keep them apart.
 
 ### Deploying
 
-1. Cloudflare Pages → **Create a project** → Direct Upload (or point it at this
-   repo with build command `flutter build web --release` and output `build/web`).
-2. Custom domain → `app.padilearn.com`. Cloudflare adds the CNAME itself since
-   the zone is already there.
-3. Upload `build/web/`. `web/_redirects` ships inside it and supplies the SPA
-   fallback — see below.
+The Pages project is **`padilearn-app`** (Direct Upload, separate from the
+Git-connected `padi-learn` project that builds the marketing site).
+
+```bash
+flutter build web --release
+npx wrangler@3 pages deploy build/web --project-name padilearn-app --branch main
+```
+
+`wrangler@3` is pinned deliberately: wrangler 4 requires Node >= 22 and this
+machine runs Node 20. If Node is upgraded later, plain `npx wrangler` works.
+
+Pages is not told how to build Flutter — the bundle is built locally and
+uploaded. Connecting this project to Git instead would mean fetching the
+Flutter SDK inside every Cloudflare build, which is slow and brittle for no
+gain while releases are occasional.
+
+`web/_redirects` is uploaded with the bundle and supplies the SPA fallback.
+
+A freshly created project can answer 522 for a minute or so while it
+propagates; the assets return 200 before the HTML routes do. Re-check before
+assuming a bad deploy.
+
+### Custom domain (one-time, dashboard)
+
+Wrangler cannot attach a Pages custom domain, so this part is manual:
+
+**Workers & Pages → padilearn-app → Custom domains → Set up a custom domain →
+`app.padilearn.com`.**
+
+`padilearn.com` is already a Cloudflare zone, so the CNAME and certificate are
+created automatically. Nothing changes for `padilearn.com` itself.
 
 ### Two things that must be true
 
