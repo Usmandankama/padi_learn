@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:padi_learn/screens/login/login_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
+import 'package:padi_learn/utils/responsive.dart';
 import '../../models/onboarding_page.dart'; // Import the OnboardingPage widget
 
 class OnboardingScreen extends StatefulWidget {
@@ -27,7 +28,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     AppColors.watch(context);
     return Scaffold(
       backgroundColor: AppColors.palette.surface,
-      body: PageView(
+      body: PageBody(
+        maxWidth: Breakpoints.readable,
+        child: PageView(
         controller: _pageController,
         onPageChanged: (int page) {
           setState(() {
@@ -63,6 +66,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             },
           ),
         ],
+      ),
       ),
       // The bottomSheet slot is laid out behind the device's own navigation
       // bar on edge-to-edge Android, which put 'Get Started' under the
@@ -103,7 +107,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             : Container(
                 color: Colors.white,
                 padding: const EdgeInsets.all(16.0),
-                child: Row(
+                child: PageBody(
+                  maxWidth: Breakpoints.readable,
+                  child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
                     TextButton(
@@ -149,6 +155,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                     ),
                   ],
+                ),
                 ),
               ),
       ),

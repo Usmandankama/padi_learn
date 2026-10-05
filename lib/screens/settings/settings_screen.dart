@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:padi_learn/utils/responsive.dart';
 
 import 'package:padi_learn/controller/settings_controller.dart';
 import 'package:padi_learn/screens/components/settings_tile.dart';
@@ -37,7 +38,9 @@ class SettingsScreen extends StatelessWidget {
           ),
         ),
       ),
-      body: ListView(
+      body: PageBody(
+        maxWidth: Breakpoints.readable,
+        child: ListView(
         padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 32.h),
         children: [
           // Just the password here. Editing your name and photo is the button
@@ -96,6 +99,7 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

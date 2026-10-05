@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:padi_learn/utils/responsive.dart';
 
 import 'package:padi_learn/config/deep_links.dart';
 import 'package:padi_learn/screens/components/primary_button.dart';
@@ -36,7 +37,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     AppColors.watch(context);
     return Scaffold(
       backgroundColor: AppColors.palette.surface,
-      body: SafeArea(
+      body: PageBody(
+        maxWidth: Breakpoints.readable,
+        child: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
@@ -103,6 +106,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

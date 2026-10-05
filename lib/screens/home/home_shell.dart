@@ -11,6 +11,7 @@ import 'package:padi_learn/screens/login/login_screen.dart';
 import 'package:padi_learn/screens/onboarding/role_selection_screen.dart';
 import 'package:padi_learn/screens/teacher/my_courses.dart';
 import 'package:padi_learn/utils/colors.dart';
+import 'package:padi_learn/utils/responsive.dart';
 import '../student/student_profile_screen.dart';
 import '../teacher/teacher_dashboard.dart';
 import '../teacher/teacher_profle.dart';
@@ -174,6 +175,26 @@ class _HomeShellState extends State<HomeShell> {
     AppColors.watch(context);
     final ready = _status == _ShellStatus.ready && _screens.isNotEmpty;
 
+    // A floating pill across the bottom of a 1920px monitor is a phone idiom
+    // stretched past its purpose. Wide windows get a rail instead, which is
+    // what someone with a mouse expects and leaves the vertical space to the
+    // content. Phones are untouched.
+    if (context.isWide) {
+      return Scaffold(
+        backgroundColor: AppColors.palette.surface,
+        body: ready
+            ? Row(
+                children: [
+                  _buildRail(),
+                  VerticalDivider(
+                      width: 1, thickness: 1, color: AppColors.palette.hairline),
+                  Expanded(child: PageBody(child: _buildBody(ready))),
+                ],
+              )
+            : _buildBody(ready),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.palette.surface,
       body: _buildBody(ready),
@@ -185,6 +206,45 @@ class _HomeShellState extends State<HomeShell> {
               // isStudent: isStudent,
             )
           : null,
+    );
+  }
+
+  /// Side navigation for wide windows. Labels are always shown: the rail has
+  /// the room, and three unlabelled icons make people guess.
+  Widget _buildRail() {
+    return NavigationRail(
+      selectedIndex: _selectedIndex,
+      onDestinationSelected: _onItemTapped,
+      labelType: NavigationRailLabelType.all,
+      backgroundColor: AppColors.palette.ground,
+      indicatorColor: AppColors.primaryColor.withValues(alpha: 0.15),
+      selectedIconTheme: const IconThemeData(color: AppColors.primaryColor),
+      unselectedIconTheme: IconThemeData(color: AppColors.palette.inkSoft),
+      selectedLabelTextStyle: GoogleFonts.poppins(
+        fontWeight: FontWeight.w600,
+        color: AppColors.primaryColor,
+      ),
+      unselectedLabelTextStyle:
+          GoogleFonts.poppins(color: AppColors.palette.inkSoft),
+      leading: Padding(
+        padding: const EdgeInsets.only(top: 16, bottom: 8),
+        child: Icon(Icons.school_rounded,
+            size: 28, color: AppColors.primaryColor),
+      ),
+      destinations: const [
+        NavigationRailDestination(
+          icon: Icon(Icons.home_rounded),
+          label: Text('Home'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.library_books_rounded),
+          label: Text('Courses'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.person_rounded),
+          label: Text('Profile'),
+        ),
+      ],
     );
   }
 

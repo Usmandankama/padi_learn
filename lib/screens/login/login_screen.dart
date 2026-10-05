@@ -9,6 +9,7 @@ import 'package:padi_learn/screens/register/register_screen.dart';
 import 'package:padi_learn/screens/forgot_password/forgot_password_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
 import 'package:padi_learn/services/auth_service.dart';
+import 'package:padi_learn/utils/responsive.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -45,7 +46,9 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: AppColors.palette.surface,
-      body: SafeArea(
+      body: PageBody(
+        maxWidth: Breakpoints.readable,
+        child: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
@@ -170,6 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }
