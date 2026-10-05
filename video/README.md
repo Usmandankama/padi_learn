@@ -87,6 +87,40 @@ the two beds in `public/audio/` are unlistened placeholders (see Known gaps) —
 the wrong thing to attach to a piece that goes out in public. Add one the same
 way `AppAd` does if you want a score.
 
+## The score
+
+`scripts/make_audio.py` synthesises everything you hear: three beds and nine
+spot effects, from oscillators, filtered noise and a Karplus-Strong string.
+
+```bash
+python scripts/make_audio.py
+```
+
+It is generated rather than licensed for the reason the pictures are code
+rather than stock — so that nothing in the ad belongs to anybody else. Audio
+was the last part that had not caught up: the two CC0 tracks that used to be
+here came with a licence claim that rested on the artist rather than on the
+item they were downloaded from, and `SOURCES.md` admitted as much at length.
+That question is now gone, and so are they.
+
+Generating it also buys frame accuracy. `directions.teach` asks for ascending
+ticks that land "on one resolved note as it stops — the number stopping is the
+beat, hit it exactly", and the only way to hit it exactly is to know the
+frame. The naira figure stops at frame 590, so `sfx-land` is at frame 590.
+
+**The arrangement is baked into the bed, the cues are placed in the
+composition.** Which instruments play in which scene is a musical decision and
+lives in `make_audio.py`; the bed is written against the same scene table the
+ad uses, so the lesson scene drops away under the footage and the kick arrives
+with the teach card. All the composition does is fade the master and fire the
+one-shots. The bed enters at frame 120 rather than at the browse scene's start
+so that, at 120bpm, the closing card falls exactly eight bars later and the
+logo build resolves on a bar line.
+
+Levels are checked on the way out — peak, RMS, clipping — and the finished
+renders were onset-analysed to confirm every cue fires where it was meant to.
+None of that is listening to it, and nobody has.
+
 ## The logo animation
 
 `src/components/LogoMark.tsx` builds the mark as a plant growing: the stem
@@ -182,11 +216,13 @@ the ad draws around a clip always agrees with the chrome inside it.
 
 ## Known gaps
 
-- **A placeholder music bed, and nothing else.** Two CC0 tracks are wired up
-  (see `public/audio/SOURCES.md`) — but nobody has listened to them, because
-  audio cannot be judged by inspecting it. They prove the pipeline; they are
-  not a scoring decision. **No voiceover and no spot effects**: the lines and
-  cues are written, render `EditorsNotes` and hand it over.
+- **Nobody has listened to the score.** It is written and wired — see
+  `public/audio/SOURCES.md` — and each cue was onset-analysed in the finished
+  render to confirm it fires on the intended frame. That is not the same as
+  it sounding good, which cannot be read off an array. Listen before shipping;
+  the fix is a number in `scripts/make_audio.py`, not a stock library.
+- **No voiceover.** The lines are written in `theme.ts` under `directions`.
+  Render `EditorsNotes` and hand it to whoever reads them.
 - **No captions.** Most social video is watched muted. Worth adding before the
   vertical cut goes anywhere public.
 - **The lessons are taught by nobody.** The footage is generated: every figure

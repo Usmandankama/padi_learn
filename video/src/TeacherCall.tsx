@@ -1,8 +1,11 @@
 import React from 'react';
 import {
   AbsoluteFill,
+  Audio,
   Easing,
+  Sequence,
   interpolate,
+  staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from 'remotion';
@@ -53,6 +56,17 @@ const STARTS = BEATS.reduce<number[]>((acc, beat, i) => {
 }, []);
 
 export const CALL_DURATION = BEATS.reduce((t, b) => t + b.duration, 0);
+
+/** One spot effect, at one frame. `layout="none"` — it places sound, not pixels. */
+const Cue: React.FC<{at: number; src: string; volume?: number}> = ({
+  at,
+  src,
+  volume = 1,
+}) => (
+  <Sequence from={at} layout="none">
+    <Audio src={staticFile(`audio/${src}.wav`)} volume={volume} />
+  </Sequence>
+);
 
 /**
  * Fade and lift, with a hold between. The only move in the piece.
@@ -119,6 +133,45 @@ export const TeacherCall: React.FC = () => {
         WebkitFontSmoothing: 'antialiased',
       }}
     >
+      {/* ---- score ----
+          Far sparser than the ad's: a low drone with a slow pulse, one soft
+          mark as each statement arrives, and movement held back for the
+          number and the close. A notice should not chirp at you.
+
+          The drone runs from frame 0, unlike the ad's bed — there is no hook
+          here whose silence needs protecting, and a statement appearing in
+          total silence reads as a slide rather than a film. */}
+      <Audio
+        src={staticFile('audio/bed-teachers.mp3')}
+        volume={(f) =>
+          interpolate(f, [0, 20, CALL_DURATION - 40, CALL_DURATION], [0, 0.5, 0.5, 0], {
+            extrapolateLeft: 'clamp',
+            extrapolateRight: 'clamp',
+          })
+        }
+      />
+
+      {/* One low mark per statement, on the frame its text starts to rise. */}
+      {[0, 1, 2].map((i) => (
+        <Cue key={i} at={STARTS[i]} src="sfx-mark" volume={0.3} />
+      ))}
+
+      {/* The number is the point of the piece, so it gets the one real hit,
+          and the kicker under it gets the resolution ten frames later. */}
+      <Cue at={STARTS[3]} src="sfx-sub" volume={0.5} />
+      <Cue at={STARTS[3] + 10} src="sfx-land" volume={0.26} />
+
+      {/* A tick as each term rules itself in — `reveal` staggers them seven
+          frames apart, so these are those frames. */}
+      {[0, 1, 2].map((i) => (
+        <Cue key={i} at={STARTS[4] + i * 7} src="sfx-tick" volume={0.16} />
+      ))}
+      <Cue at={STARTS[4] + 24} src="sfx-chime" volume={0.2} />
+
+      {/* `LogoMark` runs at speed 2.4 on the closing card, putting its
+          bowlSweep (26) and leafPop (56) at scene frames 11 and 23. */}
+      <Cue at={STARTS[5] + 8} src="sfx-whoosh" volume={0.28} />
+      <Cue at={STARTS[5] + 23} src="sfx-pluck" volume={0.38} />
       {/* Standing header. Gives the piece a frame and keeps the brand present
           without a logo sitting over every statement. */}
       <div
