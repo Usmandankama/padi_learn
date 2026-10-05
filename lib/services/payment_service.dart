@@ -12,9 +12,19 @@ class PaymentInit {
 /// The app never sees the secret key, the price, or performs verification
 /// itself — initialization and verification are server-authoritative.
 class PaymentService {
-  /// URL Paystack redirects to after checkout. It never needs to resolve — the
-  /// checkout WebView just intercepts navigation to it.
-  static const String callbackUrl = 'https://padilearn.com/payment-callback';
+  /// URL Paystack redirects to after checkout.
+  ///
+  /// On the web this is a real destination: the browser actually lands here,
+  /// the app cold-starts, and `PaymentCallbackScreen` finishes the purchase.
+  /// It therefore points at the app host (`app.padilearn.com`), not the
+  /// marketing site — and that host must serve `index.html` for unknown paths
+  /// or every successful payment ends on a 404. See `docs/LAUNCH_WEB.md`.
+  ///
+  /// On mobile it never needs to resolve: the checkout WebView intercepts the
+  /// navigation before it is ever requested.
+  ///
+  /// Must match the callback URL registered in the Paystack dashboard.
+  static const String callbackUrl = 'https://app.padilearn.com/payment-callback';
 
   /// Starts a transaction for [courseId] and returns the checkout URL + ref.
   static Future<PaymentInit> initialize(String courseId) async {
