@@ -12,6 +12,185 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-10-05 — The demo catalogue went live, and a second campaign for teachers
+
+**The seed is applied.** `demo_catalogue.sql` ran against the `padilearn`
+project: 12 seeded courses, 121 seeded lessons, one free preview each, every
+filmed lesson sitting at the position printed in its own footage. The six real
+courses and their 8 lessons were untouched — the uuid prefixes did their job.
+
+The 10 courses from the previous catalogue were deleted with the teardown
+scoped to just them, which cascaded away 4 demo enrolments. `welcome-to-padilearn`
+survived, being in both sets.
+
+**A bug caught on the way in.** The lesson-trimming DELETE added yesterday was
+scoped to every course matching the `a0000000-…` prefix, not to the courses
+the run actually writes. It would have stripped the lessons off the 10 retired
+courses and left them in the marketplace with no curriculum at all — worse
+than leaving them alone, and not that statement's job. It now scopes to
+`_seed_courses`. Retiring an old course is the teardown's job, deliberately a
+separate and manual one.
+
+**The media is uploaded**, by hand, from the staging trees. Both buckets were
+verified afterwards rather than assumed: all 12 clip keys and all 12 thumbnail
+keys exist, every one byte-identical to the file in `video/out/`, and the
+public thumbnail URLs return 200 with the right length and `image/jpeg`.
+`course-media` still refuses anonymous reads, so playback goes through
+`get-course-video` as designed. No clips from the previous catalogue remain
+under `demo/`.
+
+Nothing in this repo did the uploading. There is no Supabase CLI on this
+machine, no access token, the repo rightly refuses to store a `service_role`
+key, and the MCP server exposes SQL but no Storage API — so the buckets stay a
+by-hand or dashboard job, and `DEMO_MEDIA.md` says so.
+
+### The "first teachers" announcement
+
+A second campaign in `video/`: `TeacherCall` (9:16 and 1:1, 18s, silent) and
+`TeacherFlyer` (1080×1350, dark and light). Copy in `src/announcement.ts`.
+
+It exists because the catalogue is the thing actually missing. Eleven courses
+are seeded and all eleven are ours; the product does not need more learners
+yet, it needs someone to teach.
+
+**What it may and may not claim is written into the copy file, with reasons.**
+The 85/15 split, the student-paid card fee, and the worked example — a course
+listed at ₦5,000 pays the teacher ₦4,250 — are real and checked against
+`PRODUCT_OVERVIEW.md`. Three things a recruitment ad would normally reach for
+are banned: *start earning today* (nothing is open; the closed beta ships free
+courses only), *get paid straight to your account* (payouts are not built —
+`payout_accounts` and the ledger exist, moving money is manual and undesigned,
+and the product ad's version of this line is ahead of itself), and any claim
+of scale (there are two teacher accounts, both ours). The honest pitch is that
+the terms are real and the doors are not open yet, which is the offer.
+
+It deliberately looks nothing like `AppAd`: no phones, no product screens, no
+scene-by-scene tour. Type on a dark ground, one statement at a time, around a
+single number. Flat brand colour, hairline rules, a hanging left margin — and
+none of the things that make a graphic read as generated, down to keeping
+em-dashes out of the body copy.
+
+Both videos are silent on purpose. A typographic notice carries without sound,
+most of it is watched muted, and the two audio beds are still unlistened
+placeholders — the wrong thing to attach to something going out in public.
+
+### Outstanding
+
+- `welcome-to-padilearn`'s thumbnail is 1920x1080 where the other eleven are
+  1280x720, because it is a frame of the ad rather than of a lesson board. The
+  card crops to fill so it looks right; it is just the odd one out in the set.
+- `welcome-to-padilearn` has a second, hand-made lesson on it ("What padilearn
+  is", lowercase p) that predates the seed and has a random uuid, so the seed
+  neither manages nor removes it. The course shows two lessons, both previews.
+  Delete it by hand if it is not wanted.
+- Nobody has read the announcement copy but me. It makes claims about money to
+  people who may act on them; it should get a second pair of eyes before it is
+  posted.
+
+---
+
+## 2026-10-04 — The demo catalogue became eleven real lessons, and the ad shows them
+
+The demo catalogue was eleven courses whose lessons all played Pixabay b-roll:
+a sewing machine for the tailoring course, a spreadsheet for the Excel one.
+Footage of the *subject*, with nobody teaching it. It is now eleven
+purpose-built lesson videos that each teach one idea — a figure that draws
+itself, the formula, and the rule it proves — rendered from a separate project,
+`PadiLearn-lesson-videos`, in PadiLearn's own palette.
+
+`supabase/seed/import_lesson_videos.py` is the boundary between the two
+repos. It takes the MP4s, writes the bucket-ready trees in `video/out/`, cuts
+the course thumbnails, and drops render copies into `video/public/`. Re-run it
+after rebuilding a lesson over there and the catalogue, the thumbnails and the
+ad all follow.
+
+### The footage dictates the catalogue
+
+Each video prints its own course name and lesson number into the corner of
+every frame — "WAEC PHYSICS · LESSON 14". That is not decoration, it is a
+constraint, because `course_description_screen.dart` numbers curriculum rows
+**by their index in the list, not by `lessons.position`**. A course whose
+Projectile Motion lesson is filmed as lesson 14 has to actually have fourteen
+lessons or the screen contradicts the video playing on it.
+
+So the courses were rebuilt around the footage rather than the other way
+round: twelve courses and 121 lessons, each course as long as its filmed
+lesson's number requires, and every course title beginning with the exact name
+its video prints. Nothing in there can be reordered or trimmed without
+re-cutting a video. The seed says so at the top, at length, because this is
+exactly the kind of coupling that gets discovered by breaking it.
+
+The seed now also deletes seeded lessons that are no longer in the set. Without
+that, a course that was longer on a previous run keeps its surplus rows, and
+the surplus pushes the filmed lesson past its own printed number.
+
+### One real lesson per course, and it is the preview
+
+120 distinct lesson videos is not a thing anyone is about to record, so a
+course's lessons still share one clip. What changed is which one is free: the
+filmed lesson is now the course's only preview. A visitor who has not enrolled
+can only open previews, so the only video they can reach is the one whose
+burned-in number matches the row they tapped. Enrol and open lesson 3 of WAEC
+Physics and you still get the lesson 14 clip — that is the known cost, written
+down rather than discovered.
+
+The seeded student's progress moved onto that lesson too, for the same reason:
+their resume point is now nine seconds into WAEC Mathematics lesson 7, the one
+lesson in the course with its own video, so the dashboard's "continue" lands on
+footage that matches the row it came from.
+
+### The ad was rebuilt on the same data
+
+`video/src/catalogue.ts` mirrors the seed the way `theme.ts` mirrors
+`colors.dart`, and the ad renders from it. The marketplace mock shows the
+eleven real courses with the real thumbnails, scrolling, instead of six
+invented ones behind gradient placeholders.
+
+A new scene carries the actual footage. Hook → browse → **lesson** → learn →
+teach → cta, still 24 seconds. The lesson scene plays two clips large enough to
+read: the physics one joined while its trajectory is still drawing, the pricing
+one joined as the formula resolves and the takeaway lands, so between them you
+see a lesson build an idea and then close it. Everything else in the cut is a
+claim about the product; that scene is the product, which is why it is the one
+the notes say cannot be dropped from a 15-second version.
+
+### Invented traction came out of the ad
+
+The cards used to read "1.2k students · 4.8 ★". The database stopped carrying
+invented counters when the 2026-09-14 migration made them trigger-derived, so
+the ad was showing numbers the app itself would not, and a public ad is a worse
+place to fabricate traction than a demo database was. They now show `New` and a
+zero count, which is what the seeded app actually renders. At card size the
+line is a few pixels tall and unreadable either way, so the fake was buying
+nothing.
+
+Three other things in the mock had drifted from `course_card.dart` and were
+corrected while the file was open: the rating pill sat top-right instead of
+bottom-left, the category pill printed in ink instead of brand green, and a
+paid course's price printed in ink instead of green.
+
+### Outstanding
+
+- **Nothing is uploaded.** `video/out/demo-clips/demo/` (9.3 MB) goes to
+  `course-media` and `video/out/demo-thumbs/demo/` (364 KB) to
+  `course-thumbnails`. The seed has not been run against the database either —
+  it is the usual by-hand job, and running it replaces the old demo courses.
+- **The old courses do not disappear on their own.** Slugs that are gone —
+  `waec-english`, `flutter-for-beginners`, `phone-photography`,
+  `personal-finance`, `whatsapp-marketing` and the rest — keep their rows until
+  the teardown block at the bottom of the seed is run. Their media is still in
+  the buckets too.
+- **Still nobody teaching.** Every figure and number in the footage is
+  correct and checkable, but these are diagrams, not a person. They exist so
+  the catalogue is not visibly empty for the first testers. On a marketplace a
+  shaky phone recording of someone who knows their subject outsells an
+  animation, because the buyer is buying the teacher.
+- `fetch_demo_clips.py` and `fetch_demo_thumbs.py` are retired and banner-marked
+  rather than deleted — they are the provenance and licence record for footage
+  that may still be sitting in a bucket.
+
+---
+
 ## 2026-09-29 — The card fee moved from the teacher to the student
 
 A teacher's price used to be what the student paid, so Paystack's cut came out

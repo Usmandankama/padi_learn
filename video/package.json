@@ -10,7 +10,12 @@
     "render:all": "npm run render:ad && npm run render:ad-vertical && npm run render:sting",
     "render:sting": "remotion render LogoSting out/padilearn-logo-sting.mp4",
     "render:sting-square": "remotion render LogoStingSquare out/padilearn-logo-sting-square.mp4",
-    "render:notes": "remotion render EditorsNotes out/padilearn-ad-EDITING-NOTES.mp4"
+    "render:notes": "remotion render EditorsNotes out/padilearn-ad-EDITING-NOTES.mp4",
+    "render:teacher-call": "remotion render TeacherCall out/padilearn-teachers-9x16.mp4",
+    "render:teacher-call-square": "remotion render TeacherCallSquare out/padilearn-teachers-1x1.mp4",
+    "render:flyer": "remotion still TeacherFlyer out/padilearn-teachers-flyer.png",
+    "render:flyer-light": "remotion still TeacherFlyerLight out/padilearn-teachers-flyer-light.png",
+    "render:announcement": "npm run render:teacher-call && npm run render:teacher-call-square && npm run render:flyer && npm run render:flyer-light"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.0",
