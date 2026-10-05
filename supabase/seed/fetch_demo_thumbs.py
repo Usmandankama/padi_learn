@@ -1,4 +1,13 @@
-"""Fetch one photo per seeded course and crop it to a course thumbnail.
+"""RETIRED. Superseded by `import_lesson_videos.py`.
+
+Do not run it. The slugs in `COURSES` below are from the catalogue that the
+purpose-built lesson videos replaced, so a run would write eleven thumbnails
+no course points at. Thumbnails now come from the lesson videos themselves.
+
+Kept for its provenance record and for the note below on why these carry no
+type, which still governs the thumbnails that replaced them.
+
+Fetch one photo per seeded course and crop it to a course thumbnail.
 
 Deliberately plain photography — no text baked in, no gradient wash, no
 badge. The card already prints the title, author and price *underneath* the

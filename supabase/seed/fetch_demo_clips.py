@@ -1,5 +1,17 @@
-"""Fetch one themed Pixabay clip per seeded course, trim it, and lay the files
-out mirroring the `course-media` bucket so the whole tree can be dragged in.
+"""RETIRED. Superseded by `import_lesson_videos.py`.
+
+Fetched one themed Pixabay clip per seeded course, trimmed it, and laid the
+files out mirroring the `course-media` bucket.
+
+Do not run it. The catalogue it was written against no longer exists: `COURSES`
+below lists slugs that `demo_catalogue.sql` has not contained since the
+purpose-built lesson videos replaced this b-roll, so a run would drop eleven
+unreferenced folders into the upload staging tree and they would go into the
+bucket with everything else.
+
+Kept because it is the provenance record for footage that may still be sitting
+in a bucket somewhere, and because the Pixabay licence terms it documents are
+worth not having to reconstruct.
 
 Pixabay Content License: free for commercial use, no attribution required.
 """
