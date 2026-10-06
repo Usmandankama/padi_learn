@@ -12,6 +12,421 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-10-06 — Suspended means signed in but unable to act
+
+**Admin panel item 10, live.** The plan was a
+Supabase auth ban via an `admin-users` edge function. Decision 6 ruled that
+out: a suspended user keeps signing in. They can still watch what they own,
+save progress, read notifications, delete their own comments and ratings, and
+delete their account. Everything else stops: creating or editing courses and
+lessons, uploading, commenting, rating, reporting, suggesting categories,
+editing their profile, enrolling or buying, and changing bank details. A
+suspended teacher's courses leave the catalogue, but enrolled students keep
+them, so a suspension owes no refunds; if the content is the problem, that is
+a takedown. Their payouts are held.
+
+**A table, a private check, and restrictive policies.**
+
+- `suspensions` holds one row per suspended user.
+- `private.is_suspended()` is security definer, so policies can see every
+  row. It lives in a `private` schema, which PostgREST does not expose, so it
+  is not an RPC anyone could use to ask about another user.
+- Each blocked write gets a *restrictive* policy, ANDed onto the existing
+  permissive ones, so not one existing policy changed.
+- Triggers and admin functions run as the table owner, which bypasses RLS. A
+  suspended student deleting their rating therefore still lets the rating
+  trigger recount the course; the dry run checked exactly that.
+
+**Update rules use WITH CHECK only, deliberately.** A restrictive `USING` on
+UPDATE would quietly match no rows, and the app would report success. WITH
+CHECK fails loudly. DELETE has no WITH CHECK, so a suspended teacher's delete
+silently does nothing, and the app should stop offering it (item 13).
+
+**No token lag.** An auth ban only bites when the access token expires, up to
+an hour later. These rules are evaluated on every request, so a suspension
+applies on the next one.
+
+**The service role sees past all of it,** so three functions check too:
+
+- `get-course-video` refuses previews of a suspended teacher's courses. It
+  fails closed if it cannot check.
+- `payout-account` refuses to save bank details for a suspended user.
+- `initialize-payment` refuses a suspended buyer or seller. This one waits for
+  the payments deploy, with the rest of that function.
+
+**Dry run against the live schema**, 34 checks, rolled back. The controls ran
+first: an upload and a course edit by the teacher both succeeded before the
+suspension, so the refusals afterwards are the suspension and nothing else.
+One test was wrong on the first run, not the migration: users have no UPDATE
+grant on `enrollments` at all, and progress is saved through
+`lesson_progress`, which is what the passing run used.
+
+**Applied, then deployed, in that order.** Both functions query
+`suspensions`, so the table had to exist first. After applying, 18 more checks
+passed against the full admin-screen functions:
+
+- Suspending moved a teacher from "payable" to "payouts held", and a real
+  payout attempt was refused.
+- Lifting the suspension let the same payout through.
+
+Both functions answered a smoke test from their own code. PostgREST refuses
+`private` outright (`PGRST106`), so `is_suspended` is unreachable from the
+API.
+
+### Still outstanding
+
+- The app does not yet tell a suspended user why their actions fail (item 13).
+- `initialize-payment`'s suspension check waits for the payments deploy.
+
+---
+
+## 2026-10-06 — One screen for what is waiting and how the money stands
+
+**Admin panel item 9, live, which completes Phase A.** It is the last
+database item. `admin_overview()` is the admin app's first screen as one JSON
+document. It answers what needs doing (open reports, category suggestions,
+refunds owed, teachers who could be paid) and how things stand (accounts,
+catalogue, enrolments, money).
+
+**The overview borrows its sums rather than redoing them.** Teacher figures
+come from `teacher_balance_rows()`, and refunds owed use the same rule as
+`admin_refunds_owed()`. A summary that computed them separately could drift
+from the screens it summarises.
+
+**PadiLearn's net is shown, not just its commission.** The net is commission
+minus what refunds cost the platform, because a takedown refund gives back
+the commission and swallows Paystack's fee. The dry run showed it: on the one
+real sale, after a takedown and refund the net went from ₦750 to −₦177.67.
+
+**What it says today:**
+
+- 7 accounts, 13 live courses (all by one teacher, one of them paid), 123
+  lessons, 2 enrolments.
+- One sale of ₦5,177.67: ₦750 to PadiLearn, ₦4,250 to the teacher, still
+  pending under the 7-day hold.
+- One category suggestion waiting.
+
+### Still outstanding
+
+- The performance advisor's findings are listed under item 9 in
+  `ADMIN_PANEL.md`. Mostly pre-existing, and immaterial at this size.
+
+---
+
+## 2026-10-06 — Who is this person, and what have they got
+
+**Admin panel item 8, live.** Support starts
+with that question, and the answer is spread across `auth.users`,
+`profiles`, and every table that hangs off a user. Clients can read none of
+it for anyone but themselves, by design. `admin_search_users()` finds an
+account by part of an email or name, or by exact id. `admin_user_detail()`
+returns everything about one account as a single JSON document, so the
+detail page costs one round trip.
+
+**Two details worth keeping.** Search escapes LIKE wildcards, so typing `%`
+finds a literal percent sign rather than every account. The detail shows
+only the last four digits of a payout account; the full number appears in
+one place only, `admin_teacher_balances()`, where it is needed to send money.
+
+**Read-only, so not logged.** Only actions that change something write to
+`admin_actions`. If access to personal data ever needs its own audit trail,
+for a regulator or because there are more admins, this is where it would go.
+
+**Verified before and after applying**, 15 and 12 checks, rolled back. They
+print only counts and yes/no answers, so no personal data reached the logs.
+
+---
+
+## 2026-10-06 — Category suggestions can be approved, renamed or merged
+
+**Admin panel item 7, live.** Teachers have
+been able to suggest categories since August. A suggestion saves as inactive
+and stays out of the browse filters, and approving one was left to "SQL or
+the dashboard". There are now four admin functions: list (pending first),
+approve or switch off, rename or reorder, and delete. Delete can merge into
+another category.
+
+**Names are compared case-insensitively.** The table's unique constraint is
+case-sensitive, so a teacher can suggest "design" while "Design" exists.
+Approving it would put two near-identical filters side by side, so approval
+refuses a clash and points to merging instead.
+
+**Nothing is left without a category by accident.** `courses.category`
+references the category by name with `ON DELETE SET NULL`, so deleting a
+category in use would silently clear it on those courses. Deleting therefore
+requires a category to move them to whenever any course uses it, and that
+target must be active. Renames cascade to courses through the existing
+`ON UPDATE CASCADE`.
+
+**Reasons are optional here.** Unlike takedowns and money, nothing in this
+item affects a user's access or a balance. Every action is still logged.
+
+**Dry run against the live schema**, 17 checks, rolled back. Among them, a
+synthetic "design" duplicate used by one course was refused for approval,
+refused for deletion without a target, and then merged into "Design", which
+carried its course across. The checks passed again after applying.
+
+### Still outstanding
+
+- "Philosophy" is still waiting. It can be approved from the admin app, or
+  now with `admin_set_category_active` from a second-factor session.
+
+---
+
+## 2026-10-06 — A wrong role at signup can be undone
+
+**Admin panel item 6, live.** `claim_role()`
+lets a user pick a role once, and `role` has been out of reach of client
+writes since August, so nobody can promote themselves. The side effect was
+that a user who tapped the wrong role at signup was stuck without SQL.
+`admin_set_role()` sets Student or Teacher, or clears the role. Clearing is
+the gentler fix, because the app reads a null role as "onboarding
+unfinished": on the next launch it shows the picker, and the user chooses
+through `claim_role()` themselves.
+
+**A teacher who owns courses cannot be demoted or cleared.** The student
+shell has nowhere to manage courses, so their courses, sales and students
+would be stranded. The dry run hit exactly this: the dev teacher owns all 13
+courses and was refused.
+
+**Verified before and after applying**, 14 checks each time, rolled back. They
+covered self-promotion still being blocked, the refusals, a student promoted
+and then cleared, and that user re-claiming their own role exactly once.
+
+---
+
+## 2026-10-06 — What each teacher is owed, and what they have been paid
+
+**Admin panel item 5, live.** Web checkout
+takes real money, and until now nothing recorded what PadiLearn then owes
+each teacher or what it has sent them. Transfers are still made by hand;
+`payouts` records them, and a balance says what can be sent.
+
+**One definition of the balance.** `teacher_balance_rows()` is internal and
+shared by the admin list and by the payout check, so the number an admin sees
+is the number a payout is checked against:
+
+- balance: the teacher's share of every sale, minus refund clawbacks, minus
+  payouts;
+- pending: unrefunded sales younger than `payout_hold()`;
+- available: balance minus pending.
+
+A refunded sale counts once in earnings and once, negatively, in clawbacks,
+so it nets to zero and is kept out of pending.
+
+**The rules were decided today** (`ADMIN_PANEL.md`, decision 5):
+
+- **7-day hold.** The interval lives in one function, `payout_hold()`, so
+  changing it is a one-line migration.
+- **Negative balances carry forward.** A refund after a payout is recovered
+  from later sales, never chased.
+- **Verified accounts only.** Payouts go only to a Paystack-verified account,
+  and each payout keeps a copy of the account it went to, because the teacher
+  can change theirs later.
+- **No overpaying.** A payout cannot exceed what is available.
+
+Recording a payout locks the teacher's bank-account row, which serialises
+payouts per teacher, so two admins cannot both pay out the same balance. The
+transfer reference is unique, so the same transfer cannot be recorded twice.
+
+**Dry run against the live schema**, 18 checks, rolled back:
+
+- Today's real sale (₦4,250 to the teacher, paid three hours earlier) showed
+  as pending, with nothing payable.
+- A synthetic sale backdated 10 days made ₦2,000 payable. Paying ₦1,500
+  left ₦500.
+- Refunding that sale afterwards took the payable balance to −₦1,500, which
+  then blocked any further payout.
+
+The same checks passed again after applying.
+
+### Still outstanding
+
+- No teacher has a payout account yet (`payout_accounts` is empty), so
+  nothing can actually be paid out until one adds and verifies their bank
+  details in the app.
+- Teachers cannot see their balance or payouts in the app. The earnings
+  screen still sums raw sales (`ADMIN_PANEL.md`, item 13).
+
+---
+
+## 2026-10-06 — A refund is its own row, and the teacher's share goes with it
+
+**Admin panel item 4, live.** A takedown
+stops playback for students who paid, so they are owed their money back.
+Refunds are issued by hand in the Paystack dashboard; `refunds` records them,
+one row per refunded sale, so teacher balances (item 5) can leave them out.
+
+**Who pays was decided today** (`ADMIN_PANEL.md`, decision 4). The student
+gets everything back. The teacher loses their whole share, because the breach
+was theirs. PadiLearn gives up its commission and absorbs Paystack's fee,
+which Paystack keeps on a refund. The function computes the split from the
+ledger, so no admin can type a different one: `amount_kobo` and
+`teacher_clawback_kobo` are copied from the sale, and `platform_cost_kobo` is
+generated as the difference. On the one real (test-mode) sale it came out at
+₦5,177.67 back, ₦4,250 off the teacher, ₦927.67 to PadiLearn.
+
+**`transactions` is not touched.** Marking the sale "refunded" would mean
+editing the ledger. A separate row keeps it append-only, and a `RESTRICT`
+foreign key means a refunded sale can never be deleted out from under its
+refund.
+
+**Recording a refund removes the enrolment.** Access is already gone while the
+course is down, but a course restored on appeal would otherwise give the
+student both the refund and the course.
+
+**Only takedown refunds, for now.** Refunding for any other reason needs a
+refund policy (`terms.md` still has a placeholder) and its own answer to who
+pays, so `admin_record_refund()` refuses sales of courses that are still live.
+
+**Verified live.** 16 checks passed both as a dry run and after applying, in
+transactions ending in an exception. The checks cover the split, the enrolment
+removal surviving a restore, double refunds, the refusal for live courses,
+non-admins, the real admin without a second factor, and anon.
+
+### Still outstanding
+
+- The app's teacher earnings (`transaction_service.dart`) sum `transactions`
+  and will not show a clawback until item 5's balance replaces them.
+- Deleting a course with paid students is blocked in the app, not in RLS. A
+  crafted call could still do it, leaving its buyers owed refunds against a
+  course that no longer exists.
+
+---
+
+## 2026-10-06 — Reports can be read, and acted on once per target
+
+**Admin panel item 3, live.** Reports have
+been write-only since they shipped: filed from the app, readable only in
+Studio. `admin_list_reports(status)` is the queue. Each row carries the
+snapshot taken at report time *and* the content as it is now, because a comment
+may have been edited or deleted since, plus the reporter, the owner, and how
+many open reports point at the same thing. Open reports come oldest first, so
+the queue is worked in order.
+
+**Acting on content closes its reports.** `admin_delete_comment()` and
+`admin_remove_course()` (now redefined) close every open report about what
+they act on, as `actioned` with the same reason, so ten people flagging one
+comment is one decision. Order matters for comments: the reports are closed
+*before* the delete, because `content_reports.comment_id` is
+`ON DELETE SET NULL` and the match would be gone afterwards. The text survives
+in the reports' snapshot and in the audit log. Taking a course down leaves
+reports about *comments* on that course open: those are about someone else's
+words. `admin_set_report_status()` covers the rest (dismiss, mark actioned
+when the owner already fixed it, reopen a mistake), always with a reason.
+
+**The reports insert grant never narrowed anything.** The September migration
+granted INSERT on five columns but never revoked the table-wide INSERT that
+Supabase gives every new table, so the column grant was a no-op. The fill
+trigger overwrote most server-owned fields, which is why it never mattered, but
+the new `resolved_by` and `resolution_note` columns would have been settable
+by whoever filed the report. The table privilege is now revoked and the five
+columns re-granted, which is the same fix `courses` got in item 2. The trigger
+also clears the two new columns, so "server-owned fields are set here" stays
+true if a grant is ever widened again. Reports still cannot be read by users,
+and a duplicate still raises `23505`, which the app shows as "already
+reported".
+
+**Dry run first, then verified live.** In each pass, reports were filed
+through the app's exact insert shape, then queued, acted on, reopened and
+dismissed, inside a transaction ending in an exception: 21 checks before
+applying, 22 after. The extra one confirms the real admin account,
+hello@padilearn.com, is refused while it has no second factor.
+
+### Still outstanding
+
+- Nothing in the database. The queue gets a screen with the admin app
+  (`ADMIN_PANEL.md`, items 11–12).
+
+---
+
+## 2026-10-06 — A takedown the teacher cannot undo
+
+**Admin panel item 2, live.** Until now the
+only way to hide a course was `archived_at`, which the teacher owns: archive
+one for copyright and its owner could put it straight back. Takedowns get
+their own columns, `removed_at` and `removed_reason`, that no client can
+write. Only `admin_remove_course()` and `admin_restore_course()` touch them,
+both require a reason, and both log to `admin_actions`.
+
+**Students who paid lose playback** (decided today, `ADMIN_PANEL.md`
+decision 2). A removed course still *resolves* for its owner and for enrolled
+students, the same way an archived one does, so libraries and the player do
+not break. `get-course-video` is what actually stops playback: it runs as the
+service role, so RLS never applied there, and it now loads the course for
+every request, previews included, and refuses a removed one to everyone but
+the owner. The player shows the function's error verbatim, so the message
+itself tells a paying student to email hello@padilearn.com. The removal call
+returns how many paid sales it just made refundable.
+
+**Course INSERT is now column-by-column.** It was the last table-wide grant on
+`courses`, so a new `removed_at` would have been settable at creation. The
+same grant had always let a teacher create a course with `enrollments` or
+`rating_avg` set to anything, and the counters are only recounted when an
+enrolment or rating changes, so an invented number stuck. Narrowed to the
+seven columns `create_course_screen.dart` sends.
+
+**Dry run first, then verified live.** Before applying, the migration and 18
+behaviour checks ran in one transaction that ends in an exception, so nothing
+persisted. Among the checks: a stranger sees the same 13 courses before and
+after, which confirms the rewritten select policy hides nothing it should not.
+After applying the migration and then deploying `get-course-video` (version
+3, in that order because the function selects `removed_at`), the same checks
+plus two more (a teacher can still edit their course; anon cannot reach the
+RPCs) passed on the real schema, and the function answered a smoke test from
+its own code.
+
+### Still outstanding
+
+- `initialize-payment` now refuses archived and removed courses, but must not
+  be deployed alone. The live payment functions are the June/August versions
+  and `paystack-webhook` was never deployed (see `ADMIN_PANEL.md`, "Live
+  payment functions"). They go out together, in one payments deploy.
+- The main app does not show that a course was taken down (admin item 13).
+
+---
+
+## 2026-10-06 — An admin is a row, and every admin action leaves one
+
+**The admin panel is scoped, in `docs/ADMIN_PANEL.md`.** Until now Supabase
+Studio was the back office: fine for one operator, but it keeps no record of
+who did what, and the only way to delegate it is to hand over the whole
+database. The doc holds the build order as a checklist; this is item 1.
+
+**Admins are rows in `public.admins`, not a role and not a claim.** Putting
+"Admin" in `profiles.role` would publish the list of admins to every signed-in
+user (profiles are world-readable to the app), and the app's role branching
+would drop an unknown value into the student shell. A JWT claim in
+`app_metadata` would outlive its revocation until the token expired; a deleted
+row is gone on the next request. Clients have no grants on the table at all.
+
+**`is_admin()` requires a second factor.** It is true only for a listed user
+whose session is `aal2`, so a leaked password reaches nothing. The admin app
+will enrol and challenge a TOTP factor before calling anything.
+
+**Every admin write logs itself in the same transaction.** Admin RPCs start
+with `perform public.assert_admin();` and end with `log_admin_action(...)`,
+which writes `admin_actions` with the admin taken from the session rather than
+an argument. Same transaction, so the log can neither miss a committed action
+nor show one that rolled back. Admins can read the log; nobody can write it
+except through those functions.
+
+Nothing existing changes: no table, policy or grant the app relies on is
+touched, so the app behaves exactly as before.
+
+### Still outstanding
+
+- ~~Apply `20261006000001_admin_foundation.sql` to the live project.~~ Applied
+  2026-10-06; 15 role-simulated checks passed in a rolled-back transaction.
+- ~~Add the first admin, hello@padilearn.com.~~ Granted 2026-10-06. It has no
+  TOTP factor yet, so `is_admin()` answers false for it until the admin app
+  enrols one.
+- `log_admin_action` reads `auth.uid()`, which is null under the service role.
+  The `admin-users` edge function (item 9) must log through an RPC called with
+  the admin's own JWT, or its rows will have no author.
+
+---
+
 ## 2026-10-06 — The APK is hosted, at dl.padilearn.com
 
 **The download the landing page promises now exists.** The release APK sits in

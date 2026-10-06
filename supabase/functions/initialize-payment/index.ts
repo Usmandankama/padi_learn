@@ -47,10 +47,35 @@ Deno.serve(async (req) => {
     // Authoritative price comes from the DB, never the client.
     const { data: course, error: courseErr } = await admin
       .from("courses")
-      .select("id, title, price")
+      .select("id, title, price, user_id, archived_at, removed_at")
       .eq("id", courseId)
       .maybeSingle();
     if (courseErr || !course) return json({ error: "Course not found" }, 404);
+
+    // The service role sees courses RLS hides, so an archived or taken-down
+    // course would still sell to anyone holding its id. Refuse both before
+    // Paystack is involved.
+    if (course.archived_at || course.removed_at) {
+      return json({ error: "This course is no longer available." }, 410);
+    }
+
+    // Same reason, for suspensions: a suspended buyer cannot buy, and a
+    // suspended teacher's courses are off sale.
+    const { data: suspensions, error: suspensionErr } = await admin
+      .from("suspensions")
+      .select("user_id")
+      .in("user_id", [user.id, course.user_id]);
+    if (suspensionErr) {
+      return json({ error: "Could not check this purchase." }, 500);
+    }
+    if ((suspensions ?? []).some((s) => s.user_id === user.id)) {
+      return json({
+        error: "Your account is suspended. Email hello@padilearn.com to appeal.",
+      }, 403);
+    }
+    if ((suspensions ?? []).length > 0) {
+      return json({ error: "This course is no longer available." }, 410);
+    }
 
     const price = Number(course.price ?? 0);
     if (price <= 0) return json({ error: "This course is free." }, 400);

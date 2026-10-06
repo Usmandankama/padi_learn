@@ -68,30 +68,55 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (lessonErr || !lesson) return json({ error: "Lesson not found" }, 404);
 
-    // A preview lesson is the teacher's own advert - playable without buying.
-    let allowed = lesson.is_preview === true;
+    // Loaded even for previews: a course taken down by PadiLearn stops playing
+    // for everyone but its owner, previews and paid enrolments included. The
+    // service role bypasses RLS, so this check is the only thing enforcing it.
+    const { data: course } = await admin
+      .from("courses")
+      .select("id, user_id, removed_at")
+      .eq("id", lesson.course_id)
+      .maybeSingle();
+    if (!course) return json({ error: "Course not found" }, 404);
+
+    const isOwner = course.user_id === user.id;
+
+    if (course.removed_at && !isOwner) {
+      // Shown verbatim by the player. Students who paid are owed a refund,
+      // so they need somewhere to ask.
+      return json({
+        error:
+          "This course was taken down by PadiLearn and can no longer be played. " +
+          "If you paid for it, email hello@padilearn.com.",
+      }, 403);
+    }
+
+    let allowed = isOwner;
+
+    // A preview lesson is the teacher's own advert - playable without buying,
+    // unless the teacher is suspended: their courses are out of the catalogue,
+    // previews included. Students who enrolled keep access below.
+    if (!allowed && lesson.is_preview === true) {
+      const { data: suspension, error: suspensionErr } = await admin
+        .from("suspensions")
+        .select("user_id")
+        .eq("user_id", course.user_id)
+        .maybeSingle();
+      if (suspensionErr) {
+        return json({ error: "Could not check this course." }, 500);
+      }
+      allowed = suspension == null;
+    }
 
     if (!allowed) {
-      const { data: course } = await admin
-        .from("courses")
-        .select("id, user_id")
-        .eq("id", lesson.course_id)
+      // Enrollments for paid courses are only ever created by
+      // `verify-payment`, so this is the paywall.
+      const { data: enrollment } = await admin
+        .from("enrollments")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("course_id", lesson.course_id)
         .maybeSingle();
-      if (!course) return json({ error: "Course not found" }, 404);
-
-      allowed = course.user_id === user.id;
-
-      if (!allowed) {
-        // Enrollments for paid courses are only ever created by
-        // `verify-payment`, so this is the paywall.
-        const { data: enrollment } = await admin
-          .from("enrollments")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("course_id", lesson.course_id)
-          .maybeSingle();
-        allowed = enrollment != null;
-      }
+      allowed = enrollment != null;
     }
 
     if (!allowed) {
