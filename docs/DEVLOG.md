@@ -12,6 +12,60 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-10-06 — The APK is hosted, at dl.padilearn.com
+
+**The download the landing page promises now exists.** The release APK sits in
+an R2 bucket, `padilearn-dl`, behind `dl.padilearn.com` (custom domain, minimum
+TLS 1.2 — safe, because the APK's floor is Android 7.0 and TLS 1.2 has been
+default since 5.0). Two objects per release: `padilearn-1.0.0.apk`, immutable
+and cached for a year, and `padilearn-latest.apk` on a five-minute cache, which
+is what `site.android.apkUrl` points at. Until today that URL resolved to
+nothing, so the new landing page could not have shipped without a dead download
+button on the one page whose job is to earn a stranger's trust.
+
+**It cannot live with the marketing site.** Cloudflare Pages caps a single file
+at 25 MiB; the universal APK is 40.6 MiB. The per-ABI splits *would* fit, and
+are roughly half the size, but serving those means asking a stranger which CPU
+their phone has. R2 instead, where egress is free.
+
+**`--pipe`, not `--file`.** `wrangler r2 object put --file` failed twice, each
+time after about five minutes, with a bare `fetch failed` and nothing uploaded.
+Streaming the same bytes in (`cat $APK | wrangler … --pipe`) worked first try.
+Worth recording because the obvious diagnosis was wrong: a bandwidth test run
+*while* the upload was in flight read 13 kB/s, which was pure contention for the
+uplink. Measured clean, the link does ~540 kB/s — fine for 40 MiB — and large
+request bodies only collapsed when `Expect: 100-continue` was in play. One
+buffered PUT does not survive this connection; a streamed one does.
+
+**Verified, not assumed.** For a single-part upload R2's `ETag` is the MD5 of
+the object, so a 42 MB download is not needed to prove the bytes are intact:
+`Content-Length` matched 42,621,037 exactly and the ETag matched the local
+`md5sum` (`05a390cb…`). A truncated upload would still have answered `200`.
+Note that the bucket's own `object_count` and `bucket_size` read zero for
+roughly an hour afterwards — those metrics lag, and are useless for verifying a
+fresh upload.
+
+**The numbers on the page were wrong.** `site.ts` claimed `41 MB`; the file is
+42.6 MB as a browser will report it. Understating a download by 4% on a trust
+page is a small own-goal, so `apkSize` and `apkUpdated` now match the artifact
+that is actually being served.
+
+### Still outstanding
+
+- **Enabling R2 was a by-hand dashboard step**, as it requires accepting terms
+  and a payment method. Nothing in this repo can do that, and the API answers
+  `code: 10042` until it is done.
+- **Uploads are still manual.** The CI workflow added yesterday builds the
+  *web* app only. Building the APK in CI would mean putting the release
+  keystore and its passwords into repository secrets, and `CLOUDFLARE_API_TOKEN`
+  would need R2 edit on top of Pages edit. That is a real decision about where
+  the signing key lives, deliberately not taken yet.
+- **This signature is not Play App Signing's.** Anyone who sideloads today must
+  uninstall before a future Play build will install over it. Worth saying out
+  loud in the release notes when there is a Play listing.
+
+---
+
 ## 2026-10-05 — The demo catalogue went live, and a second campaign for teachers
 
 **The seed is applied.** `demo_catalogue.sql` ran against the `padilearn`

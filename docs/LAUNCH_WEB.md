@@ -106,11 +106,84 @@ Add `https://app.padilearn.com` (and `https://app.padilearn.com/*`) under
 **Authentication → URL Configuration → Redirect URLs**, or password-reset and
 email-confirmation links will be ignored and fall back to the Site URL.
 
-Note that `WebLinks.emailConfirmed` still points at
-`padilearn.com/email-confirmed`, which tells people to go back to *the app* —
-written when the only app was on Android. For a web signup that sentence is now
-slightly wrong; the page should also offer a link to `app.padilearn.com`. It is
-a one-line edit in `website/src/pages/email-confirmed.astro`, not a blocker.
+`email-confirmed.astro` now offers `app.padilearn.com` alongside "go back to
+the app on your phone". It used to say only the latter, written when the only
+app was on Android, which was wrong for anyone who signed up on a laptop.
+
+---
+
+## The Android download: dl.padilearn.com
+
+The APK is handed out directly from the landing page, because the Play Store
+route is blocked on a D-U-N-S number and there is no reason to make people wait
+for it.
+
+It cannot live with the site: Cloudflare Pages caps a single file at 25 MiB and
+the universal APK is 40.6 MiB. So it sits in an **R2 bucket**, `padilearn-dl`,
+with `dl.padilearn.com` attached as a custom domain. Minimum TLS is 1.2, which
+is safe because this APK's floor is Android 7.0, and TLS 1.2 has been on by
+default since Android 5.0.
+
+Two objects per release:
+
+| Key | `Cache-Control` | Why |
+| --- | --- | --- |
+| `padilearn-<version>.apk` | `max-age=31536000, immutable` | an archive that never changes, so an old link keeps working |
+| `padilearn-latest.apk` | `max-age=300` | what `site.android.apkUrl` points at; five minutes so a new build propagates fast |
+
+### Publishing a new build
+
+The bucket and the custom domain already exist; this is the per-release part.
+
+```bash
+flutter build apk --release
+APK=build/app/outputs/flutter-apk/app-release.apk
+CT=application/vnd.android.package-archive
+
+cat $APK | npx wrangler@3 r2 object put padilearn-dl/padilearn-1.0.0.apk   --pipe --content-type $CT --cache-control "public, max-age=31536000, immutable"
+
+cat $APK | npx wrangler@3 r2 object put padilearn-dl/padilearn-latest.apk   --pipe --content-type $CT --cache-control "public, max-age=300"
+```
+
+**`--pipe` is not optional, and it is the part worth remembering.** Passing
+`--file` instead failed from this machine twice in a row, each time after about
+five minutes, with a bare `fetch failed` and nothing uploaded. The connection is
+not the problem — it measures around 540 kB/s — but one buffered 40 MiB PUT does
+not survive it while a streamed one does. If `--pipe` ever fails too, upload
+through the R2 dashboard rather than burning an hour on wrangler.
+
+### Verify, and do not skip it
+
+A truncated upload still answers `200`.
+
+```bash
+curl -I https://dl.padilearn.com/padilearn-latest.apk
+md5sum build/app/outputs/flutter-apk/app-release.apk
+```
+
+`Content-Length` must equal the local file's byte count, and for a single-part
+upload R2's `ETag` **is** the MD5 of the object, so the two must match. For
+1.0.0: `42621037` bytes, `05a390cb9dbef5cc7574e6d04945d0d7`.
+
+Then update `site.android` in `website/src/site.ts` — `apkVersion`, `apkSize`
+and `apkUpdated` are shown to the user, so wrong numbers are worse than none —
+and redeploy the marketing site.
+
+### What this APK is
+
+Universal (`arm64-v8a`, `armeabi-v7a`, `x86_64`), so one link installs on every
+phone. The per-ABI splits are roughly half the size and would even fit under the
+Pages file cap, but they would make a stranger pick a CPU architecture on the
+page whose whole job is to earn their trust.
+
+Signed with the release keystore (`CN=Groundwork Tech Ltd`), APK Signature
+Scheme v2 and no v1 — v1 is only needed below Android 7.0, which `minSdkVersion`
+24 already excludes. That is why `minAndroid: '7.0'` in `site.ts` is
+load-bearing rather than decoration.
+
+One consequence to plan for: this signature is not the one Play App Signing
+would produce later, so anyone who sideloads today has to uninstall before a
+Play build will install over it.
 
 ---
 
