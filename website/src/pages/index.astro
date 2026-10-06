@@ -11,15 +11,19 @@ import courseShot from '../assets/screens/course.png';
 const faqs = [
   {
     q: 'How much does it cost?',
-    a: 'Many courses are free. Paid courses aren’t on sale during the beta. We’ll update our terms before anything is sold.',
+    a: 'Every course on PadiLearn is free today. When teachers begin publishing paid courses they set the price in naira, you pay once, and the course stays yours — it is not a subscription.',
   },
   {
     q: 'Is it on Google Play?',
-    a: 'PadiLearn is in a closed test on Google Play. Join the beta and we’ll send you the link to install it.',
+    a: 'Not yet. You can use PadiLearn in your browser now, or download the Android app from this page. A Play Store listing is coming.',
+  },
+  {
+    q: 'Is it safe to install the download?',
+    a: 'Yes. Android warns you because the file did not come from the Play Store — that warning is about where a file came from, not what is inside it. The download is served over HTTPS from padilearn.com.',
   },
   {
     q: 'What about iPhone?',
-    a: 'Android comes first. An iPhone version will follow once the Android app is stable.',
+    a: 'PadiLearn works in the browser on iPhone. A native iPhone app will follow once the Android app is stable.',
   },
   {
     q: 'Who can teach?',
@@ -41,8 +45,8 @@ const faqs = [
       <h1>Learn from Nigerian teachers.</h1>
       <p class="sub">Video courses on your phone, at your own pace.</p>
       <div class="links">
-        <a class="button" href={mailto('Join the PadiLearn beta')}>Join the beta</a>
-        <a class="more" href="#teachers">Teach on PadiLearn</a>
+        <a class="button" href={site.appUrl}>Open PadiLearn</a>
+        <a class="more" href="#get">Get the Android app</a>
       </div>
     </div>
     <div class="hero-devices">
@@ -99,22 +103,30 @@ const faqs = [
           <p>Your courses stay yours. We host them and show them to students.</p>
         </div>
       </div>
-      <a class="more" href={mailto('I want to teach on PadiLearn')}>Become a beta teacher</a>
+      <a class="more" href={mailto('I want to teach on PadiLearn')}>Talk to us about teaching</a>
     </div>
   </section>
 
-  <!-- Beta -->
-  <section class="beta">
+  <!-- Get it -->
+  <section id="get" class="beta">
     <div class="container center">
-      <h2>Be one of the first.</h2>
+      <h2>Start learning today.</h2>
       <p class="sub">
-        We’re inviting students and teachers to try PadiLearn on Android. Email us from your Google account
-        and we’ll send you an invite.
+        PadiLearn runs in your browser, with nothing to install. Or put the Android app on your
+        phone and carry your courses with you.
       </p>
       <div class="links">
-        <a class="button" href={mailto('Join the PadiLearn beta')}>Join the beta</a>
-        <a class="more" href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>
+        <a class="button" href={site.appUrl}>Open in your browser</a>
+        <a class="button ghost" href={site.android.apkUrl}>Download for Android</a>
       </div>
+      <p class="note">
+        Android {site.android.minAndroid} or later{site.android.apkSize && ` · ${site.android.apkSize}`} · version{' '}
+        {site.android.apkVersion}. Your phone will ask you to allow installing from your browser —
+        that is normal for an app that does not come from the Play Store.
+      </p>
+      <p class="links">
+        <a class="more" href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>
+      </p>
     </div>
   </section>
 
@@ -291,6 +303,25 @@ const faqs = [
       grid-template-columns: 1fr;
       gap: 1.5rem;
     }
+  }
+
+  /* Get it ---------------------------------------------------------------- */
+  .ghost {
+    background: transparent;
+    color: var(--green-text);
+    box-shadow: inset 0 0 0 1px var(--green);
+  }
+
+  .ghost:hover {
+    background: color-mix(in srgb, var(--green) 10%, transparent);
+  }
+
+  .note {
+    margin: 1.5rem auto 0;
+    max-width: 34rem;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--text-soft);
   }
 
   /* FAQ ------------------------------------------------------------------- */
