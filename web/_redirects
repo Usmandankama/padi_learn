@@ -1,0 +1,11 @@
+# Cloudflare Pages SPA fallback for app.padilearn.com.
+#
+# Flutter copies everything in web/ into build/web, so this ships with the app.
+#
+# /payment-callback is a route, not a file. Paystack sends a paying student
+# there after checkout; without this rule Cloudflare returns 404 and the
+# student is never enrolled even though the money left their account.
+#
+# 200 (not 301/302) so the browser keeps the original URL and its
+# ?reference=... query string, which is what the callback screen reads.
+/*    /index.html   200

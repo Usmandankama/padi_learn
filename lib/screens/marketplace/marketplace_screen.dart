@@ -11,6 +11,7 @@ import 'package:padi_learn/screens/description/course_description_screen.dart';
 import 'package:padi_learn/screens/marketplace/components/course_card.dart';
 import 'package:padi_learn/services/category_service.dart';
 import 'package:padi_learn/utils/colors.dart';
+import 'package:padi_learn/utils/responsive.dart';
 import 'package:padi_learn/utils/money.dart';
 import 'package:padi_learn/controller/ongoing_courses_controller.dart';
 
@@ -390,7 +391,7 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final crossAxisCount = width >= 1100 ? 4 : (width >= 720 ? 3 : 2);
+        final crossAxisCount = gridColumnsFor(width);
         return GridView.builder(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.fromLTRB(_kGap16.w, 12.h, _kGap16.w, _kGap24.h),

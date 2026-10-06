@@ -14,41 +14,76 @@
 -- and re-running after editing a title or price just corrects it.
 --
 --
+-- ============================== THE FOOTAGE ================================
+--
+-- Eleven purpose-built lesson videos, one per subject course, produced by the
+-- separate `PadiLearn-lesson-videos` project and brought in by
+-- `import_lesson_videos.py`. They replaced a set of Pixabay b-roll clips that
+-- showed the *subject* of a course — a sewing machine, a spreadsheet — but
+-- nobody teaching it. These teach something: a figure that draws itself, a
+-- formula, and a takeaway, in PadiLearn's own palette.
+--
+-- THEY CONSTRAIN THIS FILE. Each video prints its own course name and lesson
+-- number into the corner of every frame — "WAEC PHYSICS · LESSON 14". The app
+-- numbers curriculum rows by their position in the list
+-- (course_description_screen.dart numbers by index, not by `position`), so a
+-- course whose Projectile Motion lesson is filmed as lesson 14 must actually
+-- have fourteen lessons before the screen agrees with the video. That is why
+-- the courses below are as long as they are, and why no lesson may be
+-- reordered or removed without re-cutting the footage.
+--
+-- Every course title likewise begins with the exact course name its video
+-- prints, so the catalogue cannot contradict what is on the board.
+--
+--
 -- ============================ WHAT YOU MUST UPLOAD ==========================
 --
--- The seed writes URLs and object keys for files that do not exist yet. That
--- is intentional and nothing breaks in the meantime: `CourseThumbnail` falls
--- back to the branded placeholder when an image 404s, so the app looks
--- deliberate rather than broken while you gather the artwork.
+-- Both trees are already laid out to mirror their buckets — drag the `demo`
+-- folder in and the whole catalogue works. Nothing breaks in the meantime:
+-- `CourseThumbnail` falls back to the branded placeholder when an image 404s.
 --
 -- THUMBNAILS -> bucket `course-thumbnails` (public), path `demo/<slug>.jpg`
---   demo/welcome-to-padilearn.jpg      demo/excel-for-office-work.jpg
---   demo/jamb-mathematics.jpg          demo/start-a-small-business.jpg
---   demo/waec-english.jpg              demo/whatsapp-marketing.jpg
---   demo/flutter-for-beginners.jpg     demo/tailoring-basics.jpg
---   demo/python-basics.jpg             demo/phone-photography.jpg
---   demo/personal-finance.jpg
---
--- Landscape, 16:9, 1280x720 is plenty. The card crops to fill, so keep the
--- subject centred.
+--   READY in `video/out/demo-thumbs/demo/`. One per course, 1280x720, taken
+--   from each lesson video at the moment its figure and formula are both on
+--   the board, then inverted to dark so a near-white board does not read as a
+--   broken image inside a white card.
 --
 -- VIDEOS -> bucket `course-media` (private), key `demo/<slug>/clip.mp4`
---   ALREADY PREPARED. `video/out/demo-clips/demo/` holds all 11 files laid out
---   in exactly this structure — drag that `demo` folder into the bucket root
---   and every seeded lesson plays. 13 MB total. See video/out/demo-clips/
---   UPLOAD.md for provenance and licence.
+--   READY in `video/out/demo-clips/demo/`. Eleven lesson videos at 18s each,
+--   1280x720, silent, about 0.5 MB apiece, plus the rendered ad as
+--   `welcome-to-padilearn`. Roughly 9 MB in total.
 --
---   All lessons of a course share one clip, and `duration_seconds` above
---   matches the real file.
+--
+-- ============================= ONE REAL LESSON =============================
+--
+-- Each course has exactly one filmed lesson, and it is the course's free
+-- preview. The rest of its lessons point at the same clip, because a demo of
+-- 120 distinct videos is not a thing anyone is about to record.
+--
+-- Making the filmed one the preview is what keeps the seam hidden where it
+-- matters: a visitor who has not enrolled can only open preview lessons, so
+-- the only video they can reach is the one whose burned-in number matches the
+-- row they tapped. Enrol, open lesson 3 of WAEC Physics, and you will get the
+-- Projectile Motion clip with "LESSON 14" in its corner. That is the known
+-- cost of the arrangement, and it is the first thing real course content
+-- fixes.
+--
+-- `duration_seconds` is 18 everywhere for the same reason it was 14 before:
+-- it must match the file actually sitting at that key, or the progress bar
+-- lies and the player seeks past the end.
 --
 --
 -- ================================ HONESTY ==================================
 --
--- The instructor names below are invented, and so are `enrollments`,
--- `rating_avg` and `rating_count` — they exist so the cards do not all read
--- "0 students". They are set dressing for a demo. Do not present these numbers
--- as traction, and do not let an invented instructor name survive into
--- anything a real person might read as a real teacher on your platform.
+-- The instructor names below are invented. They exist so the catalogue does
+-- not read as one teacher with eleven courses. Do not let an invented name
+-- survive into anything a real person might read as a real teacher on your
+-- platform.
+--
+-- `enrollments`, `rating_avg` and `rating_count` are NOT set here. They are
+-- trigger-derived from real rows, every seeded course starts at zero, and the
+-- cards correctly show "New" instead of a rating. An earlier version of this
+-- file invented traction and the 2026-09-14 migration took it back out.
 --
 -- To remove everything this file created, see the block at the very bottom.
 -- ===========================================================================
@@ -91,7 +126,7 @@ end $$;
 
 create temporary table _seed_courses on commit drop as
 select * from (values
-  -- slug, title, category, price, author, enrollments, rating, rating_count, description
+  -- slug, title, category, price, author, description
   ('welcome-to-padilearn',
    'Welcome to PadiLearn',
    -- Cast because this is the first row: an uncast NULL here would leave the
@@ -100,89 +135,85 @@ select * from (values
    null::text,
    0::numeric,
    'PadiLearn',
-   4820, 5.0, 96,
    'A short tour of what PadiLearn does — how to find a course, how to learn offline, and how to start teaching and get paid.'),
 
-  ('jamb-mathematics',
-   'JAMB Mathematics: Past Questions Solved',
+  ('waec-physics',
+   'WAEC Physics: Motion, Forces and Energy',
+   'Exam Prep',
+   3000::numeric,
+   'Ibrahim Yusuf',
+   'The mechanics half of the syllabus, worked the way the examiner marks it. Every figure drawn out, every formula derived rather than handed to you.'),
+
+  ('waec-mathematics',
+   'WAEC Mathematics: Algebra and Quadratics',
    'Exam Prep',
    3500::numeric,
    'Ibrahim Yusuf',
-   1240, 4.8, 213,
-   'Ten years of JAMB maths past questions, worked step by step. Covers algebra, indices, sequences, geometry and probability — the topics that come up every single year.'),
+   'Number bases through to probability, built around the topics that come up every single year. Heavy on quadratics, because that is where the marks are.'),
 
-  ('waec-english',
-   'WAEC English: Comprehension and Summary',
+  ('waec-chemistry',
+   'WAEC Chemistry: Moles and Calculations',
    'Exam Prep',
    3000::numeric,
    'Ngozi Adeyemi',
-   980, 4.6, 154,
-   'The two sections students lose the most marks on. Learn how examiners mark summary answers, and practise on real past papers.'),
+   'The calculation questions students skip. Moles, formulae, stoichiometry and redox, each reduced to a method you can repeat under time pressure.'),
 
-  ('flutter-for-beginners',
-   'Flutter for Beginners: Build Your First App',
-   'Programming',
-   7500::numeric,
-   'Amaka Obi',
-   860, 4.7, 121,
-   'From zero to a working app on your own phone. No prior mobile experience needed — if you can write a little Dart, you can follow this.'),
-
-  ('python-basics',
-   'Python Basics for Absolute Beginners',
-   'Programming',
-   5000::numeric,
-   'Samuel Okonkwo',
-   1510, 4.5, 268,
-   'Variables, loops, functions and files, taught by building small useful scripts rather than toy examples.'),
-
-  ('excel-for-office-work',
-   'Excel for Office Work',
-   'Business',
-   2500::numeric,
-   'Musa Danladi',
-   1980, 4.5, 341,
-   'The formulas and shortcuts that actually come up in an office job: lookups, pivot tables, and cleaning up somebody else''s spreadsheet.'),
-
-  ('start-a-small-business',
-   'Start a Small Business in Nigeria',
+  ('bookkeeping',
+   'Bookkeeping: Keep Books That Balance',
    'Business',
    0::numeric,
-   'Tunde Bakare',
-   3120, 4.6, 402,
-   'Registration, pricing, record-keeping and finding your first customers. Free, because the barrier should not be the course.'),
+   'Musa Danladi',
+   'From the accounting equation to closing the month. Free, because a business that cannot keep records is not helped by anything else you would buy.'),
 
-  ('whatsapp-marketing',
-   'Digital Marketing with WhatsApp',
-   'Marketing',
+  ('pricing-and-margins',
+   'Pricing & Margins: Price So You Profit',
+   'Business',
    4000::numeric,
-   'Chioma Nwosu',
-   1450, 4.7, 199,
-   'Turn a WhatsApp contact list into repeat customers — catalogues, broadcast lists, status strategy and what gets you blocked.'),
+   'Tunde Bakare',
+   'Work out what you actually cost, what you must sell to break even, and how to raise a price without losing the customer.'),
 
-  ('tailoring-basics',
-   'Tailoring: From Measurement to Finish',
+  ('tailoring',
+   'Tailoring: Patterns That Fit',
    'Fashion & Tailoring',
    5000::numeric,
    'Grace Eze',
-   640, 4.9, 88,
-   'Take accurate measurements, cut a clean pattern, and finish a garment that fits. Filmed close enough to see the stitches.'),
+   'Measurement, blocks, darts and finishing. Filmed close enough to see which way the seam is pressed.'),
 
-  ('phone-photography',
-   'Photography With the Phone You Already Have',
-   'Photography & Video',
+  ('electrical-work',
+   'Practical Electrical Work: Circuits and Wiring',
+   'Trades & Vocational',
+   6000::numeric,
+   'Emeka Okafor',
+   'Ohm''s law through to fault finding, with the safety practice that comes before any of it. For the apprentice who already holds the pliers.'),
+
+  ('excel-for-business',
+   'Excel for Business: Formulas That Earn',
+   'Business',
+   2500::numeric,
+   'Musa Danladi',
+   'The formulas and habits that come up in real office work: lookups, pivot tables, and cleaning up somebody else''s spreadsheet.'),
+
+  ('programming-fundamentals',
+   'Programming Fundamentals: Algorithms That Matter',
+   'Programming',
+   7500::numeric,
+   'Amaka Obi',
+   'Variables to Big-O, in whichever language you already write. The half of programming that does not go out of date.'),
+
+  ('graphic-design',
+   'Graphic Design: Type, Scale and Layout',
+   'Design',
    4500::numeric,
    'Daniel Effiong',
-   1120, 4.6, 167,
-   'Light, framing and editing — no camera required. Shoot product photos good enough to sell with.'),
+   'Why some layouts look designed and others look assembled. Type scales, grids, colour and white space — then preparing the file so the printer does not ruin it.'),
 
-  ('personal-finance',
-   'Personal Finance in Naira',
-   'Finance',
-   15000::numeric,
+  ('broiler-farming',
+   'Broiler Farming: Feed, Weight and Margin',
+   'Agriculture',
+   3500::numeric,
    'Fatima Bello',
-   410, 4.8, 62,
-   'Budgeting, saving and investing against real Nigerian inflation, exchange rates and interest. The premium course in the catalogue, and priced like one.')
-) as t(slug, title, category, price, author, enrollments, rating_avg, rating_count, description);
+   'A full cycle, costed. Chicks, brooding, feed conversion and biosecurity, ending with the arithmetic that says whether the batch made money.')
+) as t(slug, title, category, price, author, description);
 
 /*
  * A course's id is derived from its slug rather than generated, which is what
@@ -204,10 +235,8 @@ select
   c.author,
   ctx.thumb_base || c.slug || '.jpg',
   ctx.teacher_id,
-  -- Counters start at zero. The invented figures in `_seed_courses` used to
-  -- be written here, and real users would have read them as traction; the
-  -- 2026-09-14 migration reset them. Triggers now recount enrolments and
-  -- ratings from real rows, so these columns are never the seed's to set.
+  -- Counters start at zero and are never the seed's to set: triggers recount
+  -- enrolments and ratings from real rows. See HONESTY above.
   0,
   0,
   0
@@ -224,79 +253,159 @@ on conflict (id) do update set
 
 
 -- ------------------------------- lessons ----------------------------------
+--
+-- Mirrored by `video/src/catalogue.ts`, which the ad renders from. If you edit
+-- one, edit the other, or the ad starts advertising a catalogue that is not
+-- there.
+--
+-- `is_filmed` marks the single lesson per course that has its own video, and
+-- becomes `is_preview` on insert — see ONE REAL LESSON above. Its position is
+-- printed into the footage and cannot be changed from here.
 
 create temporary table _seed_lessons on commit drop as
 select * from (values
-  ('welcome-to-padilearn', 1, 'What PadiLearn is', 24, true),
+  -- course_slug, position, title, is_filmed
+  ('welcome-to-padilearn',  1, 'What PadiLearn is',           true ),
 
-  ('jamb-mathematics', 1, 'How JAMB maths is marked', 380, true),
-  ('jamb-mathematics', 2, 'Simultaneous equations', 495, false),
-  ('jamb-mathematics', 3, 'Quadratic equations', 720, false),
-  ('jamb-mathematics', 4, 'Indices and logarithms', 610, false),
-  ('jamb-mathematics', 5, 'Sequences and series', 840, false),
-  ('jamb-mathematics', 6, 'Probability basics', 545, false),
+  ('waec-physics',  1, 'How WAEC physics is marked',                false),
+  ('waec-physics',  2, 'Measurement and units',                     false),
+  ('waec-physics',  3, 'Scalars and vectors',                       false),
+  ('waec-physics',  4, 'Distance, speed and velocity',              false),
+  ('waec-physics',  5, 'Acceleration and the equations of motion',  false),
+  ('waec-physics',  6, 'Newton''s laws',                            false),
+  ('waec-physics',  7, 'Momentum and collisions',                   false),
+  ('waec-physics',  8, 'Work, energy and power',                    false),
+  ('waec-physics',  9, 'Friction',                                  false),
+  ('waec-physics', 10, 'Circular motion',                           false),
+  ('waec-physics', 11, 'Equilibrium and moments',                   false),
+  ('waec-physics', 12, 'Simple harmonic motion',                    false),
+  ('waec-physics', 13, 'Resolving vectors',                         false),
+  ('waec-physics', 14, 'Projectile Motion',                         true ),
+  ('waec-physics', 15, 'Density and upthrust',                      false),
+  ('waec-physics', 16, 'Past paper walkthrough',                    false),
 
-  ('waec-english', 1, 'What the examiner is looking for', 410, true),
-  ('waec-english', 2, 'Comprehension: finding the answer', 660, false),
-  ('waec-english', 3, 'Summary: cutting without losing marks', 720, false),
-  ('waec-english', 4, 'Practice paper walkthrough', 900, false),
+  ('waec-mathematics',  1, 'How WAEC maths is marked',                  false),
+  ('waec-mathematics',  2, 'Number bases',                              false),
+  ('waec-mathematics',  3, 'Fractions, indices and surds',              false),
+  ('waec-mathematics',  4, 'Logarithms',                                false),
+  ('waec-mathematics',  5, 'Linear equations',                          false),
+  ('waec-mathematics',  6, 'Simultaneous equations',                    false),
+  ('waec-mathematics',  7, 'Completing the Square',                     true ),
+  ('waec-mathematics',  8, 'The quadratic formula',                     false),
+  ('waec-mathematics',  9, 'Sequences and series',                      false),
+  ('waec-mathematics', 10, 'Geometry and circle theorems',              false),
+  ('waec-mathematics', 11, 'Trigonometry',                              false),
+  ('waec-mathematics', 12, 'Statistics and probability',                false),
 
-  ('flutter-for-beginners', 1, 'Setting up Flutter', 540, true),
-  ('flutter-for-beginners', 2, 'Widgets and layout', 780, false),
-  ('flutter-for-beginners', 3, 'State and interaction', 690, false),
-  ('flutter-for-beginners', 4, 'Running on your own phone', 420, false),
+  ('waec-chemistry',  1, 'States of matter',                          false),
+  ('waec-chemistry',  2, 'Atomic structure',                          false),
+  ('waec-chemistry',  3, 'The Mole',                                  true ),
+  ('waec-chemistry',  4, 'Chemical formulae and equations',           false),
+  ('waec-chemistry',  5, 'Stoichiometry',                             false),
+  ('waec-chemistry',  6, 'Acids, bases and salts',                    false),
+  ('waec-chemistry',  7, 'Redox reactions',                           false),
+  ('waec-chemistry',  8, 'Rates of reaction',                         false),
+  ('waec-chemistry',  9, 'Organic chemistry basics',                  false),
+  ('waec-chemistry', 10, 'Past paper walkthrough',                    false),
 
-  ('python-basics', 1, 'Installing Python', 300, true),
-  ('python-basics', 2, 'Variables and types', 520, false),
-  ('python-basics', 3, 'Loops and conditions', 640, false),
-  ('python-basics', 4, 'Functions', 580, false),
-  ('python-basics', 5, 'Reading and writing files', 610, false),
+  ('bookkeeping',  1, 'The Accounting Equation',                   true ),
+  ('bookkeeping',  2, 'Debits and credits',                        false),
+  ('bookkeeping',  3, 'The cash book',                             false),
+  ('bookkeeping',  4, 'Ledgers and the trial balance',             false),
+  ('bookkeeping',  5, 'Invoices, receipts and keeping records',    false),
+  ('bookkeeping',  6, 'The profit and loss account',               false),
+  ('bookkeeping',  7, 'The balance sheet',                         false),
+  ('bookkeeping',  8, 'Closing the month',                         false),
 
-  ('excel-for-office-work', 1, 'Getting around a spreadsheet', 360, true),
-  ('excel-for-office-work', 2, 'Formulas that matter', 620, false),
-  ('excel-for-office-work', 3, 'VLOOKUP and XLOOKUP', 540, false),
-  ('excel-for-office-work', 4, 'Pivot tables', 700, false),
+  ('pricing-and-margins',  1, 'What your product really costs',            false),
+  ('pricing-and-margins',  2, 'Fixed cost and variable cost',              false),
+  ('pricing-and-margins',  3, 'Markup and margin',                         false),
+  ('pricing-and-margins',  4, 'Break-even Point',                          true ),
+  ('pricing-and-margins',  5, 'Pricing against your competition',          false),
+  ('pricing-and-margins',  6, 'Discounts that do not kill you',            false),
+  ('pricing-and-margins',  7, 'Raising your price without losing customers',false),
 
-  ('start-a-small-business', 1, 'Is your idea a business?', 420, true),
-  ('start-a-small-business', 2, 'Registering with CAC', 510, false),
-  ('start-a-small-business', 3, 'Pricing so you actually profit', 660, false),
-  ('start-a-small-business', 4, 'Finding your first customers', 580, false),
+  ('tailoring',  1, 'Tools and your workspace',                  false),
+  ('tailoring',  2, 'Fabric types and grain',                    false),
+  ('tailoring',  3, 'Taking measurements',                       false),
+  ('tailoring',  4, 'Reading a size chart',                      false),
+  ('tailoring',  5, 'Drafting a basic block',                    false),
+  ('tailoring',  6, 'Seam allowance',                            false),
+  ('tailoring',  7, 'Cutting cleanly',                           false),
+  ('tailoring',  8, 'Darts: what they do',                       false),
+  ('tailoring',  9, 'The Bust Dart',                             true ),
+  ('tailoring', 10, 'Sleeves and armholes',                      false),
+  ('tailoring', 11, 'Zips, buttons and finishing',               false),
+  ('tailoring', 12, 'Pressing and presentation',                 false),
 
-  ('whatsapp-marketing', 1, 'Setting up WhatsApp Business', 340, true),
-  ('whatsapp-marketing', 2, 'Building a catalogue', 480, false),
-  ('whatsapp-marketing', 3, 'Broadcast without getting blocked', 560, false),
+  ('electrical-work',  1, 'Safety first',                              false),
+  ('electrical-work',  2, 'Tools and test equipment',                  false),
+  ('electrical-work',  3, 'Voltage, current and resistance',           false),
+  ('electrical-work',  4, 'Ohm''s law',                                false),
+  ('electrical-work',  5, 'Series and Parallel',                       true ),
+  ('electrical-work',  6, 'Reading a circuit diagram',                 false),
+  ('electrical-work',  7, 'Cables and cable sizing',                   false),
+  ('electrical-work',  8, 'Wiring a socket outlet',                    false),
+  ('electrical-work',  9, 'Earthing and protection',                   false),
+  ('electrical-work', 10, 'Fault finding',                             false),
 
-  ('tailoring-basics', 1, 'Tools you need', 300, true),
-  ('tailoring-basics', 2, 'Taking measurements', 720, false),
-  ('tailoring-basics', 3, 'Cutting the pattern', 840, false),
-  ('tailoring-basics', 4, 'Finishing and pressing', 600, false),
+  ('excel-for-business',  1, 'Getting around a spreadsheet',              false),
+  ('excel-for-business',  2, 'Entering and formatting data',              false),
+  ('excel-for-business',  3, 'Cell references',                           false),
+  ('excel-for-business',  4, 'SUM, AVERAGE and COUNT',                    false),
+  ('excel-for-business',  5, 'IF and nested IF',                          false),
+  ('excel-for-business',  6, 'Sorting and filtering',                     false),
+  ('excel-for-business',  7, 'Conditional formatting',                    false),
+  ('excel-for-business',  8, 'Charts that communicate',                   false),
+  ('excel-for-business',  9, 'Named ranges',                              false),
+  ('excel-for-business', 10, 'VLOOKUP',                                   false),
+  ('excel-for-business', 11, 'VLOOKUP''s One Limitation',                 true ),
+  ('excel-for-business', 12, 'Pivot tables',                              false),
+  ('excel-for-business', 13, 'Cleaning somebody else''s spreadsheet',     false),
+  ('excel-for-business', 14, 'Printing without the mess',                 false),
 
-  ('phone-photography', 1, 'Light is everything', 400, true),
-  ('phone-photography', 2, 'Framing your shot', 520, false),
-  ('phone-photography', 3, 'Editing on your phone', 610, false),
+  ('programming-fundamentals',  1, 'What a program is',                         false),
+  ('programming-fundamentals',  2, 'Variables and types',                       false),
+  ('programming-fundamentals',  3, 'Conditions',                                false),
+  ('programming-fundamentals',  4, 'Loops',                                     false),
+  ('programming-fundamentals',  5, 'Functions',                                 false),
+  ('programming-fundamentals',  6, 'Lists and arrays',                          false),
+  ('programming-fundamentals',  7, 'Linear search',                             false),
+  ('programming-fundamentals',  8, 'Binary Search',                             true ),
+  ('programming-fundamentals',  9, 'Sorting',                                   false),
+  ('programming-fundamentals', 10, 'Big-O notation',                            false),
+  ('programming-fundamentals', 11, 'Dictionaries and maps',                     false),
+  ('programming-fundamentals', 12, 'Reading and writing files',                 false),
 
-  ('personal-finance', 1, 'Where your money actually goes', 480, true),
-  ('personal-finance', 2, 'Building a budget in naira', 700, false),
-  ('personal-finance', 3, 'Saving against inflation', 780, false),
-  ('personal-finance', 4, 'First steps into investing', 820, false)
-) as t(course_slug, position, title, duration_seconds, is_preview);
+  ('graphic-design',  1, 'What design is for',                        false),
+  ('graphic-design',  2, 'The Type Scale',                            true ),
+  ('graphic-design',  3, 'Choosing typefaces',                        false),
+  ('graphic-design',  4, 'Colour and contrast',                       false),
+  ('graphic-design',  5, 'Grids and alignment',                       false),
+  ('graphic-design',  6, 'White space',                               false),
+  ('graphic-design',  7, 'Logos and marks',                           false),
+  ('graphic-design',  8, 'Designing for print and for screen',        false),
+  ('graphic-design',  9, 'Preparing files for the printer',           false),
 
--- One clip per course, shared by all its lessons, with the real duration of
--- the file sitting at that key.
---
--- Not one video per lesson: nobody in a demo opens six lessons of the same
--- course, and 11 clips keep the whole set at 13 MB rather than 42 files.
--- `duration_seconds` must match the actual file or the progress bar lies and
--- the player tries to seek past the end.
+  ('broiler-farming',  1, 'Is broiler farming for you?',               false),
+  ('broiler-farming',  2, 'Housing and ventilation',                   false),
+  ('broiler-farming',  3, 'Buying day-old chicks',                     false),
+  ('broiler-farming',  4, 'Brooding the first two weeks',              false),
+  ('broiler-farming',  5, 'Feed types and schedules',                  false),
+  ('broiler-farming',  6, 'Feed Conversion Ratio',                     true ),
+  ('broiler-farming',  7, 'Water and medication',                      false),
+  ('broiler-farming',  8, 'Biosecurity and disease',                   false),
+  ('broiler-farming',  9, 'Weighing and selling',                      false),
+  ('broiler-farming', 10, 'Costing a full cycle',                      false)
+) as t(course_slug, position, title, is_filmed);
+
+-- One clip per course, shared by all its lessons. Every file at these keys is
+-- 18 seconds, except the welcome tour, which is the rendered ad.
 create temporary table _seed_clips on commit drop as
-select * from (values
-  ('excel-for-office-work', 14), ('flutter-for-beginners', 15),
-  ('jamb-mathematics',      14), ('personal-finance',      12),
-  ('phone-photography',      5), ('python-basics',         15),
-  ('start-a-small-business',  7), ('tailoring-basics',     10),
-  ('waec-english',          15), ('welcome-to-padilearn',  24),
-  ('whatsapp-marketing',     8)
-) as t(course_slug, clip_seconds);
+select
+  slug,
+  case when slug = 'welcome-to-padilearn' then 24 else 18 end as clip_seconds
+from _seed_courses;
 
 insert into public.lessons (
   id, course_id, title, position, video_url, duration_seconds, is_preview
@@ -310,15 +419,41 @@ select
   -- Object key in the private course-media bucket, never a URL.
   'demo/' || l.course_slug || '/clip.mp4',
   c.clip_seconds,
-  l.is_preview
+  l.is_filmed
 from _seed_lessons l
-join _seed_clips c on c.course_slug = l.course_slug
+join _seed_clips c on c.slug = l.course_slug
 on conflict (id) do update set
   title            = excluded.title,
   position         = excluded.position,
   video_url        = excluded.video_url,
   duration_seconds = excluded.duration_seconds,
   is_preview       = excluded.is_preview;
+
+-- A course that was longer in an earlier run would keep its surplus rows, and
+-- because the curriculum screen numbers lessons by their index in the list,
+-- those leftovers would push the filmed lesson past the number printed in its
+-- own footage.
+--
+-- Scoped to the courses THIS run writes, not to every course the seed has
+-- ever created. Matching on the 'a0000000-…' prefix alone would also empty
+-- out courses from a previous catalogue that this file no longer mentions,
+-- leaving them in the marketplace with no lessons at all — worse than leaving
+-- them alone, and not this statement's job. Retiring an old course is the
+-- teardown's job, at the bottom of this file.
+--
+-- A teacher's real lessons cannot be caught either way: both prefixes have to
+-- match, and real rows get random uuids.
+delete from public.lessons le
+where le.id::text like 'b0000000-0000-4000-8000-%'
+  and le.course_id in (
+    select ('a0000000-0000-4000-8000-' || substr(md5(slug), 1, 12))::uuid
+    from _seed_courses
+  )
+  and not exists (
+    select 1 from _seed_lessons l
+    where ('b0000000-0000-4000-8000-' ||
+            substr(md5(l.course_slug || ':' || l.position), 1, 12))::uuid = le.id
+  );
 
 
 -- ------------------ one student, part-way through a course ------------------
@@ -341,9 +476,9 @@ select
 from _seed_ctx ctx
 join public.courses co
   on co.id in (
-    ('a0000000-0000-4000-8000-' || substr(md5('jamb-mathematics'), 1, 12))::uuid,
-    ('a0000000-0000-4000-8000-' || substr(md5('excel-for-office-work'), 1, 12))::uuid,
-    ('a0000000-0000-4000-8000-' || substr(md5('start-a-small-business'), 1, 12))::uuid
+    ('a0000000-0000-4000-8000-' || substr(md5('waec-mathematics'), 1, 12))::uuid,
+    ('a0000000-0000-4000-8000-' || substr(md5('excel-for-business'), 1, 12))::uuid,
+    ('a0000000-0000-4000-8000-' || substr(md5('bookkeeping'), 1, 12))::uuid
   )
 where ctx.student_id is not null
   and not exists (
@@ -351,8 +486,14 @@ where ctx.student_id is not null
     where e.user_id = ctx.student_id and e.course_id = co.id
   );
 
--- Two lessons finished and one part-watched, so the course opens on a real
--- "Resume from 4:12" rather than at zero.
+-- Six lessons finished and the seventh part-watched, so the course opens on a
+-- real resume point rather than at zero.
+--
+-- The seventh is deliberate: it is WAEC Mathematics' filmed lesson, so the
+-- student's resume point is the one lesson in the course that has its own
+-- video. Tapping straight into the dashboard's "continue" therefore plays
+-- Completing the Square, which is also the lesson number printed in the clip.
+-- Any other stopping place would resume into footage of a different lesson.
 insert into public.lesson_progress (
   user_id, lesson_id, course_id, position_seconds, completed_at
 )
@@ -364,11 +505,17 @@ select
   case when p.completed then now() else null end
 from _seed_ctx ctx
 cross join (values
-  ('jamb-mathematics', 1, true, 0),
-  ('jamb-mathematics', 2, true, 0),
-  -- Inside the clip, not the 4:12 a full-length lesson would have had — the
-  -- player would otherwise try to seek past the end of a 14-second file.
-  ('jamb-mathematics', 3, false, 6)
+  ('waec-mathematics', 1, true, 0),
+  ('waec-mathematics', 2, true, 0),
+  ('waec-mathematics', 3, true, 0),
+  ('waec-mathematics', 4, true, 0),
+  ('waec-mathematics', 5, true, 0),
+  ('waec-mathematics', 6, true, 0),
+  -- Nine seconds in, not the 4:12 a full-length lesson would have had: the
+  -- player would otherwise try to seek past the end of an 18-second file.
+  -- Halfway, and far enough in that resuming lands on a drawn board rather
+  -- than a blank one. `LessonMock.RESUME_AT` in the ad matches this.
+  ('waec-mathematics', 7, false, 9)
 ) as p(course_slug, position, completed, seconds)
 join public.lessons le
   on le.id = ('b0000000-0000-4000-8000-' ||

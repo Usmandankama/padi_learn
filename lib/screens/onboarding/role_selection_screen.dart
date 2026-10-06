@@ -5,6 +5,7 @@ import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/screens/home/home_shell.dart';
 import 'package:padi_learn/services/auth_service.dart';
 import 'package:padi_learn/utils/colors.dart';
+import 'package:padi_learn/utils/responsive.dart';
 
 /// Asks a signed-in user whether they are here to learn or to teach.
 ///
@@ -66,7 +67,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     AppColors.watch(context);
     return Scaffold(
       backgroundColor: AppColors.palette.surface,
-      body: SafeArea(
+      body: PageBody(
+        maxWidth: Breakpoints.readable,
+        child: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
           child: Column(
@@ -130,6 +133,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

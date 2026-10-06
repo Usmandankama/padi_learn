@@ -13,6 +13,7 @@ import 'package:padi_learn/screens/marketplace/marketplace_screen.dart';
 import 'package:padi_learn/screens/notifications/notification_bell.dart';
 import 'package:padi_learn/screens/student/components/ongoingCourses.dart';
 import 'package:padi_learn/utils/colors.dart';
+import 'package:padi_learn/utils/responsive.dart';
 
 const double _kGap16 = 16;
 const double _kGap24 = 24;
@@ -354,7 +355,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
   Widget _buildPopularGrid() {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: _kGap16.w),
-      child: Obx(() {
+      child: LayoutBuilder(builder: (context, constraints) => Obx(() {
         final courses = _marketController.courses.toList();
         final owned =
             OngoingCoursesController.forCurrentUser()?.ownedIds.value ??
@@ -365,7 +366,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: 4,
-            gridDelegate: _gridDelegate(),
+            gridDelegate: _gridDelegate(constraints.maxWidth),
             itemBuilder: (_, __) => const CourseCardShimmer(),
           );
         }
@@ -379,7 +380,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: popular.length,
-          gridDelegate: _gridDelegate(),
+          gridDelegate: _gridDelegate(constraints.maxWidth),
           itemBuilder: (context, i) {
             final course = popular[i];
             return CourseCard(
@@ -389,13 +390,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
             );
           },
         );
-      }),
+      })),
     );
   }
 
-  SliverGridDelegateWithFixedCrossAxisCount _gridDelegate() {
+  SliverGridDelegateWithFixedCrossAxisCount _gridDelegate([double? width]) {
     return SliverGridDelegateWithFixedCrossAxisCount(
-      crossAxisCount: 2,
+      // Two columns on a phone, as before; more once there is room, so the
+      // home page does not show six cards in a tall thin ribbon on a monitor.
+      crossAxisCount: width == null ? 2 : gridColumnsFor(width),
       crossAxisSpacing: 14.w,
       mainAxisSpacing: 16.h,
       childAspectRatio: 0.68,

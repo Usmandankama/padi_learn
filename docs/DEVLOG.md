@@ -12,6 +12,457 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-10-05 — The demo catalogue went live, and a second campaign for teachers
+
+**The seed is applied.** `demo_catalogue.sql` ran against the `padilearn`
+project: 12 seeded courses, 121 seeded lessons, one free preview each, every
+filmed lesson sitting at the position printed in its own footage. The six real
+courses and their 8 lessons were untouched — the uuid prefixes did their job.
+
+The 10 courses from the previous catalogue were deleted with the teardown
+scoped to just them, which cascaded away 4 demo enrolments. `welcome-to-padilearn`
+survived, being in both sets.
+
+**A bug caught on the way in.** The lesson-trimming DELETE added yesterday was
+scoped to every course matching the `a0000000-…` prefix, not to the courses
+the run actually writes. It would have stripped the lessons off the 10 retired
+courses and left them in the marketplace with no curriculum at all — worse
+than leaving them alone, and not that statement's job. It now scopes to
+`_seed_courses`. Retiring an old course is the teardown's job, deliberately a
+separate and manual one.
+
+**The media is uploaded**, by hand, from the staging trees. Both buckets were
+verified afterwards rather than assumed: all 12 clip keys and all 12 thumbnail
+keys exist, every one byte-identical to the file in `video/out/`, and the
+public thumbnail URLs return 200 with the right length and `image/jpeg`.
+`course-media` still refuses anonymous reads, so playback goes through
+`get-course-video` as designed. No clips from the previous catalogue remain
+under `demo/`.
+
+Nothing in this repo did the uploading. There is no Supabase CLI on this
+machine, no access token, the repo rightly refuses to store a `service_role`
+key, and the MCP server exposes SQL but no Storage API — so the buckets stay a
+by-hand or dashboard job, and `DEMO_MEDIA.md` says so.
+
+### The "first teachers" announcement
+
+A second campaign in `video/`: `TeacherCall` (9:16 and 1:1, 18s, silent) and
+`TeacherFlyer` (1080×1350, dark and light). Copy in `src/announcement.ts`.
+
+It exists because the catalogue is the thing actually missing. Eleven courses
+are seeded and all eleven are ours; the product does not need more learners
+yet, it needs someone to teach.
+
+**What it may and may not claim is written into the copy file, with reasons.**
+The 85/15 split, the student-paid card fee, and the worked example — a course
+listed at ₦5,000 pays the teacher ₦4,250 — are real and checked against
+`PRODUCT_OVERVIEW.md`. Three things a recruitment ad would normally reach for
+are banned: *start earning today* (nothing is open; the closed beta ships free
+courses only), *get paid straight to your account* (payouts are not built —
+`payout_accounts` and the ledger exist, moving money is manual and undesigned,
+and the product ad's version of this line is ahead of itself), and any claim
+of scale (there are two teacher accounts, both ours). The honest pitch is that
+the terms are real and the doors are not open yet, which is the offer.
+
+It deliberately looks nothing like `AppAd`: no phones, no product screens, no
+scene-by-scene tour. Type on a dark ground, one statement at a time, around a
+single number. Flat brand colour, hairline rules, a hanging left margin — and
+none of the things that make a graphic read as generated, down to keeping
+em-dashes out of the body copy.
+
+Both videos are silent on purpose. A typographic notice carries without sound,
+most of it is watched muted, and the two audio beds are still unlistened
+placeholders — the wrong thing to attach to something going out in public.
+
+### Outstanding
+
+- `welcome-to-padilearn`'s thumbnail is 1920x1080 where the other eleven are
+  1280x720, because it is a frame of the ad rather than of a lesson board. The
+  card crops to fill so it looks right; it is just the odd one out in the set.
+- `welcome-to-padilearn` has a second, hand-made lesson on it ("What padilearn
+  is", lowercase p) that predates the seed and has a random uuid, so the seed
+  neither manages nor removes it. The course shows two lessons, both previews.
+  Delete it by hand if it is not wanted.
+- Nobody has read the announcement copy but me. It makes claims about money to
+  people who may act on them; it should get a second pair of eyes before it is
+  posted.
+
+---
+
+## 2026-10-04 — The demo catalogue became eleven real lessons, and the ad shows them
+
+The demo catalogue was eleven courses whose lessons all played Pixabay b-roll:
+a sewing machine for the tailoring course, a spreadsheet for the Excel one.
+Footage of the *subject*, with nobody teaching it. It is now eleven
+purpose-built lesson videos that each teach one idea — a figure that draws
+itself, the formula, and the rule it proves — rendered from a separate project,
+`PadiLearn-lesson-videos`, in PadiLearn's own palette.
+
+`supabase/seed/import_lesson_videos.py` is the boundary between the two
+repos. It takes the MP4s, writes the bucket-ready trees in `video/out/`, cuts
+the course thumbnails, and drops render copies into `video/public/`. Re-run it
+after rebuilding a lesson over there and the catalogue, the thumbnails and the
+ad all follow.
+
+### The footage dictates the catalogue
+
+Each video prints its own course name and lesson number into the corner of
+every frame — "WAEC PHYSICS · LESSON 14". That is not decoration, it is a
+constraint, because `course_description_screen.dart` numbers curriculum rows
+**by their index in the list, not by `lessons.position`**. A course whose
+Projectile Motion lesson is filmed as lesson 14 has to actually have fourteen
+lessons or the screen contradicts the video playing on it.
+
+So the courses were rebuilt around the footage rather than the other way
+round: twelve courses and 121 lessons, each course as long as its filmed
+lesson's number requires, and every course title beginning with the exact name
+its video prints. Nothing in there can be reordered or trimmed without
+re-cutting a video. The seed says so at the top, at length, because this is
+exactly the kind of coupling that gets discovered by breaking it.
+
+The seed now also deletes seeded lessons that are no longer in the set. Without
+that, a course that was longer on a previous run keeps its surplus rows, and
+the surplus pushes the filmed lesson past its own printed number.
+
+### One real lesson per course, and it is the preview
+
+120 distinct lesson videos is not a thing anyone is about to record, so a
+course's lessons still share one clip. What changed is which one is free: the
+filmed lesson is now the course's only preview. A visitor who has not enrolled
+can only open previews, so the only video they can reach is the one whose
+burned-in number matches the row they tapped. Enrol and open lesson 3 of WAEC
+Physics and you still get the lesson 14 clip — that is the known cost, written
+down rather than discovered.
+
+The seeded student's progress moved onto that lesson too, for the same reason:
+their resume point is now nine seconds into WAEC Mathematics lesson 7, the one
+lesson in the course with its own video, so the dashboard's "continue" lands on
+footage that matches the row it came from.
+
+### The ad was rebuilt on the same data
+
+`video/src/catalogue.ts` mirrors the seed the way `theme.ts` mirrors
+`colors.dart`, and the ad renders from it. The marketplace mock shows the
+eleven real courses with the real thumbnails, scrolling, instead of six
+invented ones behind gradient placeholders.
+
+A new scene carries the actual footage. Hook → browse → **lesson** → learn →
+teach → cta, still 24 seconds. The lesson scene plays two clips large enough to
+read: the physics one joined while its trajectory is still drawing, the pricing
+one joined as the formula resolves and the takeaway lands, so between them you
+see a lesson build an idea and then close it. Everything else in the cut is a
+claim about the product; that scene is the product, which is why it is the one
+the notes say cannot be dropped from a 15-second version.
+
+### Invented traction came out of the ad
+
+The cards used to read "1.2k students · 4.8 ★". The database stopped carrying
+invented counters when the 2026-09-14 migration made them trigger-derived, so
+the ad was showing numbers the app itself would not, and a public ad is a worse
+place to fabricate traction than a demo database was. They now show `New` and a
+zero count, which is what the seeded app actually renders. At card size the
+line is a few pixels tall and unreadable either way, so the fake was buying
+nothing.
+
+Three other things in the mock had drifted from `course_card.dart` and were
+corrected while the file was open: the rating pill sat top-right instead of
+bottom-left, the category pill printed in ink instead of brand green, and a
+paid course's price printed in ink instead of green.
+
+### Outstanding
+
+- **Nothing is uploaded.** `video/out/demo-clips/demo/` (9.3 MB) goes to
+  `course-media` and `video/out/demo-thumbs/demo/` (364 KB) to
+  `course-thumbnails`. The seed has not been run against the database either —
+  it is the usual by-hand job, and running it replaces the old demo courses.
+- **The old courses do not disappear on their own.** Slugs that are gone —
+  `waec-english`, `flutter-for-beginners`, `phone-photography`,
+  `personal-finance`, `whatsapp-marketing` and the rest — keep their rows until
+  the teardown block at the bottom of the seed is run. Their media is still in
+  the buckets too.
+- **Still nobody teaching.** Every figure and number in the footage is
+  correct and checkable, but these are diagrams, not a person. They exist so
+  the catalogue is not visibly empty for the first testers. On a marketplace a
+  shaky phone recording of someone who knows their subject outsells an
+  animation, because the buyer is buying the teacher.
+- `fetch_demo_clips.py` and `fetch_demo_thumbs.py` are retired and banner-marked
+  rather than deleted — they are the provenance and licence record for footage
+  that may still be sitting in a bucket.
+
+---
+
+## 2026-09-29 — The card fee moved from the teacher to the student
+
+A teacher's price used to be what the student paid, so Paystack's cut came out
+of the teacher's share and their earnings moved with a fee they never agreed
+to. It now works the other way: **the list price is what settles**, and the fee
+is grossed up on top at checkout. The platform still keeps 15%.
+
+On a NGN 5,000 course the student pays NGN 5,178 and the teacher earns
+NGN 4,250 — previously they earned about NGN 4,100, and how much depended on
+which side of Paystack's flat-fee threshold the price fell.
+
+### The threshold trap is gone
+
+The old model had a band where raising a price *lowered* what the teacher
+earned: crossing NGN 2,500 added Paystack's NGN 100 flat fee to a price the
+teacher absorbed. `pricing.dart` carried an `isInFeeDeadZone` warning for it.
+Teacher earnings are now a flat 85% of the list price at every price, and
+`test/pricing_test.dart` asserts that earnings rise monotonically — that is the
+regression guard for the whole change.
+
+The cliff still exists, but it moved to the student's total, so the warning was
+reframed rather than deleted: one naira over the threshold adds about NGN 100
+to what the student pays, which is still worth telling a teacher before they
+price.
+
+### Grossing up is not "add the fee"
+
+Paystack's fee is a percentage of the amount *charged*, so adding a fee to a
+price grows the fee and lands short. `customerTotalFor` solves for the total
+instead, picking between three regimes — flat fee waived, flat fee applied, fee
+capped — and only accepting a regime's answer if that regime still holds at the
+resulting total. Rounding up is what makes the check order matter: the ceiling
+can nudge a total across NGN 2,500, silently re-introducing the flat fee and
+underpaying the teacher on every sale. The first draft did exactly that, and
+the test caught it.
+
+It is duplicated deliberately in `lib/utils/pricing.dart` and
+`supabase/functions/_shared/paystack.ts` — Dart cannot run in an edge function
+— and the two must agree exactly, because `initialize-payment` charges the
+total and `grantEntitlement` rejects anything under it. A divergence would
+reject real payments. Both files say so.
+
+### What the student sees
+
+Browsing still shows the teacher's price. The fee appears itemised in a
+confirmation sheet before Paystack opens, because Paystack renders its own
+checkout in a WebView and cannot be asked to explain our fee — so without that
+sheet its page would be the first place the real number appeared. Grossed-up
+prices in the catalogue were considered and rejected: it turns every
+deliberate NGN 5,000 into NGN 5,178 and makes the marketplace look unfinished.
+
+### Notes
+
+The server still computes the split from what genuinely settles rather than
+from the list price, so if Paystack's real fee differs from our estimate the
+split follows the money. Existing prices need no migration: the only sales on
+record are four Paystack test-mode transactions from development accounts,
+made while in-app checkout was still switched on. They carry the old split —
+NGN 4,101 to the teacher on a NGN 5,000 course, against NGN 4,250 now — and
+they keep it, because a ledger row records what was actually paid, not what
+today's rules would have paid.
+
+---
+
+## 2026-09-17 — A payment no longer depends on the buyer's phone surviving
+
+Until now the only thing joining a payment to an enrolment was the handset
+holding the checkout screen. `verify-payment` ran when the app asked it to, so
+if the app was killed, the network dropped or the battery died between Paystack
+taking the money and that call being made, Paystack kept the money and the
+student got nothing. Nobody would have noticed except the student.
+
+`supabase/functions/paystack-webhook` closes that window. Paystack delivers
+`charge.success` independently of the buyer's device and retries for days, so
+fulfilment survives the app dying.
+
+### Why the logic moved to `_shared`
+
+The webhook and `verify-payment` must reach an identical outcome, and the fee
+split is where that would quietly fail. Paystack deducts its fee before
+settlement, so the platform's 15% is taken on what *arrives*, not on the list
+price — get that wrong on a cheap course and the teacher is paid more than was
+received. Two hand-maintained copies would have drifted within months, and the
+symptom would be a teacher's balance that depends on whether their student's
+phone stayed awake. `_shared/paystack.ts` now holds one copy; both entry points
+call it.
+
+`fetchTransaction` re-asks Paystack rather than trusting the webhook payload's
+own numbers. A signed payload is authentic but not necessarily current, and the
+webhook's `data` is not shaped quite like a verify response — `fees` in
+particular is not always present.
+
+### Authentication, and the deployment that breaks it
+
+The webhook is public: Paystack has no Supabase JWT. It must be deployed with
+`--no-verify-jwt`, which makes the HMAC SHA-512 signature check the *only* thing
+standing between a stranger and a free course. The comparison is constant-time,
+because `===` on a hex digest leaks how many bytes were right and lets a
+signature be forged a byte at a time.
+
+Deploying it *with* JWT verification does not fail loudly — it silently rejects
+every delivery, which looks exactly like Paystack not sending anything.
+
+### Retry semantics
+
+A 500 asks Paystack to deliver again; a 200 ends it. So a database blip retries
+and missing metadata or a deleted course does not, because redelivering those
+would fail identically forever. That is what `retry` on the `Fulfilment` type
+carries.
+
+### Outstanding
+
+Nothing here has been deployed, and none of it has been type-checked — this
+machine has neither Deno nor the Supabase CLI. `verify-payment` changed too and
+must be redeployed. The webhook URL still has to be set in Paystack's dashboard,
+and the `_shared` import means both functions have to go up through the CLI
+rather than the dashboard editor. Then it needs testing with a real payment,
+and with the app deliberately killed straight after paying.
+
+---
+
+## 2026-09-16 — Google sign-in: which certificate Google actually checks
+
+The code for Google sign-in has been finished for a while; none of it works yet,
+because the setup lives outside the repo and nobody had written down what has to
+match what. `docs/LAUNCH_ANDROID.md` section C now records it.
+
+### Why the Supabase dialog is mostly decoration
+
+The app signs in **natively** — `GoogleSignIn.authenticate()` hands an ID token
+to `signInWithIdToken` (`auth_service.dart`). It never calls `signInWithOAuth`,
+so the provider page's **Client Secret** and **Callback URL** are unused, and
+so is "Skip nonce checks" (`google_sign_in` mints no nonce, so there is nothing
+to skip). Only **Client IDs** does anything: Supabase matches the token's `aud`
+claim against that list.
+
+Which ID lands in `aud` is the part that reads backwards. On Android it is the
+**Web** client ID, because Android passes it as `serverClientId` — the Android
+client ID never appears in `aud` and so is never listed in Supabase, even
+though Google refuses to issue a token without that client existing. On iOS
+`aud` is the iOS client ID.
+
+### The failure that only shows up in front of testers
+
+Google ties the Android client to a **signing certificate**, and under Play App
+Signing the bundle you upload is re-signed with *Google's* key before it reaches
+anyone. So the fingerprint on every build made by hand is not the fingerprint on
+the build testers install. Register only the debug and upload SHA-1s and
+sign-in passes every check you can run yourself, then fails for all 15 closed
+testers at once. The **App signing key** SHA-1 from Play Console has to go in
+too.
+
+Debug SHA-1 on the owner's laptop is
+`17:B5:FB:AD:FC:1B:CC:9C:01:70:15:D4:D2:4E:7B:6E:CD:DB:77:7F`. These are public
+certificate fingerprints, not secrets — the keystores and their passwords stay
+out of the repo as before.
+
+### Outstanding
+
+No OAuth clients exist yet, and anything created earlier under
+`com.dankamaInnoHu.padiLearn` died with the package rename. `googleWebClientId`
+in the git-ignored `lib/config/supabase_config.dart` is still empty, which is
+the one mercy here: `isGoogleSignInConfigured` hides the button rather than
+shipping one that fails. The upload keystore still does not exist, so its
+fingerprint cannot be registered. `assets/branding/google_logo.png` is missing,
+and `ios/Runner/Info.plist` has no `CFBundleURLTypes` block for the reversed
+iOS client ID.
+
+---
+
+## 2026-09-16 — Release signing, without the secrets
+
+`android/app/build.gradle` had shipped the Flutter template's placeholder since
+day one: release builds signed with the **debug** key, under a TODO. That build
+installs and runs perfectly on a phone, which is exactly why it is dangerous —
+nothing goes wrong until Play rejects the upload.
+
+### How it works now
+
+`signingConfigs.release` reads `android/key.properties`: store path, store
+password, key alias, key password. That file is git-ignored (so are `*.jks` and
+`*.keystore`), and `android/key.properties.example` records the shape without
+any values.
+
+**The fallback is deliberate, but it stops at the bundle.** When
+`key.properties` is absent, `assembleRelease` still signs with the debug key, so
+`flutter run --release` and `flutter build apk --release` work on a clone that
+has no keystore. `bundleRelease` does not: it fails at configuration with a
+message naming the file to create. An `.aab` is only ever built in order to
+upload it, so a missing keystore there is a mistake rather than a convenience.
+
+The first attempt at this was a `logger.lifecycle` warning on the fallback path.
+A test build proved it worthless — `flutter build` filters Gradle's lifecycle
+output, so the warning never appeared and the debug-signed bundle was produced
+in silence. Verified by `keytool -printcert -jarfile`, which reported
+`CN=Android Debug`. A warning nobody sees is not a safeguard; failing the one
+task that matters is.
+
+The keystore itself is not created here and its passwords are not in this repo
+or known to anyone but the owner. It lives outside the repo by instruction in
+`key.properties.example`, because a `.jks` sitting in the working tree is one
+`git add -A` away from being public.
+
+### Why this one is unforgiving
+
+The upload key is the only proof that an update comes from the same author.
+Lose it and the app can never be updated — not recovered, not reset, a new
+listing and every install starts from zero. Leak it and someone else can sign
+something Google will accept as genuinely yours. Play App Signing softens the
+first risk once enrolled, but the upload key still has to survive.
+
+### Still outstanding
+
+- Run `keytool`, write the real `key.properties`, enrol in Play App Signing.
+- Back the keystore up somewhere that is not this laptop.
+- The Google OAuth Android client must be registered against the **release**
+  key's SHA-1 as well as the debug key's, or social sign-in fails in exactly
+  the build the testers get.
+
+---
+
+## 2026-09-16 — The app is com.padilearn.app
+
+The package name moved from `com.dankamaInnoHu.padiLearn` to `com.padilearn.app`
+so the app identifies itself by the product's own domain rather than a
+workspace name that no student will recognise.
+
+**This had to happen now or never.** Google Play freezes the package name at the
+first upload and there is no way to change it afterwards — a different name
+means a different app, a different listing and a fresh start on installs and
+reviews. Nothing has been uploaded yet, so the change cost nothing today and
+would have cost everything in a fortnight.
+
+`com.padilearn.app` rather than bare `com.padilearn`: three segments keep
+native plugins that assume the conventional shape happy, and leave room for a
+sibling app under the same domain later.
+
+### What it touched
+
+- `android/app/build.gradle` — `namespace` and `applicationId`
+- `android/app/src/main/AndroidManifest.xml` — the stale `package=` attribute is
+  **gone**, not renamed. AGP 8.9 takes the namespace from Gradle; the manifest
+  attribute has been unsupported since AGP 8, and leaving it behind would have
+  meant two sources of truth disagreeing after the rename
+- `MainActivity.kt` — package declaration, and the directory tree under it
+  (`kotlin/com/padilearn/app/`)
+- `ios/Runner.xcodeproj/project.pbxproj` — six bundle identifiers, app and
+  `RunnerTests`
+- `android/app/google-services.json` — **deleted.** A leftover from the removed
+  Firebase; no `google-services` plugin is applied anywhere in the Gradle
+  files, so nothing read it. It carried the old package name
+
+Nothing in `lib/`, the website or Supabase referenced the package name. The
+`padilearn://reset-callback` deep link is a custom URL scheme and is unaffected.
+
+This also settles the "Noticed, not fixed" item from the 2026-08-24 entry: only
+`build.gradle` remains, so there is no longer a second file declaring a rival
+`applicationId`.
+
+### Still outstanding
+
+- The Google and Apple OAuth clients don't exist yet, which is *why* this was
+  cheap — Android OAuth clients are registered against package name plus
+  SHA-1. Create them against `com.padilearn.app` and the release keystore's
+  fingerprint, never the old name.
+- `flutter clean` before the next build; `build/` still holds artifacts under
+  the old name.
+- The release keystore is still unmade and release builds are still signed with
+  the debug key.
+
+---
+
 ## 2026-09-14 — Every email the app sends has somewhere to land
 
 With padilearn.com live, the app links to the site for its legal pages, and

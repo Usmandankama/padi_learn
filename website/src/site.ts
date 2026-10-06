@@ -12,6 +12,29 @@ export const site = {
     'Video courses from Nigerian teachers. Learn on your phone, at your own pace, and pick up where you left off.',
   /** Date shown on the privacy policy and terms. Change it when they change. */
   legalUpdated: '14 September 2026',
+
+  /** The Flutter web build. Works in any browser, nothing to install. */
+  appUrl: 'https://app.padilearn.com',
+
+  /**
+   * The Android build, handed out directly rather than through Google Play.
+   *
+   * **This file is hosted on R2, not with the site** — Cloudflare Pages caps a
+   * single file at 25 MiB. Nothing here may be deployed until the object is
+   * actually at `apkUrl`, or the download button 404s on the one page that
+   * exists to make people trust the product.
+   *
+   * Update `apkVersion`, `apkSize` and `apkUpdated` with every new upload. The
+   * numbers are shown to the user, so wrong ones are worse than none.
+   */
+  android: {
+    apkUrl: 'https://dl.padilearn.com/padilearn-latest.apk',
+    apkVersion: '1.0.0',
+    apkSize: '41 MB',
+    apkUpdated: '5 October 2026',
+    /** Lowest Android this build installs on — `minSdkVersion` 24. */
+    minAndroid: '7.0',
+  },
 } as const;
 
 /** A mailto link with a prefilled subject. */

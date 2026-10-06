@@ -8,7 +8,8 @@ import 'package:padi_learn/controller/enrollment_controller.dart';
 import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/screens/components/report_sheet.dart';
 import 'package:padi_learn/screens/description/components/course_header.dart';
-import 'package:padi_learn/screens/payment/paystack_checkout_screen.dart';
+import 'package:padi_learn/screens/description/components/purchase_summary_sheet.dart';
+import 'package:padi_learn/services/checkout/checkout_launcher.dart';
 import 'package:padi_learn/screens/videoplayer/videoPlayer.dart';
 import 'package:padi_learn/services/lesson_service.dart';
 import 'package:padi_learn/services/payment_service.dart';
@@ -217,22 +218,42 @@ class _CourseDescriptionScreenState extends State<CourseDescriptionScreen> {
         );
         Get.snackbar('Success', 'Course added!');
       } else {
-        // Paid course: initialize -> Paystack checkout -> server verify.
+        // Paid course: confirm the total -> initialize -> Paystack checkout ->
+        // server verify.
+        //
+        // The itemised total comes first because a course is listed at the
+        // price its teacher set, while the student also carries the card fee.
+        // Without this, Paystack's own page would be the first place the real
+        // number appeared, which reads as a bait and switch.
+        if (!mounted) return;
+        final proceed = await showPurchaseSummarySheet(
+          context,
+          courseTitle: coursesController.selectedCourseTitle.value,
+          listPrice: coursesController.selectedCoursePrice.value.toDouble(),
+        );
+        if (!proceed) {
+          setState(() => isLoading = false);
+          return;
+        }
+
         final init = await PaymentService.initialize(courseId);
         if (!mounted) return;
 
-        final completed = await Navigator.push<bool>(
+        final outcome = await launchCheckout(
           context,
-          MaterialPageRoute(
-            builder: (_) => PaystackCheckoutScreen(
-              authorizationUrl: init.authorizationUrl,
-              callbackUrl: PaymentService.callbackUrl,
-            ),
-          ),
+          courseId: courseId,
+          courseTitle: coursesController.selectedCourseTitle.value,
+          authorizationUrl: init.authorizationUrl,
+          callbackUrl: PaymentService.callbackUrl,
+          reference: init.reference,
         );
 
-        if (completed != true) {
-          // User backed out of the checkout.
+        // Web: the browser is already on its way to Paystack and this page is
+        // being torn down. The purchase is finished on the callback route, so
+        // there is nothing left to do here — and no state worth resetting.
+        if (outcome == CheckoutOutcome.redirected) return;
+
+        if (outcome == CheckoutOutcome.abandoned) {
           setState(() => isLoading = false);
           return;
         }

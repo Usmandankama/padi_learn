@@ -21,11 +21,21 @@ npm run render:all      # both cuts into out/
 | `LogoSting` | 1920×1080 | Intro bumper, splash, top of any future video |
 | `LogoStingSquare` | 1080×1080 | Social avatar animation, square placements |
 | `EditorsNotes` | 1920×1080 | Marked-up reference for a sound designer / VO artist / editor |
+| `TeacherCall` | 1080×1920 | "First teachers" announcement — WhatsApp status, social |
+| `TeacherCallSquare` | 1080×1080 | The same announcement for square placements |
+| `TeacherFlyer` | 1080×1350 | Announcement flyer, dark — for sharing (`remotion still`) |
+| `TeacherFlyerLight` | 1080×1350 | The same flyer on paper stock — for print (`remotion still`) |
 
 The two ad cuts are 720 frames — 24 seconds at 30fps; the stings are 120, or 4
 seconds. Each pair shares every component and all its copy, so the cuts cannot
 drift apart: only the frame differs, and the layout reads its own orientation
-to decide whether the caption sits beside the phone or above it.
+to decide whether the caption sits beside the phone or above it, and whether
+the lesson scene has room for a course strip under the player.
+
+The cut runs hook → browse → **lesson** → learn → teach → cta. The lesson
+scene is the proof beat: two real lessons played at a size you can read them
+at, rather than another mock screen. Everything before it is a claim about the
+product; it is the only part that is the product.
 
 ## Changing it
 
@@ -33,13 +43,83 @@ to decide whether the caption sits beside the phone or above it.
 re-render — nothing needs re-timing, which is the main reason this is code
 rather than a timeline.
 
-**The timing** is the `SCENES` table at the top of `src/AppAd.tsx`. Durations
-are in frames; the total is derived from the table, so a scene can be
-lengthened without also updating a duration constant somewhere else.
+**The timing** is the `DURATIONS` table at the top of `src/AppAd.tsx`. Only
+durations are written down; each scene's start is accumulated from the ones
+before it and the total from all of them, so retiming is editing one number
+with nothing to keep in sync by hand. `teach` carries the remainder that keeps
+the cut at exactly 720 frames — lengthen another scene and take it out of that
+one. `SCENE_ORDER` comes off the same table, so the notes overlay cannot miss
+a scene that was added to the ad.
 
 **The palette** is `src/theme.ts`, mirrored by hand from
 `lib/utils/colors.dart`. If the app's colours change, this is the one file that
 has to follow.
+
+## The "first teachers" announcement
+
+A second campaign, not a cut of the ad. `npm run render:announcement` builds
+all four pieces.
+
+The ad explains PadiLearn to someone who might learn on it. This asks someone
+who already teaches to put a course on it *before there is one*, so it is
+addressed to a different person and it is the only one of the two that asks
+for anything. It looks different on purpose — type on a dark ground, one
+statement at a time, built around a single number, no phones and no product
+screens — so the two are not mistakeable at a glance.
+
+**The copy is in `src/announcement.ts`, and the comment at the top of that
+file is the important part.** It lists what the piece may claim and what it
+may not, each checked against `docs/PRODUCT_OVERVIEW.md`, because a
+recruitment pitch is a promise to a person who may act on it. The short
+version: the 85/15 split, the student-paid card fee and the worked example are
+all real and may be stated. "Start earning today" may not — nothing is open
+yet. "Get paid straight to your account" may not either, even though the
+product ad says it: payouts are not built, so this piece talks about the split
+and never about the mechanism.
+
+The flyer has a dark and a light variant off one layout. Dark is for sharing,
+where it sits among other images and has to hold its own; light is for paper,
+where a dark ground is a print bill and a smudge.
+
+**Both videos are silent.** Not an oversight: a typographic notice carries
+without sound, most of it will be watched muted on WhatsApp status anyway, and
+the two beds in `public/audio/` are unlistened placeholders (see Known gaps) —
+the wrong thing to attach to a piece that goes out in public. Add one the same
+way `AppAd` does if you want a score.
+
+## The score
+
+`scripts/make_audio.py` synthesises everything you hear: three beds and nine
+spot effects, from oscillators, filtered noise and a Karplus-Strong string.
+
+```bash
+python scripts/make_audio.py
+```
+
+It is generated rather than licensed for the reason the pictures are code
+rather than stock — so that nothing in the ad belongs to anybody else. Audio
+was the last part that had not caught up: the two CC0 tracks that used to be
+here came with a licence claim that rested on the artist rather than on the
+item they were downloaded from, and `SOURCES.md` admitted as much at length.
+That question is now gone, and so are they.
+
+Generating it also buys frame accuracy. `directions.teach` asks for ascending
+ticks that land "on one resolved note as it stops — the number stopping is the
+beat, hit it exactly", and the only way to hit it exactly is to know the
+frame. The naira figure stops at frame 590, so `sfx-land` is at frame 590.
+
+**The arrangement is baked into the bed, the cues are placed in the
+composition.** Which instruments play in which scene is a musical decision and
+lives in `make_audio.py`; the bed is written against the same scene table the
+ad uses, so the lesson scene drops away under the footage and the kick arrives
+with the teach card. All the composition does is fade the master and fire the
+one-shots. The bed enters at frame 120 rather than at the browse scene's start
+so that, at 120bpm, the closing card falls exactly eight bars later and the
+logo build resolves on a bar line.
+
+Levels are checked on the way out — peak, RMS, clipping — and the finished
+renders were onset-analysed to confirm every cue fires where it was meant to.
+None of that is listening to it, and nobody has.
 
 ## The logo animation
 
@@ -97,18 +177,61 @@ re-shoot. It also means it can drift from the real app: if a screen changes
 materially, the mock has to be updated to match, or the ad is advertising
 something that no longer exists.
 
-`demoCourses` in `CourseCard.tsx` is placeholder catalogue data. Swap it for the
-real seed once that exists.
+The catalogue they display is **not** invented here any more. `src/catalogue.ts`
+mirrors `supabase/seed/demo_catalogue.sql` — the same eleven courses, the same
+titles, authors, prices and lesson lists the app serves — so the ad and the
+product cannot disagree about what is for sale. Edit one, edit the other.
+
+That also means the card chrome has to be right, and three things in it were
+not: the rating pill sat top-right instead of bottom-left, the category pill
+printed in ink instead of brand green, and a paid course's price printed in ink
+instead of green. All three now follow `course_card.dart`.
+
+The cards show `New` and a zero enrolment count because that is what the seeded
+app actually renders — both columns are trigger-derived and the seed leaves
+them at zero. The previous cut invented figures like "1.2k students"; at card
+size the line is a few pixels tall and unreadable, so the fake bought nothing
+and cost the one thing an ad should not spend.
+
+## The lesson footage
+
+`public/lessons/` holds the eleven lesson videos, one per course, and
+`public/thumbs/` the card art cut from them. Both are tracked, for the reason
+the audio beds are: a clean clone has to be able to render.
+
+They are **not** made here. A separate project, `PadiLearn-lesson-videos`,
+renders them, and `supabase/seed/import_lesson_videos.py` brings them across —
+into `public/` for this render, and into `out/demo-clips/` and
+`out/demo-thumbs/` laid out for the Storage buckets. Re-run it after rebuilding
+a lesson over there and everything downstream picks it up:
+
+```bash
+python ../supabase/seed/import_lesson_videos.py
+```
+
+Each video prints its own course name and lesson number into the frame
+("WAEC PHYSICS · LESSON 14"). The `lesson` scene and `LessonMock` both read
+those positions out of `catalogue.ts` rather than restating them, so the chrome
+the ad draws around a clip always agrees with the chrome inside it.
 
 ## Known gaps
 
-- **A placeholder music bed, and nothing else.** Two CC0 tracks are wired up
-  (see `public/audio/SOURCES.md`) — but nobody has listened to them, because
-  audio cannot be judged by inspecting it. They prove the pipeline; they are
-  not a scoring decision. **No voiceover and no spot effects**: the lines and
-  cues are written, render `EditorsNotes` and hand it over.
+- **Nobody has listened to the score.** It is written and wired — see
+  `public/audio/SOURCES.md` — and each cue was onset-analysed in the finished
+  render to confirm it fires on the intended frame. That is not the same as
+  it sounding good, which cannot be read off an array. Listen before shipping;
+  the fix is a number in `scripts/make_audio.py`, not a stock library.
+- **No voiceover.** The lines are written in `theme.ts` under `directions`.
+  Render `EditorsNotes` and hand it to whoever reads them.
 - **No captions.** Most social video is watched muted. Worth adding before the
   vertical cut goes anywhere public.
+- **The lessons are taught by nobody.** The footage is generated: every figure
+  and every number in it is correct and checkable, but there is no teacher in
+  it, because there is not yet a teacher. It exists so the catalogue is not
+  visibly empty when the first testers open the app. The moment someone
+  records a real lesson, that clip replaces one of these — on a marketplace a
+  shaky phone recording of someone who knows their subject outsells an
+  animation, because the buyer is buying the teacher.
 - **Licence.** Remotion is free for individuals and small companies but
   requires a paid company licence above a small headcount. Check
   remotion.dev/license before this ships as company work.

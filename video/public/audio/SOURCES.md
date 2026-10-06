@@ -1,44 +1,57 @@
 # Audio sources and licences
 
-Both tracks are by **HoliznaCC0**, who releases their catalogue under
-**CC0 1.0 Universal** — a dedication to the public domain. No attribution is
-required, the dedication cannot be revoked, and commercial use is permitted.
+**All of it is ours.** Every file here is synthesised by
+`../../scripts/make_audio.py` — three music beds and nine spot effects, from
+oscillators, filtered noise and a Karplus-Strong string. Nothing was
+downloaded, sampled or recorded, so there is no licence, no attribution and
+nobody to ask.
 
-| File | Track | Used in |
+```bash
+cd video && python scripts/make_audio.py
+```
+
+Deterministic: the noise comes from a seeded generator, so a rebuild produces
+byte-identical files and does not show up as a diff for no reason.
+
+| File | What it is | Used by |
 |---|---|---|
-| `bed-ad.mp3` | HoliznaCC0 — *Projector Screen (LoFi, Happy)* | `AppAd`, from the browse scene onward |
-| `bed-sting.mp3` | HoliznaCC0 — *Adventure Begins Loop* | `LogoSting` |
+| `bed-ad-v2.mp3` | 20s, 120bpm, F–Am–B♭–C | `AppAd`, from frame 120 |
+| `bed-teachers.mp3` | 18s drone and slow pulse | `TeacherCall` |
+| `bed-sting-v2.mp3` | 4s swell resolving on F | `LogoSting` |
+| `sfx-sub.wav` | Low hit, bending down | Hook title landing |
+| `sfx-tick.wav` | 90ms click | Each course card arriving |
+| `sfx-chime.wav` | Inharmonic bell | Progress bar filling |
+| `sfx-rise.wav` | Twelve ascending ticks | Under the naira count |
+| `sfx-land.wav` | Resolved F chord | The number stopping |
+| `sfx-whoosh.wav` | Swept noise | The bowl of the P sweeping |
+| `sfx-pluck.wav` | Plucked string | The leaf popping |
+| `sfx-chalk.wav` | Soft grain | Under a lesson figure drawing |
+| `sfx-mark.wav` | Low soft mark | Each announcement statement |
 
-Downloaded from the Internet Archive item
-[`06-holizna-cc-0-break-from-reality-lo-fi-peaceful-.mp-3`](https://archive.org/details/06-holizna-cc-0-break-from-reality-lo-fi-peaceful-.mp-3).
-Both are 320 kbps, 48 kHz stereo.
+One-shots are normalised WAV; balance is set per cue by the `volume` prop at
+the call site, which is where a mix belongs.
 
-## Two caveats worth reading before this ships
+## Why this replaced the downloaded tracks
 
-**The licence claim rests on the artist, not on that Archive item.** The item
-itself carries no `licenseurl` in its metadata, and it is a user-assembled
-compilation that also contains tracks by other artists (Brentin Davis,
-VibeDepot) whose terms have *not* been checked. Only the HoliznaCC0-credited
-files were taken. The authoritative CC0 statement is on the artist's own
-pages — [Free Music Archive](https://freemusicarchive.org/music/holiznacc0/)
-shows "CC0 1.0 Universal" on their albums. Verify there, not here, before
-anything goes public.
+Two CC0 tracks by HoliznaCC0 used to sit here, and this file used to spend two
+paragraphs explaining why that was shakier than it looked: the licence claim
+rested on the artist rather than on the Archive item they came from, and that
+item was a user-assembled compilation containing other artists' work. The
+honest summary was that nobody had verified it.
 
-**Nobody has listened to these.** They were chosen from title, genre tag and
-duration; audio cannot be judged by inspecting it. Treat both as placeholders
-that prove the pipeline, not as a scoring decision. Swapping is a file
-replacement — keep the same names and nothing else changes.
+The whole video pipeline exists to avoid exactly that — it is code rather than
+stock footage so that nothing in it belongs to anyone else. Audio was the last
+place that had not caught up. Synthesising it closes the question, and it
+also lets every cue be written to the frame it lands on, which a licensed
+track cannot do.
 
-## What is still missing
+## Nobody has listened to this
 
-The direction in `src/theme.ts` asks for things a music bed cannot supply:
+The generator checks sample rate, length, peak, RMS and clipping, and the
+renders were onset-analysed to confirm each cue fires on the intended frame.
+None of that establishes that it sounds good, which is not a property you can
+read off an array.
 
-- **Voiceover.** Five lines, written, unrecorded.
-- **Spot effects** — the UI ticks as cards land, the chime on the progress bar,
-  the ascending counter under the naira figure, and for the sting a whoosh on
-  the bowl sweep and a soft plucked note as the leaf opens. A sting really
-  wants designed sound rather than music; the bed on it now is there so the
-  file is not silent, not because it is right.
-- **Ducking.** Once there is a voiceover, the bed needs to drop under it. The
-  `volume` prop takes a per-frame function, so that is an envelope edit rather
-  than new plumbing.
+**Listen before this ships.** If something is wrong, the fix is a number in
+`make_audio.py` or a `volume` at the call site, then a re-render — not a trip
+to a stock library.

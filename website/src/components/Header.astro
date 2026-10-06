@@ -1,5 +1,5 @@
 ---
-import { mailto } from '../site';
+import { site } from '../site';
 
 // Section links point back to the home page from the other pages.
 const base = Astro.url.pathname === '/' ? '' : '/';
@@ -15,7 +15,7 @@ const base = Astro.url.pathname === '/' ? '' : '/';
       <a class="hide-sm" href={`${base}#students`}>Students</a>
       <a class="hide-sm" href={`${base}#teachers`}>Teachers</a>
       <a class="hide-sm" href={`${base}#faq`}>FAQ</a>
-      <a class="join" href={mailto('Join the PadiLearn beta')}>Join the beta</a>
+      <a class="join" href={site.appUrl}>Open the app</a>
     </nav>
   </div>
 </header>

@@ -4,7 +4,8 @@
 //
 // By the time the browser gets here Supabase has already verified the link,
 // so this page confirms nothing itself. Its job is to say it worked, or say
-// the link was stale, and send the person back to the app to log in.
+// the link was stale, and point the person at somewhere they can log in —
+// the web app or the Android app, since signing up on a laptop is now normal.
 //
 // A web page rather than a padilearn:// deep link because these emails are
 // opened on laptops as often as phones, and a deep link does nothing there.
@@ -16,15 +17,18 @@ import { site, mailto } from '../site';
   <section class="container prose page">
     <div data-state="ok">
       <h1>Your email is confirmed</h1>
-      <p>Thanks. Go back to the PadiLearn app on your phone and log in.</p>
+      <p>
+        Thanks. You can log in now — <a href={site.appUrl}>open PadiLearn in your browser</a>,
+        or go back to the app on your phone.
+      </p>
     </div>
 
     <div data-state="error" hidden>
       <h1>This link didn't work</h1>
       <p data-error-reason>It has expired or has already been used.</p>
       <p>
-        Open PadiLearn and try to log in. If it says your email isn't confirmed, tap
-        <strong>Resend</strong> to get a new link. Links expire after an hour.
+        <a href={site.appUrl}>Open PadiLearn</a> and try to log in. If it says your email
+        isn't confirmed, tap <strong>Resend</strong> to get a new link. Links expire after an hour.
       </p>
     </div>
 

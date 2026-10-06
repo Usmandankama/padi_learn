@@ -14,8 +14,10 @@ import 'controller/marketplace_controller.dart';
 import 'controller/user_controller.dart';
 import 'screens/onboarding/splash_screen.dart';
 import 'utils/colors.dart';
+import 'utils/responsive.dart';
 import 'dart:async';
 import 'package:padi_learn/screens/forgot_password/reset_password_screen.dart';
+import 'package:padi_learn/screens/payment/payment_callback_screen.dart';
 import 'package:padi_learn/services/supabase.dart';
 
 Future<void> main() async {
@@ -182,24 +184,46 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
+  /// The first screen, which on web depends on the URL the browser arrived at.
+  ///
+  /// Paystack redirects a paying student to `/payment-callback`, and that load
+  /// is a cold start — there is no navigator state left to return to. Routing
+  /// it here, before anything else builds, is what makes the redirect flow
+  /// work at all. Every other path, and every mobile launch, starts normally.
+  Widget _landing() {
+    if (kIsWeb && Uri.base.path == PaymentCallbackScreen.path) {
+      return const PaymentCallbackScreen();
+    }
+    return const SplashScreen();
+  }
+
   @override
   Widget build(BuildContext context) {
     final settings = Get.find<SettingsController>();
-    return ScreenUtilInit(
-      designSize: const Size(393, 852),
-      builder: (_, __) {
-        return GetMaterialApp(
-          debugShowCheckedModeBanner: false,
-          // Binds the palette above the Navigator, so it is set before any
-          // screen builds and re-set whenever the theme changes.
-          builder: (context, child) {
-            AppColors.bind(Theme.of(context));
-            return child ?? const SizedBox.shrink();
+    // The design size is computed from the window rather than fixed, so the
+    // ScreenUtil scale factor cannot run away on a desktop browser. See
+    // `responsiveDesignSize` — on native builds it returns the original
+    // 393x852 and nothing about the phone layout changes.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final screen = Size(constraints.maxWidth, constraints.maxHeight);
+        return ScreenUtilInit(
+          designSize: responsiveDesignSize(screen),
+          builder: (_, __) {
+            return GetMaterialApp(
+              debugShowCheckedModeBanner: false,
+              // Binds the palette above the Navigator, so it is set before any
+              // screen builds and re-set whenever the theme changes.
+              builder: (context, child) {
+                AppColors.bind(Theme.of(context));
+                return child ?? const SizedBox.shrink();
+              },
+              theme: _theme(Brightness.light, AppPalette.light),
+              darkTheme: _theme(Brightness.dark, AppPalette.dark),
+              themeMode: settings.themeMode,
+              home: _landing(),
+            );
           },
-          theme: _theme(Brightness.light, AppPalette.light),
-          darkTheme: _theme(Brightness.dark, AppPalette.dark),
-          themeMode: settings.themeMode,
-          home: const SplashScreen(),
         );
       },
     );

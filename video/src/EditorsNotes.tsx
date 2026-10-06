@@ -2,7 +2,7 @@ import React from 'react';
 import {AbsoluteFill, useCurrentFrame} from 'remotion';
 import {loadFont as loadPoppins} from '@remotion/google-fonts/Poppins';
 import {colors, directions, globalDirections, FPS} from './theme';
-import {AppAd, SCENES, AD_DURATION} from './AppAd';
+import {AppAd, SCENES, SCENE_ORDER, AD_DURATION} from './AppAd';
 
 const {fontFamily: poppins} = loadPoppins();
 
@@ -20,7 +20,6 @@ const {fontFamily: poppins} = loadPoppins();
  * moves these notes with it instead of quietly desynchronising them.
  */
 
-const SCENE_ORDER = ['hook', 'browse', 'learn', 'teach', 'cta'] as const;
 type SceneKey = (typeof SCENE_ORDER)[number];
 
 const timecode = (frames: number) => {

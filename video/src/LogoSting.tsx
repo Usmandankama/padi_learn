@@ -2,6 +2,7 @@ import React from 'react';
 import {
   AbsoluteFill,
   Audio,
+  Sequence,
   Easing,
   interpolate,
   spring,
@@ -55,12 +56,12 @@ export const LogoSting: React.FC = () => {
         WebkitFontSmoothing: 'antialiased',
       }}
     >
-      {/* Placeholder bed. A sting really wants designed sound — a whoosh on
-          the bowl sweep, a soft plucked note as the leaf opens — rather than
-          music; see `directions.cta`. This is here so the file is not silent,
-          not because it is the right answer. */}
+      {/* A swell that arrives on the tonic as the mark settles, plus the two
+          cues `directions.cta` asks for: a whoosh on the bowl sweep and a
+          plucked note as the leaf opens. `LogoMark` runs at speed 1 here, so
+          its bowlSweep (26) and leafPop (56) are these frames exactly. */}
       <Audio
-        src={staticFile('audio/bed-sting.mp3')}
+        src={staticFile('audio/bed-sting-v2.mp3')}
         volume={(f) =>
           interpolate(
             f,
@@ -70,6 +71,12 @@ export const LogoSting: React.FC = () => {
           )
         }
       />
+      <Sequence from={22} layout="none">
+        <Audio src={staticFile('audio/sfx-whoosh.wav')} volume={0.4} />
+      </Sequence>
+      <Sequence from={56} layout="none">
+        <Audio src={staticFile('audio/sfx-pluck.wav')} volume={0.45} />
+      </Sequence>
       {/* A soft bloom that swells as the mark lands, so the tile is sitting in
           light rather than pasted onto flat white. */}
       <div

@@ -10,6 +10,7 @@ import 'package:padi_learn/screens/home/home_shell.dart';
 import 'package:padi_learn/screens/login/login_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
 import 'package:padi_learn/services/auth_service.dart';
+import 'package:padi_learn/utils/responsive.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -123,7 +124,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: Scaffold(
         resizeToAvoidBottomInset: true,
         backgroundColor: AppColors.palette.surface,
-        body: SafeArea(
+        body: PageBody(
+          maxWidth: Breakpoints.readable,
+          child: SafeArea(
           child: SingleChildScrollView(
             padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
             child: Column(
@@ -254,6 +257,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

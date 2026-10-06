@@ -1,69 +1,53 @@
 # Demo course thumbnails
 
-Eleven photographs, one per seeded course. **1.4 MB total**, 1280×720 JPEG.
+Twelve images, one per seeded course. **364 KB total**, 1280×720 JPEG.
 `courses.thumbnail_url` already points at these exact paths, so uploading them
 is the only remaining step.
 
-Files are at **`video/out/demo-thumbs/demo/`** (gitignored — regenerable stock
-photography does not belong in the repo). `fetch_demo_thumbs.py` beside this
-file rebuilds the set.
+Files are at **`video/out/demo-thumbs/demo/`** (gitignored — regenerable).
+`import_lesson_videos.py` beside this file rebuilds the set, and also writes a
+copy into `video/public/thumbs/` for the ad to render from, so the card art in
+the ad and the card art in the app are the same file.
 
 ## Upload
 
 Supabase dashboard → Storage → **`course-thumbnails`** → drag the `demo` folder
 into the bucket root. The bucket is public, so the URLs resolve immediately.
 
-Largest file is 335 KB, so the size ceiling that dropped six of the video
-uploads is not a risk here.
+## What they are
 
-## The design decision
+Not photographs. Each one is a frame of that course's own lesson video, taken
+at 13 seconds — the one moment the figure and the formula are both on the board
+and the takeaway has not landed yet, which is the fullest frame that is still
+legible shrunk to a 126px-wide card.
 
-**Plain photography. No text baked in, no gradient wash, no badge.**
+Then inverted to dark. The lesson boards are near-white (`#FBFAF7`), and a
+near-white thumbnail inside a white card on a white marketplace reads as a
+broken image rather than a deliberate one. The inversion flips *lightness*
+while keeping hue and saturation, so the board goes navy and the ink comes back
+as light green and near-white — the app's own palette — and what you notice at
+card size is the silhouette of the figure. A plain negate would have done the
+board correctly and turned every green line magenta.
 
-The card prints the title, instructor and price *underneath* the image
-(`course_card.dart`), so anything written into the picture collides with what
-the card already says — and stock photos with type dropped on top are exactly
-the tacky look to avoid. What makes a grid read as one product is consistent
-crop, consistent size, and a subject that is legible at ~180px wide. That is
-what these do.
+`welcome-to-padilearn.jpg` is the exception: a frame of the ad's opening card,
+green with "Everybody sabi something." on it.
 
-Cover-cropped to 16:9 here rather than letterboxed, because the card crops to
-fill anyway — deciding the framing once makes it predictable.
+## Why no type on them
 
-## What it took to get here
+The card prints the title, author and price *underneath* the image
+(`course_card.dart`), so anything written into the picture collides with it,
+and the one thing that would collide hardest is the course title repeated. The
+crop keeps the diagram; the only text left in frame is a few pixels tall and
+reads as texture.
 
-Three passes, because the first results were bad in ways only looking could
-catch:
+That constraint is inherited from the previous set of thumbnails, which were
+stock photography fetched by `fetch_demo_thumbs.py` — now retired, see the
+banner at the top of that file.
 
-- **`python-basics` returned a literal snake.** Then, after rewording, a clay
-  figurine of a person at a computer. It is now real source code on screen.
-- **`welcome-to-padilearn` returned a cartoon dog playing a guitar.** It is now
-  children working at desks in a classroom — the strongest image in the set for
-  this market.
-- **`excel-for-office-work` was a flat "RISK ASSESSMENT" illustration**, and
-  the search needed `image_type=photo` before it would stop returning vector
-  art. Illustrations among photographs are what break the grid's consistency.
-- **`whatsapp-marketing` was the blue "SOCIAL" tech-collage** — the single most
-  dated look in stock photography.
-- **`personal-finance` returned US dollars, then Indian rupees.** Foreign
-  banknotes are as wrong as each other for a course priced in naira, so the
-  final pick avoids currency in frame entirely.
+## Consistency
 
-## Known imperfections
-
-- **`personal-finance`** is a handwritten ledger whose columns, read closely,
-  are a joke ("Happiness / Troubles, Failures, Defeats"). Illegible at card
-  size and it reads correctly as *handwritten budgeting*, but it would not
-  survive someone zooming in.
-- **`phone-photography`** shows a film SLR, not a phone.
-- **`whatsapp-marketing`** leans laptop rather than phone.
-
-All three are the best a general stock library offered. Replace them first if
-the catalogue ever gets real scrutiny.
-
-## Licence
-
-[Pixabay Content License](https://pixabay.com/service/license-summary/): free
-for commercial use, no attribution required. The limit is redistributing their
-content *as the product* — fine as course artwork, not fine as a stock library
-of your own.
+What makes a grid of these read as one product is that they genuinely are one
+set: same source, same timecode, same treatment, same palette, and a different
+figure in each. Eleven different shapes — a parabola, a balance, two circuits,
+a spreadsheet, a halving array, a type ladder — so the catalogue does not look
+generated, which it is, but should not look.

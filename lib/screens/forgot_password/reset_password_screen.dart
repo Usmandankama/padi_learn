@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:padi_learn/utils/responsive.dart';
 
 import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/screens/home/home_shell.dart';
@@ -83,7 +84,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Set a new password')),
-      body: SafeArea(
+      body: PageBody(
+        maxWidth: Breakpoints.readable,
+        child: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
               24.w, 16.h, 24.w, 24.h + MediaQuery.of(context).padding.bottom),
@@ -153,6 +156,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

@@ -13,9 +13,11 @@ import {
 import {loadFont as loadPoppins} from '@remotion/google-fonts/Poppins';
 import {loadFont as loadPlayfair} from '@remotion/google-fonts/PlayfairDisplay';
 import {colors, script} from './theme';
+import {courses} from './catalogue';
 import {Phone} from './components/Phone';
 import {MarketplaceMock} from './components/MarketplaceMock';
 import {LessonMock} from './components/LessonMock';
+import {LessonReel, REEL_DURATION} from './components/LessonReel';
 import {LogoMark} from './components/LogoMark';
 
 const {fontFamily: poppins} = loadPoppins();
@@ -28,16 +30,51 @@ const {fontFamily: playfair} = loadPlayfair();
  * ad means editing five numbers, and so the total duration is derived from the
  * scenes instead of being a constant that drifts out of sync with them.
  */
-export const SCENES = {
-  hook: {from: 0, duration: 105},
-  browse: {from: 105, duration: 165},
-  learn: {from: 270, duration: 165},
-  teach: {from: 435, duration: 150},
-  cta: {from: 585, duration: 135},
+const DURATIONS = {
+  hook: 90,
+  browse: 135,
+  // However long the reel's clips add up to, so retiming a beat in
+  // `LessonReel` cannot leave this table claiming otherwise.
+  lesson: REEL_DURATION,
+  learn: 105,
+  // Carries the remainder that keeps the cut at exactly 720 frames. If you
+  // lengthen another scene, take it out of this one.
+  teach: 106,
+  cta: 120,
 } as const;
 
+/**
+ * The scene order, and the only place it is written down. Everything that
+ * walks the ad — the notes overlay included — reads this rather than
+ * restating it, so a scene cannot be added in one place and missed in another.
+ */
+export const SCENE_ORDER = Object.keys(DURATIONS) as (keyof typeof DURATIONS)[];
+
+/**
+ * Scene boundaries, in frames at 30fps.
+ *
+ * Only durations are declared; each scene's start is accumulated from the ones
+ * before it. Retiming the ad is then editing one number, with nothing to keep
+ * in sync by hand.
+ */
+export const SCENES = (() => {
+  let at = 0;
+  const table = {} as Record<
+    keyof typeof DURATIONS,
+    {from: number; duration: number}
+  >;
+  for (const key of SCENE_ORDER) {
+    table[key] = {from: at, duration: DURATIONS[key]};
+    at += DURATIONS[key];
+  }
+  return table;
+})();
+
 /** 720 frames — 24s at 30fps. */
-export const AD_DURATION = SCENES.cta.from + SCENES.cta.duration;
+export const AD_DURATION = SCENE_ORDER.reduce(
+  (total, key) => total + DURATIONS[key],
+  0,
+);
 
 /** True when the composition is taller than it is wide. */
 const useIsVertical = () => {
@@ -366,8 +403,35 @@ const Cta: React.FC = () => {
 const MUSIC_FADE_IN = 24;
 const MUSIC_FADE_OUT = 50;
 
+/**
+ * Frame the music enters on.
+ *
+ * One second into the browse scene rather than at its start. Two reasons: the
+ * hook keeps its silence a beat longer, and at 120bpm this puts the closing
+ * card exactly eight bars later, so the logo build lands on a bar line
+ * instead of halfway through one. `scripts/make_audio.py` writes the bed
+ * against this same number.
+ */
+const BED_FROM = 120;
+
+/**
+ * One spot effect, at one frame.
+ *
+ * `layout="none"` because these place sound, not pixels — a Sequence that
+ * also laid out a div would push the scene it sits beside around.
+ */
+const Cue: React.FC<{at: number; src: string; volume?: number}> = ({
+  at,
+  src,
+  volume = 1,
+}) => (
+  <Sequence from={at} layout="none">
+    <Audio src={staticFile(`audio/${src}.wav`)} volume={volume} />
+  </Sequence>
+);
+
 export const AppAd: React.FC = () => {
-  const musicFrames = AD_DURATION - SCENES.browse.from;
+  const musicFrames = AD_DURATION - BED_FROM;
 
   return (
     // Grayscale antialiasing throughout: Chrome's default subpixel rendering
@@ -378,26 +442,67 @@ export const AppAd: React.FC = () => {
         WebkitFontSmoothing: 'antialiased',
       }}
     >
-      {/* The bed starts at the browse scene, not at frame 0 — the hook plays
-          dry so the opening line lands in silence. That is the direction in
-          `directions.hook`, honoured here rather than left as a note for
-          somebody else to apply.
+      {/* ---- score ----
+          The bed enters a second into the browse scene, not at frame 0: the
+          hook plays dry so the opening line lands in silence, which is the
+          direction in `directions.hook`. Frame 120 rather than 90 because the
+          bed is 120bpm and its tenth bar then falls exactly on the closing
+          card, so the logo build resolves on a bar line.
 
-          Placeholder track, and the one thing here I could not check: audio
-          cannot be reviewed by looking at it. Swap the file, keep the name. */}
-      <Sequence from={SCENES.browse.from}>
+          Its arrangement — which parts play in which scene — is baked into
+          the file by `scripts/make_audio.py`, because that is a musical
+          decision and belongs with the music. Only the master fade is here. */}
+      <Sequence from={BED_FROM}>
         <Audio
-          src={staticFile('audio/bed-ad.mp3')}
+          src={staticFile('audio/bed-ad-v2.mp3')}
           volume={(f) =>
             interpolate(
               f,
               [0, MUSIC_FADE_IN, musicFrames - MUSIC_FADE_OUT, musicFrames],
-              [0, 0.55, 0.55, 0],
+              [0, 0.62, 0.62, 0],
               {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'},
             )
           }
         />
       </Sequence>
+
+      {/* One low hit as the title lands, over silence. */}
+      <Cue at={8} src="sfx-sub" volume={0.55} />
+
+      {/* A tick per course card. `MarketplaceMock` springs card i at local
+          frame 10 + 2i, so these are those frames, and the flurry is the
+          grid filling. Very low individually — eleven of them inside
+          two-thirds of a second is a texture, not eleven sounds. */}
+      {courses.map((course, i) => (
+        <Cue
+          key={course.slug}
+          at={SCENES.browse.from + 10 + i * 2}
+          src="sfx-tick"
+          volume={0.12}
+        />
+      ))}
+
+      {/* Barely-there texture under each lesson figure drawing itself. It
+          should register as the room the board is in. */}
+      <Cue at={SCENES.lesson.from + 5} src="sfx-chalk" volume={0.1} />
+      <Cue at={SCENES.lesson.from + 87} src="sfx-chalk" volume={0.1} />
+
+      {/* The progress bar finishes filling at local frame 70. */}
+      <Cue at={SCENES.learn.from + 62} src="sfx-chime" volume={0.28} />
+
+      {/* The naira figure counts over local frames 18–96. The rise runs under
+          it and deliberately stops short, so the landing is its own cue and
+          retiming one does not drag the other out of place. The number
+          stopping is the beat — `sfx-land` is on the exact frame it does. */}
+      <Cue at={SCENES.teach.from + 18} src="sfx-rise" volume={0.3} />
+      <Cue at={SCENES.teach.from + 96} src="sfx-land" volume={0.45} />
+
+      {/* `LogoMark` runs at speed 2 here, so its internal bowlSweep (26) and
+          leafPop (56) land on scene frames 13 and 28. The whoosh leads the
+          sweep by three frames because a movement is heard starting, not
+          finishing. */}
+      <Cue at={SCENES.cta.from + 11} src="sfx-whoosh" volume={0.42} />
+      <Cue at={SCENES.cta.from + 28} src="sfx-pluck" volume={0.4} />
       <Sequence from={SCENES.hook.from} durationInFrames={SCENES.hook.duration}>
         <SceneFade duration={SCENES.hook.duration}>
           <Hook />
@@ -412,8 +517,24 @@ export const AppAd: React.FC = () => {
           <PhoneScene
             title={script.browse.title}
             sub={script.browse.sub}
-            screen={<MarketplaceMock poppins={poppins} playfair={playfair} />}
+            screen={
+              <MarketplaceMock
+                poppins={poppins}
+                playfair={playfair}
+                scrollOver={SCENES.browse.duration}
+              />
+            }
           />
+        </SceneFade>
+      </Sequence>
+
+      {/* The proof beat: a lesson, at a size you can read. */}
+      <Sequence
+        from={SCENES.lesson.from}
+        durationInFrames={SCENES.lesson.duration}
+      >
+        <SceneFade duration={SCENES.lesson.duration}>
+          <LessonReel poppins={poppins} playfair={playfair} />
         </SceneFade>
       </Sequence>
 
