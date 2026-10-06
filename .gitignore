@@ -70,3 +70,6 @@ video/node_modules/
 video/out/
 
 # Downloaded audio beds are tracked — they are small and the render needs them.
+
+# Release APKs staged for upload to R2 — binaries, never committed.
+/dist-apk/
