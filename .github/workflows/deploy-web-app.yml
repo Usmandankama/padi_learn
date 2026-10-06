@@ -1,0 +1,92 @@
+# Builds the Flutter web app and uploads it to Cloudflare Pages.
+#
+# Why GitHub Actions and not Cloudflare's own Git integration: Pages has no
+# Flutter SDK, so a Git-connected Pages project would have to download it
+# inside every build — slow and brittle. Here the SDK is cached between runs
+# and Cloudflare only ever receives a finished bundle, which is the same thing
+# `wrangler pages deploy` uploads by hand today.
+#
+# This deploys the APP (project `padilearn-app`, app.padilearn.com). The
+# marketing site in `website/` is a separate Pages project built from Git by
+# Cloudflare directly, and is not touched here.
+name: Deploy web app
+
+on:
+  push:
+    branches: [main]
+    # Only rebuild when something that ends up in the bundle changes.
+    paths:
+      - 'lib/**'
+      - 'web/**'
+      - 'assets/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - '.github/workflows/deploy-web-app.yml'
+  workflow_dispatch:
+
+# A second push should supersede the first, not race it onto the same domain.
+concurrency:
+  group: deploy-web-app
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      # Not a secret — it appears in every Cloudflare dashboard URL, and is
+      # useless without the API token, which IS a secret.
+      CLOUDFLARE_ACCOUNT_ID: 5ebc0180c2d0adcfc9bb31785b3f1107
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.38.3
+          channel: stable
+          cache: true
+
+      # `lib/config/supabase_config.dart` is git-ignored, so a fresh clone has
+      # no copy and the build cannot compile. It is reconstructed here from
+      # repository secrets. Nothing in it is privileged: the publishable key is
+      # constrained by RLS and ships in the bundle anyway. The service_role key
+      # must never appear here.
+      - name: Write supabase_config.dart
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+          GOOGLE_IOS_CLIENT_ID: ${{ secrets.GOOGLE_IOS_CLIENT_ID }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "::error::Repository secrets SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY are required."
+            exit 1
+          fi
+          cat > lib/config/supabase_config.dart <<EOF
+          // Generated in CI from repository secrets. Never committed.
+          class SupabaseConfig {
+            SupabaseConfig._();
+
+            static const String url = '${SUPABASE_URL}';
+            static const String publishableKey = '${SUPABASE_PUBLISHABLE_KEY}';
+            static const String googleWebClientId = '${GOOGLE_WEB_CLIENT_ID}';
+            static const String googleIosClientId = '${GOOGLE_IOS_CLIENT_ID}';
+          }
+          EOF
+
+      - run: flutter pub get
+
+      # Real errors stop a deploy; the repo's existing lint infos do not.
+      - run: flutter analyze --no-fatal-infos
+
+      # No --dart-define needed: kPaidCheckoutEnabled defaults to on for web.
+      # `web/_redirects` is copied into the bundle here, which is what supplies
+      # the SPA fallback that Paystack's /payment-callback return depends on.
+      - run: flutter build web --release
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy build/web --project-name padilearn-app --branch main

@@ -39,10 +39,30 @@ npx wrangler@3 pages deploy build/web --project-name padilearn-app --branch main
 `wrangler@3` is pinned deliberately: wrangler 4 requires Node >= 22 and this
 machine runs Node 20. If Node is upgraded later, plain `npx wrangler` works.
 
-Pages is not told how to build Flutter — the bundle is built locally and
-uploaded. Connecting this project to Git instead would mean fetching the
-Flutter SDK inside every Cloudflare build, which is slow and brittle for no
-gain while releases are occasional.
+Pages is not told how to build Flutter — it receives a finished bundle.
+Connecting *this Pages project* to Git would mean fetching the Flutter SDK
+inside every Cloudflare build, which is slow and brittle, so that is still not
+done.
+
+**Since 2026-10-06 the bundle is built by GitHub Actions instead of by hand**
+(`.github/workflows/deploy-web-app.yml`): a push to `main` touching `lib/`,
+`web/`, `assets/` or `pubspec.*` builds with Flutter 3.38.3 and uploads through
+the same `wrangler pages deploy`. That keeps Cloudflare out of the build while
+still giving push-to-deploy, and the SDK is cached between runs rather than
+re-downloaded. The command below remains the fallback, and is what
+`workflow_dispatch` runs if you trigger it manually.
+
+Two things the workflow needs that a local build does not:
+
+- **Repository secrets.** `CLOUDFLARE_API_TOKEN` (scoped to Pages : Edit),
+  `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`, plus `GOOGLE_WEB_CLIENT_ID`
+  and `GOOGLE_IOS_CLIENT_ID` once those exist. The account id is in the
+  workflow in clear, because it is not a secret.
+- **`supabase_config.dart` regenerated at build time.** It is git-ignored, so a
+  fresh clone cannot compile; the workflow writes it from those secrets. If a
+  field is added to that class, the workflow's heredoc has to learn about it or
+  CI breaks while local builds keep working — the one failure mode this setup
+  introduces.
 
 `web/_redirects` is uploaded with the bundle and supplies the SPA fallback.
 
