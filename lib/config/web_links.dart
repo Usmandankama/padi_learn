@@ -9,6 +9,12 @@ class WebLinks {
 
   static const String site = 'https://padilearn.com';
 
+  /// The Flutter web build. A **different origin** from [site]: that one is the
+  /// Astro marketing site, this one is the app itself. Anything that has to
+  /// return the user *into* the running app on web points here, never at
+  /// [site], which has no session and no screens.
+  static const String app = 'https://app.padilearn.com';
+
   static const String privacyPolicy = '$site/privacy';
   static const String terms = '$site/terms';
 

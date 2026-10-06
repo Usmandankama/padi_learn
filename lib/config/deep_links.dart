@@ -6,6 +6,10 @@
 /// user lands on the project's default site URL instead of back in the app.
 library;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+
+import 'web_links.dart';
+
 class DeepLinks {
   const DeepLinks._();
 
@@ -19,4 +23,19 @@ class DeepLinks {
   /// that has no idea this app exists — so the user could open the link but
   /// never actually set a new password. That was the whole bug.
   static const String passwordReset = '$scheme://reset-callback';
+
+  /// Where the password-reset email should return to, for the platform in hand.
+  ///
+  /// A browser cannot follow `padilearn://` — there is no app to hand it to —
+  /// so sending the mobile deep link from a web signup means Supabase falls
+  /// back to the Site URL and the user lands on the marketing site, with the
+  /// recovery token stranded and no way to set a password. Web therefore
+  /// returns to the app's own origin, where `supabase_flutter` reads the
+  /// session out of the URL and `main.dart` routes on `passwordRecovery`.
+  ///
+  /// Both values must be listed under **Authentication → URL Configuration →
+  /// Redirect URLs**: `padilearn://reset-callback` and
+  /// `https://app.padilearn.com/**`.
+  static String get passwordResetRedirect =>
+      kIsWeb ? WebLinks.app : passwordReset;
 }

@@ -128,7 +128,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       // open the link and still never set a password.
       await supabase.auth.resetPasswordForEmail(
         email,
-        redirectTo: DeepLinks.passwordReset,
+        redirectTo: DeepLinks.passwordResetRedirect,
       );
       // Same wording whether or not the account exists. Supabase doesn't say
       // either, and the app shouldn't become a way to test which emails are
