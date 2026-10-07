@@ -184,6 +184,39 @@ class FakeAdminApi extends AdminApi {
     if (loadError != null) throw loadError!;
     return [...payoutRows];
   }
+
+  // --- Categories ------------------------------------------------------------
+
+  List<Map<String, dynamic>> categoryRows = [];
+
+  @override
+  Future<List<Map<String, dynamic>>> categories() async {
+    calls.add('categories');
+    if (loadError != null) throw loadError!;
+    return [for (final c in categoryRows) Map.of(c)];
+  }
+
+  @override
+  Future<void> setCategoryActive(String id, bool active,
+      {String? reason}) async {
+    calls.add('setCategoryActive:$id:$active');
+    if (actionError != null) throw actionError!;
+  }
+
+  @override
+  Future<void> updateCategory(String id,
+      {String? name, int? position, String? reason}) async {
+    calls.add('updateCategory:$id:$name:$position');
+    if (actionError != null) throw actionError!;
+  }
+
+  @override
+  Future<Map<String, dynamic>> deleteCategory(String id,
+      {String? moveTo, String? reason}) async {
+    calls.add('deleteCategory:$id:$moveTo');
+    if (actionError != null) throw actionError!;
+    return {'courses_moved': moveTo == null ? 0 : 1};
+  }
 }
 
 /// Pumps [screen] at laptop size, which is what the admin app is for.

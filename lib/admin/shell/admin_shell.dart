@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/utils/colors.dart';
 
+import '../screens/categories_screen.dart';
 import '../screens/courses_screen.dart';
 import '../screens/overview_screen.dart';
 import '../screens/payouts_screen.dart';
@@ -37,6 +38,7 @@ class _AdminShellState extends State<AdminShell> {
       AdminSection.courses => const CoursesScreen(),
       AdminSection.refunds => const RefundsScreen(),
       AdminSection.payouts => const PayoutsScreen(),
+      AdminSection.categories => const CategoriesScreen(),
       _ => _ComingSoon(section: _section.label),
     };
   }

@@ -412,7 +412,15 @@ a `DEVLOG.md` entry.
     - **Tests.** `test/admin_payouts_test.dart`. They caught Dart's
       `RegExp` rejecting the inline `(?i)` flag, which made the parser throw
       on every input.
-  - [ ] **12g. Categories.** Approve, rename, reorder, merge or delete.
+  - [x] **12g. Categories.** Approve, rename, reorder, merge or delete.
+    *Built 2026-10-07:*
+    - **Layout.** Categories the app does not show (suggestions, with who
+      suggested them, and anything switched off) come first, then the live
+      ones in display order.
+    - **Actions.** Approve and switch off are one click, each undoing the
+      other. Edit sends only the fields that changed. Delete cannot be
+      confirmed without a destination while any course uses the category.
+    - **Tests.** `test/admin_categories_test.dart`.
   - [ ] **12h. Audit log.** Every admin action, newest first.
 - [ ] **13. Show the back office's effects in the main app.**
   - Takedowns: the teacher's dashboard and the student's library should say
