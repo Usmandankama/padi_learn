@@ -12,6 +12,45 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-10-07 — Users: find someone, see everything, change what they can do
+
+**Admin panel item 12c.** `UsersScreen` puts search on the left, debounced at
+350 ms; an empty search lists the newest accounts. The chosen account is on
+the right, or opens as its own page when the window is narrower than 900 px.
+The detail page shows everything `admin_user_detail()` returns:
+
+- **Account:** sign-ins, how they sign in, and authenticator state for an
+  admin.
+- **Teaching:** courses with their state, the balance in kobo, and the bank
+  account by its last four digits.
+- **Learning:** enrolments with progress, and purchases with refund state.
+- **Conduct:** reports filed and against them, and admin actions on the
+  account.
+
+**The screen refuses to offer what the database would refuse.** An admin has
+no Suspend button, only "Admins cannot be suspended". A suspended account
+shows its reason and offers Lift instead. The role dialog disables the role
+the account already has. One refusal the screen does not predict is a teacher
+with courses being made a student: it shows the database's message instead
+("owns 2 course(s)…"), so the rule lives in one place.
+
+The role picker is a segmented button rather than radio buttons, because
+Flutter 3.38 deprecates `RadioListTile.groupValue` and the analyzer would
+start flagging it.
+
+**Tests** (`test/admin_users_test.dart`) use fixtures in the exact shape the
+live `admin_user_detail()` returned; the shape was checked against the
+database, keys and types only. They pin:
+
+- what each action sends, including a null role for "let them choose";
+- that the list's badges reload after an action;
+- the narrow-window page;
+- that a database refusal is shown, not swallowed.
+
+The full suite passes (70 tests).
+
+---
+
 ## 2026-10-07 — The reports queue, where every button says what it will do
 
 **Admin panel item 12b.** `ReportsScreen` lists reports by status (open,

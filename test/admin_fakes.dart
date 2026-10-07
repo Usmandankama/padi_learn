@@ -69,6 +69,45 @@ class FakeAdminApi extends AdminApi {
     if (actionError != null) throw actionError!;
     return removeCourseResult;
   }
+
+  // --- Users -----------------------------------------------------------------
+
+  List<Map<String, dynamic>> users = [];
+  Map<String, Map<String, dynamic>> userDetails = {};
+  Map<String, dynamic> suspendResult = const {'courses_hidden': 0};
+
+  @override
+  Future<List<Map<String, dynamic>>> searchUsers(String query) async {
+    calls.add('searchUsers:$query');
+    if (loadError != null) throw loadError!;
+    return [...users];
+  }
+
+  @override
+  Future<Map<String, dynamic>> userDetail(String userId) async {
+    calls.add('userDetail:$userId');
+    if (loadError != null) throw loadError!;
+    return Map.of(userDetails[userId]!);
+  }
+
+  @override
+  Future<void> setRole(String userId, String? role, String reason) async {
+    calls.add('setRole:$userId:$role:$reason');
+    if (actionError != null) throw actionError!;
+  }
+
+  @override
+  Future<Map<String, dynamic>> suspendUser(String userId, String reason) async {
+    calls.add('suspendUser:$userId:$reason');
+    if (actionError != null) throw actionError!;
+    return suspendResult;
+  }
+
+  @override
+  Future<void> liftSuspension(String userId, String reason) async {
+    calls.add('liftSuspension:$userId:$reason');
+    if (actionError != null) throw actionError!;
+  }
 }
 
 /// Pumps [screen] at laptop size, which is what the admin app is for.

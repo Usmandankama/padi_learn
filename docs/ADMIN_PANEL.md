@@ -366,8 +366,21 @@ a `DEVLOG.md` entry.
       Report reasons reuse the app's `ReportReason` labels.
     - **Tests.** `test/admin_reports_test.dart` pins what each button sends,
       and that backing out sends nothing.
-  - [ ] **12c. Users.** Search, the detail page, correct a role, suspend or
+  - [x] **12c. Users.** Search, the detail page, correct a role, suspend or
     lift a suspension.
+    *Built 2026-10-07:*
+    - **Layout.** Search on the left (debounced; empty lists the newest),
+      the selected account on the right, or as its own page on a narrow
+      window. Badges show role, admin, suspended and unconfirmed email.
+    - **The detail page.** Sections for account, teaching (courses with
+      their state, balance, bank account's last four digits), learning
+      (enrolments, purchases with refund state) and conduct (reports filed
+      and against, admin actions on the account).
+    - **Actions.** An admin has no Suspend button; a suspended account shows
+      its reason and offers Lift instead. Change role picks Student, Teacher,
+      or "let them choose" (null).
+    - **Tests.** `test/admin_users_test.dart`, with fixtures in the shape the
+      live `admin_user_detail()` returned.
   - [ ] **12d. Courses.** Every course including archived and taken-down
     ones; take down or restore.
   - [ ] **12e. Refunds.** What is owed, record a refund, refunds recorded.

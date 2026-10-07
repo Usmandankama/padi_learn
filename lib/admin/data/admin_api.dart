@@ -64,6 +64,54 @@ class AdminApi {
     }));
   }
 
+  // --- Users -----------------------------------------------------------------
+
+  /// Accounts matching part of an email or name, or an exact id. An empty
+  /// [query] lists the newest accounts.
+  Future<List<Map<String, dynamic>>> searchUsers(String query) async {
+    final q = query.trim();
+    return _rows(await supabase.rpc('admin_search_users', params: {
+      'p_query': q.isEmpty ? null : q,
+      'p_limit': userPageSize,
+    }));
+  }
+
+  /// The most accounts one search returns.
+  static const userPageSize = 50;
+
+  /// Everything about one account, as one document. Shape in 20261006000010,
+  /// `admin_user_detail`.
+  Future<Map<String, dynamic>> userDetail(String userId) async {
+    return _object(await supabase.rpc('admin_user_detail', params: {
+      'p_user_id': userId,
+    }));
+  }
+
+  /// Sets the role to `Student` or `Teacher`, or clears it (null) so the user
+  /// picks again on their next launch.
+  Future<void> setRole(String userId, String? role, String reason) async {
+    await supabase.rpc('admin_set_role', params: {
+      'p_user_id': userId,
+      'p_role': role,
+      'p_reason': reason,
+    });
+  }
+
+  /// Suspends an account. Returns `{courses_hidden}`.
+  Future<Map<String, dynamic>> suspendUser(String userId, String reason) async {
+    return _object(await supabase.rpc('admin_suspend_user', params: {
+      'p_user_id': userId,
+      'p_reason': reason,
+    }));
+  }
+
+  Future<void> liftSuspension(String userId, String reason) async {
+    await supabase.rpc('admin_lift_suspension', params: {
+      'p_user_id': userId,
+      'p_reason': reason,
+    });
+  }
+
   // ---------------------------------------------------------------------------
 
   static Map<String, dynamic> _object(Object? result) =>
