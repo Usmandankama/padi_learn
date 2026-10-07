@@ -217,6 +217,17 @@ class FakeAdminApi extends AdminApi {
     if (actionError != null) throw actionError!;
     return {'courses_moved': moveTo == null ? 0 : 1};
   }
+
+  // --- Audit log -------------------------------------------------------------
+
+  List<Map<String, dynamic>> auditRows = [];
+
+  @override
+  Future<List<Map<String, dynamic>>> auditLog() async {
+    calls.add('auditLog');
+    if (loadError != null) throw loadError!;
+    return [...auditRows];
+  }
 }
 
 /// Pumps [screen] at laptop size, which is what the admin app is for.

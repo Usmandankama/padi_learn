@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/utils/colors.dart';
 
+import '../screens/audit_log_screen.dart';
 import '../screens/categories_screen.dart';
 import '../screens/courses_screen.dart';
 import '../screens/overview_screen.dart';
@@ -16,8 +17,8 @@ import 'sections.dart';
 /// out across the top. Only reached once [AdminGate] has heard is_admin() say
 /// true.
 ///
-/// Every section is listed from the first build so the shape of the panel is
-/// visible; each gets its screen as item 12 progresses (docs/ADMIN_PANEL.md).
+/// The section switch below is exhaustive on purpose: a section added to
+/// [AdminSection] without a screen is a compile error, not a blank page.
 class AdminShell extends StatefulWidget {
   const AdminShell({super.key});
 
@@ -39,7 +40,7 @@ class _AdminShellState extends State<AdminShell> {
       AdminSection.refunds => const RefundsScreen(),
       AdminSection.payouts => const PayoutsScreen(),
       AdminSection.categories => const CategoriesScreen(),
-      _ => _ComingSoon(section: _section.label),
+      AdminSection.auditLog => const AuditLogScreen(),
     };
   }
 
@@ -96,22 +97,6 @@ class _AdminShellState extends State<AdminShell> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ComingSoon extends StatelessWidget {
-  const _ComingSoon({required this.section});
-
-  final String section;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        '$section arrives with the next item.',
-        style: TextStyle(color: AppColors.of(context).inkSoft),
       ),
     );
   }

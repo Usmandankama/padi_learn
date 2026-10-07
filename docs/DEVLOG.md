@@ -12,6 +12,53 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-10-07 — The rest of the admin panel: courses, refunds, payouts, categories, audit log
+
+**Admin panel items 12d–12h, which completes item 12.** Each screen has its
+own commit and widget tests. The suite stands at 92 tests.
+
+- **Courses.** Every course, filtered as live, archived or taken down. The
+  screen keeps the teacher's "archived" apart from PadiLearn's "taken down",
+  because only the second is an admin's to undo.
+- **Refunds.** Who is owed, with the buyer's email and the Paystack payment
+  reference to find them by, and the split the database computes. Recording
+  needs Paystack's refund reference and a reason.
+- **Payouts.** Each teacher's balance and full account number. "Record
+  payout" appears only when the database would accept the payout. Otherwise
+  the card names the rule in the way: suspended, inside the 7-day hold,
+  nothing payable, or no verified account.
+- **Categories.** Suggestions and switched-off categories apart from the live
+  list. Approve and switch off are one click each, edit sends only what
+  changed, and delete requires a destination while any course uses the
+  category.
+- **Audit log.** Every admin action in words, filterable by area, with
+  details on expand.
+
+**Two reads go straight to tables instead of through admin functions:**
+courses and the audit log. The database already had admin-only read policies
+for both, so no migration was needed. `courses.user_id` points at
+`auth.users` rather than `profiles`, so PostgREST cannot embed names, and a
+second `profiles` query attaches them. Both reads were checked on the live
+project under an admin session: all 13 courses, a resolvable owner, and an
+empty audit log.
+
+**Shared pieces kept the screens consistent.** The takedown question and its
+result sentence moved into `widgets/course_actions.dart`, so Reports and
+Courses say the same thing. Kobo amounts typed by an admin go through
+`parseNairaToKobo`, which refuses anything it cannot read exactly, such as a
+third decimal, rather than rounding it into a different payout. Its first
+version used the inline `(?i)` flag, which Dart's `RegExp` rejects, and the
+payouts tests caught it throwing on every input. The shell's section switch
+is now exhaustive, so a new section without a screen fails to compile.
+
+### Still outstanding
+
+- Item 13, the main app: show takedowns and suspensions, and switch teacher
+  earnings to a balance that counts refunds and payouts.
+- Item 14, hosting the panel at admin.padilearn.com behind Cloudflare Access.
+
+---
+
 ## 2026-10-07 — Users: find someone, see everything, change what they can do
 
 **Admin panel item 12c.** `UsersScreen` puts search on the left, debounced at

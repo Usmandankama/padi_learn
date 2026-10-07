@@ -333,7 +333,7 @@ a `DEVLOG.md` entry.
     `flutter run -d web-server -t lib/admin/main.dart` on port 5180.
 
   Needs TOTP enabled under Authentication → Multi-Factor in the dashboard.
-- [ ] **12. Screens.** Built one at a time, in the same priority order as the
+- [x] **12. Screens.** Built one at a time, in the same priority order as the
   database work. Each is checked against the live project before the next.
   - [x] **12a. Overview**, plus the shared pieces every screen uses: the RPC
     wrapper with readable errors, NGN-to-the-kobo formatting, cards, and the
@@ -421,7 +421,20 @@ a `DEVLOG.md` entry.
       other. Edit sends only the fields that changed. Delete cannot be
       confirmed without a destination while any course uses the category.
     - **Tests.** `test/admin_categories_test.dart`.
-  - [ ] **12h. Audit log.** Every admin action, newest first.
+  - [x] **12h. Audit log.** Every admin action, newest first.
+    *Built 2026-10-07:*
+    - **Reading.** Read through "Admins can read the audit log", with admin
+      names from `profiles`.
+    - **Display.** Actions in words ("Took a course down"), filter chips by
+      area, and details on expand with kobo shown as money.
+    - **Read-only by design.** The shell's section switch is now exhaustive,
+      so a section without a screen fails to compile. Tests:
+      `test/admin_audit_log_test.dart`.
+
+  *Item 12 complete 2026-10-07. All eight screens are built and each is
+  covered by widget tests (92 tests in the suite). The two direct-table reads
+  (courses, audit log) were checked against the live project under an admin
+  session.*
 - [ ] **13. Show the back office's effects in the main app.**
   - Takedowns: the teacher's dashboard and the student's library should say
     a course was removed and why, instead of looking normal until a video
