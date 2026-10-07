@@ -393,7 +393,12 @@ a `DEVLOG.md` entry.
     - **Shared wording.** The takedown question and its result sentence moved
       to `widgets/course_actions.dart`, so Reports and Courses say the same
       thing. Tests: `test/admin_courses_test.dart`.
-  - [ ] **12e. Refunds.** What is owed, record a refund, refunds recorded.
+  - [x] **12e. Refunds.** What is owed, record a refund, refunds recorded.
+    *Built 2026-10-07:* the owed tab lists each paid sale of a taken-down
+    course with the buyer's email, the Paystack payment reference to find it
+    by, and the split the database computes. Recording asks for Paystack's
+    refund reference and a reason, both required. Tests:
+    `test/admin_refunds_test.dart`.
   - [ ] **12f. Payouts.** Teacher balances, record a payout, payouts made.
   - [ ] **12g. Categories.** Approve, rename, reorder, merge or delete.
   - [ ] **12h. Audit log.** Every admin action, newest first.

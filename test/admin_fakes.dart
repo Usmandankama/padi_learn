@@ -125,6 +125,34 @@ class FakeAdminApi extends AdminApi {
     calls.add('restoreCourse:$courseId:$reason');
     if (actionError != null) throw actionError!;
   }
+
+  // --- Refunds ---------------------------------------------------------------
+
+  List<Map<String, dynamic>> owedRows = [];
+  List<Map<String, dynamic>> refundRows = [];
+  Map<String, dynamic> recordRefundResult = const {};
+
+  @override
+  Future<List<Map<String, dynamic>>> refundsOwed() async {
+    calls.add('refundsOwed');
+    if (loadError != null) throw loadError!;
+    return [...owedRows];
+  }
+
+  @override
+  Future<Map<String, dynamic>> recordRefund(
+      String transactionId, String paystackReference, String reason) async {
+    calls.add('recordRefund:$transactionId:$paystackReference:$reason');
+    if (actionError != null) throw actionError!;
+    return recordRefundResult;
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> refunds() async {
+    calls.add('refunds');
+    if (loadError != null) throw loadError!;
+    return [...refundRows];
+  }
 }
 
 /// Pumps [screen] at laptop size, which is what the admin app is for.
