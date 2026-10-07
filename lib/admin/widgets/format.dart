@@ -14,6 +14,25 @@ String formatKobo(num kobo) {
   return '${sign}NGN $naira.$rest';
 }
 
+/// An amount typed in naira ("4,250", "4250.5", "NGN 4,250.00") as kobo. Null
+/// unless it is a positive amount with at most two decimal places: a typo in
+/// a payout should be refused, not rounded into a different number.
+int? parseNairaToKobo(String input) {
+  final cleaned =
+      input.replaceAll(RegExp(r'ngn|₦|,|\s', caseSensitive: false), '');
+  final match = RegExp(r'^(\d+)(?:\.(\d{1,2}))?$').firstMatch(cleaned);
+  if (match == null) return null;
+  final naira = int.parse(match.group(1)!);
+  final kobo = int.parse((match.group(2) ?? '0').padRight(2, '0'));
+  final total = naira * 100 + kobo;
+  return total > 0 ? total : null;
+}
+
+/// Kobo as plain naira for an input field, without the NGN or separators that
+/// [formatKobo] adds: `200000` -> `"2000.00"`.
+String koboToPlainNaira(int kobo) =>
+    '${kobo ~/ 100}.${(kobo % 100).toString().padLeft(2, '0')}';
+
 const _months = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',

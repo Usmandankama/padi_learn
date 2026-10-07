@@ -5,6 +5,7 @@ import 'package:padi_learn/utils/colors.dart';
 
 import '../screens/courses_screen.dart';
 import '../screens/overview_screen.dart';
+import '../screens/payouts_screen.dart';
 import '../screens/refunds_screen.dart';
 import '../screens/reports_screen.dart';
 import '../screens/users_screen.dart';
@@ -35,6 +36,7 @@ class _AdminShellState extends State<AdminShell> {
       AdminSection.users => const UsersScreen(),
       AdminSection.courses => const CoursesScreen(),
       AdminSection.refunds => const RefundsScreen(),
+      AdminSection.payouts => const PayoutsScreen(),
       _ => _ComingSoon(section: _section.label),
     };
   }

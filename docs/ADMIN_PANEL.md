@@ -399,7 +399,19 @@ a `DEVLOG.md` entry.
     by, and the split the database computes. Recording asks for Paystack's
     refund reference and a reason, both required. Tests:
     `test/admin_refunds_test.dart`.
-  - [ ] **12f. Payouts.** Teacher balances, record a payout, payouts made.
+  - [x] **12f. Payouts.** Teacher balances, record a payout, payouts made.
+    *Built 2026-10-07:*
+    - **Balances.** Each teacher's balance with the full account number to
+      copy into a transfer.
+    - **The record button.** Offered only when the database would accept the
+      payout. Otherwise the card says which rule is in the way: suspended,
+      inside the 7-day hold, nothing payable, or no verified account.
+    - **The amount.** Prefilled with everything payable. `parseNairaToKobo`
+      refuses anything it cannot read exactly, including a third decimal,
+      rather than rounding.
+    - **Tests.** `test/admin_payouts_test.dart`. They caught Dart's
+      `RegExp` rejecting the inline `(?i)` flag, which made the parser throw
+      on every input.
   - [ ] **12g. Categories.** Approve, rename, reorder, merge or delete.
   - [ ] **12h. Audit log.** Every admin action, newest first.
 - [ ] **13. Show the back office's effects in the main app.**
