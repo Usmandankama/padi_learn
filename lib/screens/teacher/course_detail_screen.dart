@@ -14,6 +14,7 @@ import 'package:padi_learn/services/course_service.dart';
 import 'package:padi_learn/services/lesson_service.dart';
 import 'package:padi_learn/services/supabase_storage_service.dart';
 import 'package:padi_learn/services/transaction_service.dart';
+import 'package:padi_learn/utils/app_info.dart';
 import 'package:padi_learn/utils/colors.dart';
 import 'package:padi_learn/utils/money.dart';
 
@@ -345,6 +346,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
         padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 32.h),
         children: [
           _thumbnailHeader(course, archived),
+          if (course['removed_at'] != null) ...[
+            SizedBox(height: 12.h),
+            _takenDownNotice(course),
+          ],
           SizedBox(height: 16.h),
           Row(
             children: [
@@ -461,6 +466,47 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     );
   }
 
+  /// Shown when PadiLearn has taken the course down. Without it the course
+  /// looked normal here while students were being refused playback, and the
+  /// teacher had no way to know why or who to ask.
+  Widget _takenDownNotice(Map<String, dynamic> course) {
+    final error = Theme.of(context).colorScheme.error;
+    final reason = (course['removed_reason'] ?? '').toString();
+
+    return Container(
+      padding: EdgeInsets.all(14.w),
+      decoration: BoxDecoration(
+        color: error.withValues(alpha: 0.08),
+        border: Border.all(color: error.withValues(alpha: 0.4)),
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Taken down by PadiLearn',
+            style: GoogleFonts.poppins(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w700,
+              color: error,
+            ),
+          ),
+          SizedBox(height: 6.h),
+          Text(
+            '${reason.isEmpty ? '' : 'Reason: $reason\n'}'
+            'It is hidden from the marketplace and cannot be played, '
+            'including by students who bought it. To appeal, email '
+            '$kSupportEmail.',
+            style: GoogleFonts.poppins(
+              fontSize: 12.5.sp,
+              color: AppColors.palette.ink,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _thumbnailHeader(Map<String, dynamic> course, bool archived) {
     final thumbnail = (course['thumbnail_url'] ?? '').toString();
     return ClipRRect(
@@ -474,7 +520,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
           Positioned(
             top: 10.h,
             left: 10.w,
-            child: CourseStatusChip(archived: archived),
+            child: CourseStatusChip(
+              archived: archived,
+              removed: course['removed_at'] != null,
+            ),
           ),
         ],
       ),

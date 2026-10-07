@@ -85,7 +85,17 @@ class CourseService {
       // Worst case a few objects are orphaned; the delete still proceeds.
     }
 
-    await supabase.from('courses').delete().eq('id', courseId);
+    // Asks for the deleted row back. RLS does not fail a delete it refuses, it
+    // just matches nothing (a suspended account, see 20261006000010), so an
+    // empty answer means the course is still there, and the media must stay.
+    final deleted =
+        await supabase.from('courses').delete().eq('id', courseId).select('id');
+    if (deleted.isEmpty) {
+      throw Exception(
+        'This course could not be deleted. If your account is suspended, '
+        'email hello@padilearn.com.',
+      );
+    }
 
     // Row is gone; clean the media up afterwards so a storage hiccup can't
     // leave a course the teacher believes they deleted.

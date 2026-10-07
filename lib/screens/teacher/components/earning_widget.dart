@@ -64,6 +64,26 @@ class EarningsWidget extends StatelessWidget {
                   ),
                 ),
               ),
+              // Where the money is: paid out, ready, or still inside the
+              // 7-day hold. A suspension holds payouts, so say so instead.
+              Obx(
+                () => Padding(
+                  padding: EdgeInsets.only(top: 6.h, bottom: 4.h),
+                  child: Text(
+                    controller.payoutsHeld.value
+                        ? 'Payouts are on hold while your account is '
+                            'suspended.'
+                        : 'Paid out ${formatNaira(controller.paidOut.value)}'
+                            ' · Ready ${formatNaira(controller.payable.value)}'
+                            ' · Clearing '
+                            '${formatNaira(controller.clearing.value)}',
+                    style: TextStyle(
+                      color: AppColors.appWhite.withValues(alpha: 0.85),
+                      fontSize: 12.sp,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),

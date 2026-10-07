@@ -435,7 +435,27 @@ a `DEVLOG.md` entry.
   covered by widget tests (92 tests in the suite). The two direct-table reads
   (courses, audit log) were checked against the live project under an admin
   session.*
-- [ ] **13. Show the back office's effects in the main app.**
+- [x] **13. Show the back office's effects in the main app.**
+  *Done 2026-10-07:*
+  - **Earnings.** The teacher's earnings card now reads
+    `my_teacher_balance()` (migration `20261007000001`, applied and verified
+    live). It shows earnings net of refunds, plus a line for paid out, ready
+    and clearing, or "on hold" while suspended. The function refuses a call
+    without a signed-in user, because `teacher_balance_rows(null)` returns
+    every teacher.
+  - **Takedowns.** `CourseStatusChip` gains a "Taken down" state, which wins
+    over archived. The teacher's course page shows the reason and the appeal
+    address, and the "Live" filter in My courses excludes taken-down courses.
+    Students already get a clear message from `get-course-video` when they
+    press play.
+  - **Suspension.** `SuspensionFrame` wraps the home shell's tabs: invisible
+    normally, a banner with the reason and appeal address when suspended.
+  - **Delete.** `CourseService.delete` asks for the deleted row back and
+    fails clearly when RLS matched nothing, instead of reporting success and
+    leaving the course.
+  - **Tests.** `test/app_admin_effects_test.dart`.
+
+  Original plan:
   - Takedowns: the teacher's dashboard and the student's library should say
     a course was removed and why, instead of looking normal until a video
     refuses to play. Needs `removed_at` / `removed_reason` selected and a

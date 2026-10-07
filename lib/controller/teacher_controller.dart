@@ -8,11 +8,24 @@ class TeacherController extends GetxController {
   var profileImageUrl = ''.obs;
   var totalCoursesUploaded = 0.obs;
 
-  /// Naira actually owed to this teacher, summed from the payment ledger.
+  /// Naira this teacher has earned, less what refunds took back. From
+  /// `my_teacher_balance()`, the same figures the admin panel pays from.
   var totalEarnings = 0.0.obs;
 
   /// Number of paid sales behind [totalEarnings].
   var totalSales = 0.obs;
+
+  /// Already transferred to the teacher's bank.
+  var paidOut = 0.0.obs;
+
+  /// Ready to be paid out now.
+  var payable = 0.0.obs;
+
+  /// Earned but still inside the 7-day hold.
+  var clearing = 0.0.obs;
+
+  /// Payouts are held while the account is suspended.
+  var payoutsHeld = false.obs;
   var userCourses = <Map<String, dynamic>>[].obs;
 
   @override
@@ -50,12 +63,13 @@ class TeacherController extends GetxController {
     }
   }
 
-  /// Course count, plus real earnings read from the payment ledger.
+  /// Course count, plus earnings from the teacher's balance.
   ///
-  /// This used to estimate earnings as `price × enrollments`, which counted
-  /// free enrolments as revenue, ignored the platform fee, and moved whenever a
-  /// teacher edited their price. `transactions` records what was actually
-  /// charged, so the figure is now money that genuinely changed hands.
+  /// This first estimated earnings as `price × enrollments`, which counted
+  /// free enrolments as revenue and ignored the platform fee. It then summed
+  /// the `transactions` ledger, which was real money but blind to refunds
+  /// taken back and payouts made. `my_teacher_balance()` is the definition the
+  /// admin panel pays from, so the card and the payout now agree.
   Future<void> fetchTeacherEarningsAndCourses() async {
     final userId = _userId;
     if (userId == null) return;
@@ -69,9 +83,13 @@ class TeacherController extends GetxController {
     }
 
     try {
-      final sales = await TransactionService.salesForTeacher();
-      totalEarnings.value = TransactionService.totalEarnings(sales);
-      totalSales.value = sales.length;
+      final balance = await TransactionService.myBalance();
+      totalEarnings.value = balance.earned;
+      totalSales.value = balance.salesCount;
+      paidOut.value = balance.paidOut;
+      payable.value = balance.payable;
+      clearing.value = balance.clearing;
+      payoutsHeld.value = balance.payoutsHeld;
     } catch (e) {
       // Leave the previous totals on failure.
     }
