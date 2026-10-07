@@ -16,14 +16,15 @@ catalogue, the thumbnails and the ad all pick it up.
 
 WHAT IT WRITES
 --------------
-  video/public/lessons/<slug>.mp4    tracked; the ad render reads these
-  video/public/thumbs/<slug>.jpg     tracked; card art for the ad's mock grid
-  video/out/demo-clips/demo/...      ignored; drag into `course-media`
-  video/out/demo-thumbs/demo/...     ignored; drag into `course-thumbnails`
+All into the Remotion workspace at `VIDEO` (below), outside this repo:
+
+  video/public/lessons/<slug>.mp4    the ad render reads these
+  video/public/thumbs/<slug>.jpg     card art for the ad's mock grid
+  video/out/demo-clips/demo/...      drag into `course-media`
+  video/out/demo-thumbs/demo/...     drag into `course-thumbnails`
 
 The `out/` trees mirror the bucket layout exactly so the whole folder can be
-dropped into Supabase Storage in one go. `public/` is tracked for the same
-reason the audio beds are: a clean clone has to be able to render the ad.
+dropped into Supabase Storage in one go.
 
 
 THE THUMBNAILS
@@ -40,8 +41,8 @@ near-white, which is the app's palette anyway, and makes each figure's silhouett
 the thing you notice at card size. A plain `negate` would have worked for the
 board and turned every green line magenta.
 
-`fetch_demo_thumbs.py` argues against type baked into a thumbnail, because the
-card prints the title underneath. That still holds and these obey it: what the
+The retired `fetch_demo_thumbs.py` (now only in git history) argued against
+type baked into a thumbnail, because the card prints the title underneath. That still holds and these obey it: what the
 crop keeps is the diagram, and the only text at this size is unreadable texture.
 """
 import os
@@ -52,17 +53,18 @@ import sys
 import numpy as np
 from PIL import Image
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-REPO = os.path.dirname(os.path.dirname(HERE))
-
 DEFAULT_SOURCE = (
     r"C:\Users\USMAN\Desktop\Groundwork Tech ltd\Projects\PadiLearn-lesson-videos"
 )
 
-PUBLIC_CLIPS = os.path.join(REPO, "video", "public", "lessons")
-PUBLIC_THUMBS = os.path.join(REPO, "video", "public", "thumbs")
-BUCKET_CLIPS = os.path.join(REPO, "video", "out", "demo-clips", "demo")
-BUCKET_THUMBS = os.path.join(REPO, "video", "out", "demo-thumbs", "demo")
+#: The Remotion workspace. It lived in this repo as `video/` until 2026-10-07,
+#: when it moved out with the rest of the marketing media.
+VIDEO = r"C:\Users\USMAN\Desktop\Groundwork Tech ltd\Projects\PadiLearn-media\video"
+
+PUBLIC_CLIPS = os.path.join(VIDEO, "public", "lessons")
+PUBLIC_THUMBS = os.path.join(VIDEO, "public", "thumbs")
+BUCKET_CLIPS = os.path.join(VIDEO, "out", "demo-clips", "demo")
+BUCKET_THUMBS = os.path.join(VIDEO, "out", "demo-thumbs", "demo")
 
 #: Frame to freeze for the thumbnail. See THE THUMBNAILS above.
 POSTER_AT = "13.0"
@@ -94,8 +96,9 @@ def ffmpeg():
 
     imageio-ffmpeg ships its own binary and is already a dependency of the
     lesson-video renderer, so on the machine that makes these videos it is
-    always present. `npx remotion ffmpeg` is the fallback the other seed
-    scripts use, and works wherever `video/node_modules` is installed.
+    always present. `npx remotion ffmpeg` is the fallback; it runs with `VIDEO`
+    as its working directory, so it works once that workspace's
+    `node_modules` is installed.
     """
     found = shutil.which("ffmpeg")
     if found:
@@ -116,7 +119,7 @@ def run(args):
     subprocess.run(
         FFMPEG + ["-y", "-loglevel", "error"] + args,
         check=True,
-        cwd=os.path.join(REPO, "video"),
+        cwd=VIDEO,
     )
 
 

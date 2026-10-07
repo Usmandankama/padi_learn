@@ -42,6 +42,9 @@
 -- folder in and the whole catalogue works. Nothing breaks in the meantime:
 -- `CourseThumbnail` falls back to the branded placeholder when an image 404s.
 --
+-- `video/` paths below are in the Remotion workspace, which lives outside this
+-- repo at `Groundwork Tech ltd\Projects\PadiLearn-media\video`.
+--
 -- THUMBNAILS -> bucket `course-thumbnails` (public), path `demo/<slug>.jpg`
 --   READY in `video/out/demo-thumbs/demo/`. One per course, 1280x720, taken
 --   from each lesson video at the moment its figure and formula are both on

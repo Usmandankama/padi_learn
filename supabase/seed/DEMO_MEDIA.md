@@ -4,9 +4,11 @@ Twelve files, **9.3 MB total**: eleven lesson videos, one per subject course,
 plus the rendered ad as the welcome tour. Every seeded lesson already points at
 these keys, so once they are uploaded the whole demo catalogue plays.
 
-The files are at **`video/out/demo-clips/`**, which is gitignored. This file is
-the tracked record of what they are; a copy sits beside the clips as
-`UPLOAD.md`.
+The files are at **`video/out/demo-clips/`** in the Remotion workspace, which
+lives outside this repo at `Groundwork Tech ltd\Projects\PadiLearn-media\video`
+(beside `PadiLearn-lesson-videos`). Every `video/` path below is relative to
+`PadiLearn-media`. This file is the tracked record of what they are; a copy
+sits beside the clips as `UPLOAD.md`.
 
 ## Where they come from
 
@@ -24,8 +26,8 @@ clip is our own ad: `cd video && npm run render:ad`, then copy
 `out/padilearn-ad-16x9.mp4` to `out/demo-clips/demo/welcome-to-padilearn/clip.mp4`.
 
 Nothing here is third-party footage any more. The previous set was Pixabay
-b-roll fetched by `fetch_demo_clips.py`, now retired — see the banner at the
-top of that file.
+b-roll fetched by `fetch_demo_clips.py`, retired and then deleted on
+2026-10-07 (it is in git history).
 
 ## How to upload
 

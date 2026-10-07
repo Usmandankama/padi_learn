@@ -9,6 +9,7 @@
 .history
 .svn/
 migrate_working_dir/
+.wrangler/
 
 # IntelliJ related
 *.iml
@@ -65,13 +66,11 @@ supabase/.branches/
 supabase/.temp/
 supabase/**/.env
 
-# Remotion video workspace: source is tracked, dependencies and renders are not.
-video/node_modules/
-video/out/
-
-# Downloaded audio beds are tracked — they are small and the render needs them.
-
 # Release APKs staged for upload to R2 — binaries, never committed.
 /dist-apk/
+
+# Marketing media (the Remotion workspace and the showreel captures) moved out
+# to `Groundwork Tech ltd\Projects\PadiLearn-media` on 2026-10-07. Kept ignored
+# so a stray copy can never be committed back into the app repo.
 /video
 /.assets

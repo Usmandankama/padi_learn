@@ -4,7 +4,9 @@ Twelve images, one per seeded course. **364 KB total**, 1280×720 JPEG.
 `courses.thumbnail_url` already points at these exact paths, so uploading them
 is the only remaining step.
 
-Files are at **`video/out/demo-thumbs/demo/`** (gitignored — regenerable).
+Files are at **`video/out/demo-thumbs/demo/`** in the Remotion workspace,
+outside this repo at `Groundwork Tech ltd\Projects\PadiLearn-media\video`
+(regenerable).
 `import_lesson_videos.py` beside this file rebuilds the set, and also writes a
 copy into `video/public/thumbs/` for the ad to render from, so the card art in
 the ad and the card art in the app are the same file.
@@ -41,8 +43,8 @@ crop keeps the diagram; the only text left in frame is a few pixels tall and
 reads as texture.
 
 That constraint is inherited from the previous set of thumbnails, which were
-stock photography fetched by `fetch_demo_thumbs.py` — now retired, see the
-banner at the top of that file.
+stock photography fetched by `fetch_demo_thumbs.py` — retired, then deleted on
+2026-10-07 (it is in git history).
 
 ## Consistency
 

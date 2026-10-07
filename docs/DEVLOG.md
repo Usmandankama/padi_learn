@@ -12,6 +12,43 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-10-07 — Repo cleanup: marketing media and business docs move out
+
+**The app repo now holds the app, its backend, its website and its docs —
+nothing else.** Three things left, all to sibling folders under
+`Groundwork Tech ltd\Projects\`, next to `PadiLearn-lesson-videos`:
+
+- **`video/` and `.assets/` → `PadiLearn-media\`.** The Remotion workspace
+  was half in git: commit 5bed55d added `/video` to `.gitignore` to keep
+  renders out, which also kept the new showreel source out, so that existed on
+  one laptop with no backup while the older video source stayed tracked. They
+  move together because the showreel renders with `--public-dir ../.assets`.
+  Nothing in the app, CI or the website read from either.
+- **`docs/decks/` and `docs/COSTS.md` → `PadiLearn-business\`.** The repo is
+  public; an investor pitch and a cost model are not app documentation. Old
+  commits still hold them, so this stops new copies rather than unpublishing.
+
+Scripts that crossed the boundary were repointed rather than left to fail:
+`supabase/seed/import_lesson_videos.py` writes into the media workspace by
+absolute path (as it already read its source), the deck builder reads phone
+shots from there and writes beside itself, and `split_logo.py` reads the logo
+master from this repo. The seed docs say where `video/…` paths now live.
+
+**Also removed:** the four Playfair `.ttf` files (never declared in `pubspec`,
+so never bundled; the three Playfair headings come from `google_fonts`), the
+`cupertino_icons` dependency (no `CupertinoIcons` anywhere), the retired
+`fetch_demo_clips.py` / `fetch_demo_thumbs.py` seed scripts, the three feature
+branches already merged into `main`, JVM and Kotlin crash dumps, and leftover
+tool scaffolding. `android/build/` and `android/.kotlin/` are now ignored.
+
+**Release APKs are kept locally in `dist-apk/<version>/`** (git-ignored). The
+1.0.1 APK and its native debug symbols were copied there before
+`flutter clean`. The 1.0.0 APK (42,621,037 bytes, MD5 `05a390cb…`) existed only
+inside an accidental GitHub Desktop stash of `website/node_modules`, and was
+pulled out of it before the stash was dropped.
+
+---
+
 ## 2026-10-07 — Closing the loose ends: course deletes, RLS speed, a new APK
 
 **A teacher can no longer delete a course that has students**

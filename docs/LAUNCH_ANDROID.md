@@ -235,7 +235,7 @@ only becomes **yes** once account deletion in section B is built.
 
 - [ ] Check error reporting and Android vitals every day.
 - [ ] Reply to every store review and support email.
-- [ ] Compare Supabase egress and database size with `docs/COSTS.md`.
+- [ ] Compare Supabase egress and database size with the cost model (`COSTS.md`, kept outside the repo in `PadiLearn-business`).
 
 ---
 
