@@ -20,7 +20,7 @@ export const site = {
    * The Android build, handed out directly rather than through Google Play.
    *
    * **This file is hosted on R2, not with the site** — Cloudflare Pages caps a
-   * single file at 25 MiB and the universal APK is 40.6 MiB. It lives in the
+   * single file at 25 MiB and the APK is about 41 MiB. It lives in the
    * `padilearn-dl` bucket, served from `dl.padilearn.com`; see
    * docs/LAUNCH_WEB.md for how a new build gets there. Nothing here may be
    * deployed until the object is actually at `apkUrl`, or the download button
@@ -31,9 +31,9 @@ export const site = {
    */
   android: {
     apkUrl: 'https://dl.padilearn.com/padilearn-latest.apk',
-    apkVersion: '1.0.0',
-    apkSize: '42.6 MB',
-    apkUpdated: '6 October 2026',
+    apkVersion: '1.0.1',
+    apkSize: '42.8 MB',
+    apkUpdated: '7 October 2026',
     /** Lowest Android this build installs on — `minSdkVersion` 24. */
     minAndroid: '7.0',
   },

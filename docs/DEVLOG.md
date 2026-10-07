@@ -36,9 +36,29 @@ can see in 12 tables was identical before the change, after the dry run, and
 after the real apply. The 15 unindexed foreign keys are indexed too
 (`…003` and `…004`).
 
-**Android 1.0.1.** A new APK carries item 13 (real earnings, takedown
-notices, the suspension banner) to sideloaded phones. The steps are those in
-`LAUNCH_WEB.md`.
+**Android 1.0.1, live at dl.padilearn.com.** It carries item 13 (real
+earnings, takedown notices, the suspension banner) to sideloaded phones.
+
+- **Size and checksum:** 42,752,393 bytes, MD5
+  `84ad6030cae7cb4e53c067fee3ac73ca`. Both `padilearn-1.0.1.apk` and
+  `padilearn-latest.apk` were checked against it via `Content-Length` and
+  `ETag`.
+- **Signing:** same release certificate as 1.0.0 (SHA-256 `b8fba329…`), so it
+  installs as an update.
+- **The download size, caught before shipping.** The documented
+  `flutter build apk --release` produced 63.5 MB, 21 MB more than 1.0.0.
+  Unzipping the live 1.0.0 showed only the two ARM library sets, so 1.0.0
+  had been built with `--target-platform android-arm,android-arm64`, while
+  `LAUNCH_WEB.md` claimed it included `x86_64`. Plain, the command adds
+  `x86_64` (emulators and a few Chromebooks), and since Flutter stores native
+  libraries uncompressed, every student would have downloaded it. The rebuild
+  matches 1.0.0, and `LAUNCH_WEB.md` now has the flag and the reason.
+- **Upload:** `--pipe` again, and the second upload still failed once with
+  `fetch failed` before succeeding on retry. `--remote` does not exist in
+  wrangler 3, which uploads to the real bucket by default.
+
+`website/src/site.ts` says 1.0.1, 42.8 MB, 7 October. The marketing site
+picks that up on the next push to `main`.
 
 **Payments deploy: blocked, now with a cause.** The one live sale was charged
 ₦5,177.67 through the June `initialize-payment`, which asks Paystack for

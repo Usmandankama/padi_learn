@@ -136,11 +136,11 @@ Two objects per release:
 The bucket and the custom domain already exist; this is the per-release part.
 
 ```bash
-flutter build apk --release
+flutter build apk --release --target-platform android-arm,android-arm64
 APK=build/app/outputs/flutter-apk/app-release.apk
 CT=application/vnd.android.package-archive
 
-cat $APK | npx wrangler@3 r2 object put padilearn-dl/padilearn-1.0.0.apk   --pipe --content-type $CT --cache-control "public, max-age=31536000, immutable"
+cat $APK | npx wrangler@3 r2 object put padilearn-dl/padilearn-<version>.apk   --pipe --content-type $CT --cache-control "public, max-age=31536000, immutable"
 
 cat $APK | npx wrangler@3 r2 object put padilearn-dl/padilearn-latest.apk   --pipe --content-type $CT --cache-control "public, max-age=300"
 ```
@@ -163,7 +163,9 @@ md5sum build/app/outputs/flutter-apk/app-release.apk
 
 `Content-Length` must equal the local file's byte count, and for a single-part
 upload R2's `ETag` **is** the MD5 of the object, so the two must match. For
-1.0.0: `42621037` bytes, `05a390cb9dbef5cc7574e6d04945d0d7`.
+1.0.0: `42621037` bytes, `05a390cb9dbef5cc7574e6d04945d0d7`. Bump `version:`
+in `pubspec.yaml` first (name and build number both), so a phone sees an
+update rather than the same version again.
 
 Then update `site.android` in `website/src/site.ts` — `apkVersion`, `apkSize`
 and `apkUpdated` are shown to the user, so wrong numbers are worse than none —
@@ -171,10 +173,20 @@ and redeploy the marketing site.
 
 ### What this APK is
 
-Universal (`arm64-v8a`, `armeabi-v7a`, `x86_64`), so one link installs on every
-phone. The per-ABI splits are roughly half the size and would even fit under the
-Pages file cap, but they would make a stranger pick a CPU architecture on the
-page whose whole job is to earn their trust.
+One APK for both ARM architectures (`arm64-v8a`, `armeabi-v7a`), so one link
+installs on every phone. The per-ABI splits are roughly half the size and
+would even fit under the Pages file cap, but they would make a stranger pick a
+CPU architecture on the page whose whole job is to earn their trust.
+
+**Not `x86_64`, and the `--target-platform` flag is what keeps it out.** This
+section used to say the APK included `x86_64`, and the command above used to be
+a bare `flutter build apk --release`. Plain, that command adds `x86_64`, which
+only emulators and a few Chromebooks run, and makes the download 63.5 MB
+instead of about 42 MB. Checked on 2026-10-07 by unzipping the live 1.0.0: it
+holds only the two ARM sets, so it was built with the flag. Flutter stores
+native libraries uncompressed (`minSdkVersion` 24 lets Android load them in
+place), so every architecture costs its full size in the download, and
+students pay for that data.
 
 Signed with the release keystore (`CN=Groundwork Tech Ltd`), APK Signature
 Scheme v2 and no v1 — v1 is only needed below Android 7.0, which `minSdkVersion`
