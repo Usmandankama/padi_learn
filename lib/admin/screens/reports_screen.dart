@@ -4,6 +4,7 @@ import 'package:padi_learn/services/report_service.dart';
 import 'package:padi_learn/utils/colors.dart';
 
 import '../data/admin_api.dart';
+import '../widgets/course_actions.dart';
 import '../widgets/format.dart';
 import '../widgets/panel.dart';
 import '../widgets/reason_dialog.dart';
@@ -81,27 +82,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Future<void> _takeCourseDown(Map<String, dynamic> report) async {
-    final reason = await askForReason(
-      context,
-      title: 'Take this course down?',
-      message: 'It leaves the catalogue and stops playing for everyone but its '
-          'teacher, including students who paid. They are owed refunds, '
-          'which appear under Refunds. Open reports on the course are closed; '
-          'reports on its comments stay open.',
-      confirmLabel: 'Take course down',
-      destructive: true,
-    );
+    final reason = await askToTakeCourseDown(context);
     if (reason == null) return;
 
     await _act(report['id'] as String, () async {
       final result = await widget.api
           .removeCourse(report['course_id'] as String, reason);
-      final sales = asCount(result['paid_sales']);
-      final refunds = sales == 0
-          ? 'No paid sales to refund.'
-          : '$sales paid ${sales == 1 ? 'sale' : 'sales'}, '
-              '${formatKobo(asCount(result['paid_kobo']))}, now owed refunds.';
-      return 'Course taken down. ${_closed(result)} $refunds';
+      return describeTakedown(result);
     });
   }
 

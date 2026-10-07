@@ -381,8 +381,18 @@ a `DEVLOG.md` entry.
       or "let them choose" (null).
     - **Tests.** `test/admin_users_test.dart`, with fixtures in the shape the
       live `admin_user_detail()` returned.
-  - [ ] **12d. Courses.** Every course including archived and taken-down
+  - [x] **12d. Courses.** Every course including archived and taken-down
     ones; take down or restore.
+    *Built 2026-10-07:*
+    - **Reading.** Courses are read straight from the table through "Admins
+      can see every course", with teachers' names from a second `profiles`
+      lookup, because `courses.user_id` points at auth.users. No migration
+      was needed.
+    - **Filters.** All, live, archived (the teacher's) and taken down
+      (PadiLearn's), with search across title, teacher and category.
+    - **Shared wording.** The takedown question and its result sentence moved
+      to `widgets/course_actions.dart`, so Reports and Courses say the same
+      thing. Tests: `test/admin_courses_test.dart`.
   - [ ] **12e. Refunds.** What is owed, record a refund, refunds recorded.
   - [ ] **12f. Payouts.** Teacher balances, record a payout, payouts made.
   - [ ] **12g. Categories.** Approve, rename, reorder, merge or delete.

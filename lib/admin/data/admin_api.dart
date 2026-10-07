@@ -112,7 +112,168 @@ class AdminApi {
     });
   }
 
+  // --- Courses ---------------------------------------------------------------
+
+  /// Every course, newest first, including archived and taken-down ones, with
+  /// its teacher's name as `owner_name`.
+  ///
+  /// Read straight from the table: the "Admins can see every course" policy
+  /// (20261006000002) lets an admin session see all of them. The names come
+  /// from a second query because `courses.user_id` points at auth.users, not
+  /// profiles, so PostgREST cannot embed them.
+  Future<List<Map<String, dynamic>>> courses() async {
+    final rows = _rows(await supabase
+        .from('courses')
+        .select('id, title, price, category, user_id, enrollments, '
+            'created_at, archived_at, removed_at, removed_reason')
+        .order('created_at', ascending: false)
+        .limit(coursePageSize));
+    await _attachNames(rows, idKey: 'user_id', nameKey: 'owner_name');
+    return rows;
+  }
+
+  static const coursePageSize = 500;
+
+  /// Puts a taken-down course back.
+  Future<void> restoreCourse(String courseId, String reason) async {
+    await supabase.rpc('admin_restore_course', params: {
+      'p_course_id': courseId,
+      'p_reason': reason,
+    });
+  }
+
+  // --- Refunds ---------------------------------------------------------------
+
+  /// Paid sales of taken-down courses with no refund recorded yet.
+  Future<List<Map<String, dynamic>>> refundsOwed() async {
+    return _rows(await supabase.rpc('admin_refunds_owed'));
+  }
+
+  /// Records a refund already issued in the Paystack dashboard. The split is
+  /// computed by the database. Returns `{refund_id, amount_kobo,
+  /// teacher_clawback_kobo, platform_cost_kobo, enrollment_revoked}`.
+  Future<Map<String, dynamic>> recordRefund(
+      String transactionId, String paystackReference, String reason) async {
+    return _object(await supabase.rpc('admin_record_refund', params: {
+      'p_transaction_id': transactionId,
+      'p_paystack_reference': paystackReference,
+      'p_reason': reason,
+    }));
+  }
+
+  Future<List<Map<String, dynamic>>> refunds() async {
+    return _rows(await supabase.rpc('admin_list_refunds', params: {
+      'p_limit': 200,
+    }));
+  }
+
+  // --- Payouts ---------------------------------------------------------------
+
+  /// Every teacher with a sale or a payout, most payable first, with the bank
+  /// account a transfer goes to.
+  Future<List<Map<String, dynamic>>> teacherBalances() async {
+    return _rows(await supabase.rpc('admin_teacher_balances'));
+  }
+
+  /// Records a transfer already made. Returns `{payout_id, amount_kobo,
+  /// available_after_kobo}`.
+  Future<Map<String, dynamic>> recordPayout({
+    required String teacherId,
+    required int amountKobo,
+    required String transferReference,
+    String? note,
+  }) async {
+    return _object(await supabase.rpc('admin_record_payout', params: {
+      'p_teacher_id': teacherId,
+      'p_amount_kobo': amountKobo,
+      'p_transfer_reference': transferReference,
+      'p_note': note,
+    }));
+  }
+
+  Future<List<Map<String, dynamic>>> payouts() async {
+    return _rows(await supabase.rpc('admin_list_payouts', params: {
+      'p_limit': 200,
+    }));
+  }
+
+  // --- Categories ------------------------------------------------------------
+
+  /// Pending suggestions first, then the approved list in display order.
+  Future<List<Map<String, dynamic>>> categories() async {
+    return _rows(await supabase.rpc('admin_list_categories'));
+  }
+
+  Future<void> setCategoryActive(String id, bool active, {String? reason}) async {
+    await supabase.rpc('admin_set_category_active', params: {
+      'p_category_id': id,
+      'p_active': active,
+      'p_reason': reason,
+    });
+  }
+
+  /// Renames and/or reorders. A null field is left as it is.
+  Future<void> updateCategory(String id,
+      {String? name, int? position, String? reason}) async {
+    await supabase.rpc('admin_update_category', params: {
+      'p_category_id': id,
+      'p_name': name,
+      'p_position': position,
+      'p_reason': reason,
+    });
+  }
+
+  /// Deletes a category, moving its courses to [moveTo] first. Returns
+  /// `{courses_moved}`.
+  Future<Map<String, dynamic>> deleteCategory(String id,
+      {String? moveTo, String? reason}) async {
+    return _object(await supabase.rpc('admin_delete_category', params: {
+      'p_category_id': id,
+      'p_move_to': moveTo,
+      'p_reason': reason,
+    }));
+  }
+
+  // --- Audit log -------------------------------------------------------------
+
+  /// Admin actions, newest first, with the acting admin's name as
+  /// `admin_name`. Read through "Admins can read the audit log"
+  /// (20261006000001).
+  Future<List<Map<String, dynamic>>> auditLog() async {
+    final rows = _rows(await supabase
+        .from('admin_actions')
+        .select('id, admin_id, action, target_type, target_id, reason, '
+            'details, created_at')
+        .order('created_at', ascending: false)
+        .limit(auditPageSize));
+    await _attachNames(rows, idKey: 'admin_id', nameKey: 'admin_name');
+    return rows;
+  }
+
+  static const auditPageSize = 300;
+
   // ---------------------------------------------------------------------------
+
+  /// Adds `profiles.name` to each row under [nameKey], looked up by the user
+  /// id in [idKey]. Profiles are readable by any signed-in user.
+  static Future<void> _attachNames(List<Map<String, dynamic>> rows,
+      {required String idKey, required String nameKey}) async {
+    final ids = {
+      for (final row in rows)
+        if (row[idKey] is String) row[idKey] as String,
+    };
+    if (ids.isEmpty) return;
+    final profiles = await supabase
+        .from('profiles')
+        .select('id, name')
+        .inFilter('id', ids.toList());
+    final names = {
+      for (final p in profiles) p['id'] as String: p['name'] as String?,
+    };
+    for (final row in rows) {
+      row[nameKey] = names[row[idKey]];
+    }
+  }
 
   static Map<String, dynamic> _object(Object? result) =>
       Map<String, dynamic>.from(result as Map);

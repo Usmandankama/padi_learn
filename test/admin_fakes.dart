@@ -108,6 +108,23 @@ class FakeAdminApi extends AdminApi {
     calls.add('liftSuspension:$userId:$reason');
     if (actionError != null) throw actionError!;
   }
+
+  // --- Courses ---------------------------------------------------------------
+
+  List<Map<String, dynamic>> courseRows = [];
+
+  @override
+  Future<List<Map<String, dynamic>>> courses() async {
+    calls.add('courses');
+    if (loadError != null) throw loadError!;
+    return [for (final c in courseRows) Map.of(c)];
+  }
+
+  @override
+  Future<void> restoreCourse(String courseId, String reason) async {
+    calls.add('restoreCourse:$courseId:$reason');
+    if (actionError != null) throw actionError!;
+  }
 }
 
 /// Pumps [screen] at laptop size, which is what the admin app is for.
