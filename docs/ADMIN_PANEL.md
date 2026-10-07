@@ -333,8 +333,33 @@ a `DEVLOG.md` entry.
     `flutter run -d web-server -t lib/admin/main.dart` on port 5180.
 
   Needs TOTP enabled under Authentication → Multi-Factor in the dashboard.
-- [ ] **12. Screens.** Overview, reports queue, courses, users, refunds owed,
-  teacher balances and payouts, categories, audit log.
+- [ ] **12. Screens.** Built one at a time, in the same priority order as the
+  database work. Each is checked against the live project before the next.
+  - [x] **12a. Overview**, plus the shared pieces every screen uses: the RPC
+    wrapper with readable errors, NGN-to-the-kobo formatting, cards, and the
+    load/error/retry frame. Waiting items link to their screens.
+    *Built 2026-10-07:*
+    - **What is shared.** `data/admin_api.dart` holds every call and turns
+      errors into words: 42501 means "sign in again".
+      `widgets/format.dart` has `formatKobo` (NGN 5,177.67) and
+      `formatWhen`. `widgets/panel.dart` has `AdminCard`, `StatRow` and
+      `AdminLoader`. `shell/sections.dart` holds the section enum that
+      screens link by.
+    - **The test.** `test/admin_overview_test.dart` renders the screen at
+      laptop size from the document the live project returned, checks every
+      kobo figure, checks a waiting item opens its screen, and checks a
+      refused call explains itself and retries. It caught two bugs in
+      `AdminLoader.reload()` before anyone saw them.
+  - [ ] **12b. Reports queue.** Act on, dismiss or reopen a report; delete a
+    comment; take a course down from its report.
+  - [ ] **12c. Users.** Search, the detail page, correct a role, suspend or
+    lift a suspension.
+  - [ ] **12d. Courses.** Every course including archived and taken-down
+    ones; take down or restore.
+  - [ ] **12e. Refunds.** What is owed, record a refund, refunds recorded.
+  - [ ] **12f. Payouts.** Teacher balances, record a payout, payouts made.
+  - [ ] **12g. Categories.** Approve, rename, reorder, merge or delete.
+  - [ ] **12h. Audit log.** Every admin action, newest first.
 - [ ] **13. Show the back office's effects in the main app.**
   - Takedowns: the teacher's dashboard and the student's library should say
     a course was removed and why, instead of looking normal until a video

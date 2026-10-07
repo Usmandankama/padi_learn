@@ -12,6 +12,46 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-10-07 — The admin overview, and the test that has to stand in for signing in
+
+**Admin panel item 12a.** The overview screen shows, from one
+`admin_overview()` call:
+
+- what is waiting: reports, category suggestions, refunds owed, teachers to
+  pay;
+- how the money stands, to the kobo;
+- accounts, catalogue and learning.
+
+Each waiting item and the headline figures link to the screen that deals with
+them. With it came the pieces every later screen reuses:
+
+- `AdminApi`, the one place calls are made, which turns the database's error
+  codes into words;
+- `formatKobo`;
+- `AdminCard`, `StatRow`, and `AdminLoader`, which handles loading, error and
+  retry;
+- the `AdminSection` enum, so screens link by name, not by rail index.
+
+**Why a widget test rather than a look.** Seeing the screen with real data
+needs the admin password and an authenticator, so neither the preview pane
+nor CI can sign in. `test/admin_overview_test.dart` renders the screen at
+laptop size from the exact document the live project returned today. It
+checks the kobo figures (5,177.67 gross, 750.00 commission, 4,250.00 owed),
+that a waiting item opens its screen, and that a refused call says why and
+retries.
+
+**It found two bugs before anyone saw them, both in `AdminLoader.reload()`.**
+
+- `setState(() => _future = load())` returns the Future from the closure,
+  which Flutter asserts against, so Refresh and Try again would have thrown.
+- A load that fails fast completes before the rebuild subscribes, so the
+  error was reported as uncaught even though the screen showed it.
+  `..ignore()` marks it handled, and the FutureBuilder still receives it.
+
+The whole suite passes (56 tests).
+
+---
+
 ## 2026-10-07 — The admin app: a second entry point that stops at the code prompt
 
 **Admin panel item 11, verified end to end.** hello@padilearn.com signed in,
