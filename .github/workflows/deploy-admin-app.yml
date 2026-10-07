@@ -1,0 +1,93 @@
+# Builds the admin app and uploads it to Cloudflare Pages
+# (docs/ADMIN_PANEL.md, item 14).
+#
+# A second Flutter entry point (lib/admin/main.dart) in the same codebase,
+# deployed to its own Pages project (`padilearn-admin`, admin.padilearn.com).
+# Separate from deploy-web-app.yml on purpose: its own concurrency group, so a
+# failing admin deploy never holds up the student and teacher app, and the
+# other way round.
+#
+# Needs the one-time setup in ADMIN_PANEL.md first: the Pages project, its
+# custom domain, and the Cloudflare Access policy in front of it. Without the
+# project, the deploy step fails; without Access, the sign-in page is public
+# (the panel itself still refuses anyone who is not an admin with a second
+# factor, but nobody else should reach the form at all).
+name: Deploy admin app
+
+on:
+  push:
+    branches: [main]
+    # The admin app shares lib/ with the main app, so any of it can change the
+    # bundle.
+    paths:
+      - 'lib/**'
+      - 'web/**'
+      - 'assets/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - '.github/workflows/deploy-admin-app.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-admin-app
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      # Not a secret; see deploy-web-app.yml.
+      CLOUDFLARE_ACCOUNT_ID: 5ebc0180c2d0adcfc9bb31785b3f1107
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.38.3
+          channel: stable
+          cache: true
+
+      # Same reconstruction as deploy-web-app.yml: the config is git-ignored.
+      # The admin app reads only the URL and publishable key; every admin
+      # action is authorised by the database, never by anything shipped here.
+      - name: Write supabase_config.dart
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+          GOOGLE_IOS_CLIENT_ID: ${{ secrets.GOOGLE_IOS_CLIENT_ID }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "::error::Repository secrets SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY are required."
+            exit 1
+          fi
+          cat > lib/config/supabase_config.dart <<EOF
+          // Generated in CI from repository secrets. Never committed.
+          class SupabaseConfig {
+            SupabaseConfig._();
+
+            static const String url = '${SUPABASE_URL}';
+            static const String publishableKey = '${SUPABASE_PUBLISHABLE_KEY}';
+            static const String googleWebClientId = '${GOOGLE_WEB_CLIENT_ID}';
+            static const String googleIosClientId = '${GOOGLE_IOS_CLIENT_ID}';
+          }
+          EOF
+
+      - run: flutter pub get
+
+      - run: flutter analyze --no-fatal-infos
+
+      # The admin screens are only tested, never signed into, in CI.
+      - run: flutter test
+
+      # Its own output folder, so it can never be mistaken for the main app's
+      # build/web. -o wants an absolute path.
+      - run: flutter build web --release -t lib/admin/main.dart -o "$GITHUB_WORKSPACE/build/admin-web"
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy build/admin-web --project-name padilearn-admin --branch main

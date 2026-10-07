@@ -33,6 +33,7 @@ class TeacherCourseCard extends StatelessWidget {
     final ratingAvg = (course['rating_avg'] as num?)?.toDouble() ?? 0;
     final ratingCount = (course['rating_count'] as num?)?.toInt() ?? 0;
     final archived = course['archived_at'] != null;
+    final removed = course['removed_at'] != null;
 
     return GestureDetector(
       onTap: onTap,
@@ -72,9 +73,9 @@ class TeacherCourseCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (archived) ...[
+                      if (archived || removed) ...[
                         SizedBox(width: 6.w),
-                        const CourseStatusChip(archived: true),
+                        CourseStatusChip(archived: archived, removed: removed),
                       ],
                     ],
                   ),
@@ -143,16 +144,28 @@ class TeacherCourseCard extends StatelessWidget {
 }
 
 /// Small pill showing whether a course is live or archived.
+/// Live, archived (the teacher's own switch) or taken down (PadiLearn's, see
+/// docs/ADMIN_PANEL.md item 2). Taken down wins: it is the one the teacher
+/// cannot undo, so it is the one they most need to see.
 class CourseStatusChip extends StatelessWidget {
   final bool archived;
-  const CourseStatusChip({super.key, required this.archived});
+  final bool removed;
+  const CourseStatusChip({
+    super.key,
+    required this.archived,
+    this.removed = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     // Subscribes to theme changes; without this the screen keeps
     // painting the previous theme's colours when the mode flips.
     AppColors.watch(context);
-    final color = archived ? AppColors.palette.inkSoft : AppColors.primaryColor;
+    final color = removed
+        ? Theme.of(context).colorScheme.error
+        : archived
+            ? AppColors.palette.inkSoft
+            : AppColors.primaryColor;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
       decoration: BoxDecoration(
@@ -160,7 +173,11 @@ class CourseStatusChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(20.r),
       ),
       child: Text(
-        archived ? 'Archived' : 'Live',
+        removed
+            ? 'Taken down'
+            : archived
+                ? 'Archived'
+                : 'Live',
         style: GoogleFonts.poppins(
           fontSize: 9.5.sp,
           fontWeight: FontWeight.w700,

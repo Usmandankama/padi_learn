@@ -20,8 +20,27 @@ import 'package:padi_learn/screens/forgot_password/reset_password_screen.dart';
 import 'package:padi_learn/screens/payment/payment_callback_screen.dart';
 import 'package:padi_learn/services/supabase.dart';
 
+/// Whether *this* tab is the one that followed the emailed recovery link.
+///
+/// Only meaningful on web, and it has to be read before [Supabase.initialize],
+/// which exchanges the `?code=` and then clears it from the address bar.
+///
+/// The session lives in local storage and `onAuthStateChange` broadcasts to
+/// every open tab, so a tab the user already had open hears `passwordRecovery`
+/// too. Without this flag that tab shows the password form while the tab that
+/// actually opened the link carries on into the app — the form ends up in the
+/// wrong window.
+bool _openedRecoveryLink = false;
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Read before initialize, which consumes the code. `?code=` is the PKCE
+  // flow; the fragment check covers the implicit one.
+  _openedRecoveryLink = kIsWeb &&
+      (Uri.base.queryParameters.containsKey('code') ||
+          Uri.base.fragment.contains('type=recovery'));
+
   await Supabase.initialize(
     url: SupabaseConfig.url,
     publishableKey: SupabaseConfig.publishableKey,
@@ -100,6 +119,9 @@ class _MyAppState extends State<MyApp> {
           (scope) => scope.setUser(uid == null ? null : SentryUser(id: uid)));
 
       if (state.event != AuthChangeEvent.passwordRecovery) return;
+      // Every open tab hears this event. Only the one that followed the link
+      // should offer the form; the others would steal it from under the user.
+      if (kIsWeb && !_openedRecoveryLink) return;
       if (Get.currentRoute.contains('ResetPasswordScreen')) return;
       Get.to(() => const ResetPasswordScreen());
     });

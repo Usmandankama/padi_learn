@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:padi_learn/services/auth_service.dart';
 import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/screens/components/primary_button.dart';
+import 'package:padi_learn/screens/components/suspension_frame.dart';
 import 'package:padi_learn/screens/home/components/bottom_nav_bar.dart';
 import 'package:padi_learn/screens/marketplace/marketplace_screen.dart';
 import 'package:padi_learn/screens/student/student_dashboard.dart';
@@ -259,7 +260,12 @@ class _HomeShellState extends State<HomeShell> {
     // rebuilt its realtime subscriptions (the teacher's course stream, the
     // activity feed) and threw away scroll position and search text. The tabs
     // now stay alive behind the one on screen.
-    return IndexedStack(index: _selectedIndex, children: _screens);
+    //
+    // Inside a SuspensionFrame, which explains a suspension above every tab
+    // and is invisible otherwise.
+    return SuspensionFrame(
+      child: IndexedStack(index: _selectedIndex, children: _screens),
+    );
   }
 
   Widget _buildOffline() {

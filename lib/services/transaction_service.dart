@@ -56,6 +56,58 @@ class Sale {
   double get earning => teacherEarningKobo / 100;
 }
 
+/// The signed-in teacher's balance, from `my_teacher_balance()`.
+///
+/// The same definition the admin panel pays from (`teacher_balance_rows`), so
+/// unlike summing [Sale]s it knows about refunds taken back and payouts made.
+/// Amounts in kobo; the getters convert to naira for display.
+class TeacherBalance {
+  final int salesCount;
+  final int earnedKobo;
+  final int clawbackKobo;
+  final int paidOutKobo;
+  final int pendingKobo;
+  final int availableKobo;
+
+  /// Payouts are held while the account is suspended.
+  final bool payoutsHeld;
+
+  const TeacherBalance({
+    required this.salesCount,
+    required this.earnedKobo,
+    required this.clawbackKobo,
+    required this.paidOutKobo,
+    required this.pendingKobo,
+    required this.availableKobo,
+    required this.payoutsHeld,
+  });
+
+  factory TeacherBalance.fromJson(Map<String, dynamic> json) {
+    int kobo(String key) => (json[key] as num?)?.toInt() ?? 0;
+    return TeacherBalance(
+      salesCount: kobo('sales_count'),
+      earnedKobo: kobo('earned_kobo'),
+      clawbackKobo: kobo('clawback_kobo'),
+      paidOutKobo: kobo('paid_out_kobo'),
+      pendingKobo: kobo('pending_kobo'),
+      availableKobo: kobo('available_kobo'),
+      payoutsHeld: json['payouts_held'] == true,
+    );
+  }
+
+  /// Everything earned, less what refunds took back, in naira.
+  double get earned => (earnedKobo - clawbackKobo) / 100;
+
+  double get paidOut => paidOutKobo / 100;
+
+  /// Earned, but still inside the 7-day hold.
+  double get clearing => pendingKobo / 100;
+
+  /// Ready to be paid out now. Never shown below zero: a negative balance is
+  /// recovered from later sales, not owed back.
+  double get payable => availableKobo > 0 ? availableKobo / 100 : 0;
+}
+
 /// Reads the payment ledger.
 ///
 /// The table is append-only from the client: RLS lets a buyer see their own
@@ -99,4 +151,10 @@ class TransactionService {
   /// Total naira owed to the teacher across [sales].
   static double totalEarnings(List<Sale> sales) =>
       sales.fold<double>(0, (sum, sale) => sum + sale.earning);
+
+  /// The signed-in teacher's balance, refunds and payouts included.
+  static Future<TeacherBalance> myBalance() async {
+    final result = await supabase.rpc('my_teacher_balance');
+    return TeacherBalance.fromJson(Map<String, dynamic>.from(result as Map));
+  }
 }

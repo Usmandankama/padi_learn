@@ -15,7 +15,12 @@
     "render:teacher-call-square": "remotion render TeacherCallSquare out/padilearn-teachers-1x1.mp4",
     "render:flyer": "remotion still TeacherFlyer out/padilearn-teachers-flyer.png",
     "render:flyer-light": "remotion still TeacherFlyerLight out/padilearn-teachers-flyer-light.png",
-    "render:announcement": "npm run render:teacher-call && npm run render:teacher-call-square && npm run render:flyer && npm run render:flyer-light"
+    "render:announcement": "npm run render:teacher-call && npm run render:teacher-call-square && npm run render:flyer && npm run render:flyer-light",
+    "studio:showreel": "remotion studio src/showreel/index.ts --public-dir ../.assets",
+    "render:showreel-16x9": "remotion render src/showreel/index.ts ShowreelLandscape ../.assets/out/padilearn-showreel-16x9.mp4 --public-dir ../.assets --image-format=png --pixel-format=yuv420p --color-space=bt709",
+    "render:showreel-1x1": "remotion render src/showreel/index.ts ShowreelSquare ../.assets/out/padilearn-showreel-1x1.mp4 --public-dir ../.assets --image-format=png --pixel-format=yuv420p --color-space=bt709",
+    "render:showreel-9x16": "remotion render src/showreel/index.ts ShowreelVertical ../.assets/out/padilearn-showreel-9x16.mp4 --public-dir ../.assets --image-format=png --pixel-format=yuv420p --color-space=bt709",
+    "render:showreel": "npm run render:showreel-16x9 && npm run render:showreel-1x1 && npm run render:showreel-9x16"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.0",

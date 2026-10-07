@@ -63,9 +63,11 @@ class _TeacherMyCoursesPageState extends State<TeacherMyCoursesPage> {
     final query = _search.text.trim().toLowerCase();
     return courses.where((course) {
       final archived = course['archived_at'] != null;
+      // A taken-down course is not live, whatever its archive switch says.
+      final removed = course['removed_at'] != null;
       switch (_filter) {
         case _CourseFilter.live:
-          if (archived) return false;
+          if (archived || removed) return false;
           break;
         case _CourseFilter.archived:
           if (!archived) return false;

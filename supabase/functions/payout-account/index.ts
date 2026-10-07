@@ -86,6 +86,27 @@ Deno.serve(async (req) => {
       return json({ error: "Unknown action" }, 400);
     }
 
+    // A suspended teacher's payouts are held, and changing where the money
+    // goes mid-suspension is exactly what must not happen. The service role
+    // sees past the RLS rule that blocks the same thing in the app.
+    if (action === "save") {
+      const { data: suspension, error: suspensionErr } = await admin
+        .from("suspensions")
+        .select("user_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (suspensionErr) {
+        return json({ error: "Could not check your account." }, 500);
+      }
+      if (suspension) {
+        return json({
+          error:
+            "Your account is suspended, so bank details cannot be changed. " +
+            "Email hello@padilearn.com to appeal.",
+        }, 403);
+      }
+    }
+
     const bankCode = String(body?.bankCode ?? "").trim();
     const accountNumber = String(body?.accountNumber ?? "").trim();
 

@@ -73,3 +73,5 @@ video/out/
 
 # Release APKs staged for upload to R2 — binaries, never committed.
 /dist-apk/
+/video
+/.assets
