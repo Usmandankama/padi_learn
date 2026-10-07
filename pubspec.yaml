@@ -54,6 +54,10 @@ dependencies:
   crypto: ^3.0.7
   sentry_flutter: ^9.30.0
   url_launcher: ^6.3.2
+  # Admin app only (lib/admin): draws the authenticator QR code from the TOTP
+  # otpauth:// link. Supabase sends the code as SVG, which Flutter cannot
+  # draw without a package either; this one is smaller and pure Dart.
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:

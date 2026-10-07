@@ -308,8 +308,31 @@ a `DEVLOG.md` entry.
 
 ### Phase C: admin app
 
-- [ ] **11. Shell.** `lib/admin/main.dart`, email sign-in, TOTP enrol and
+- [x] **11. Shell.** `lib/admin/main.dart`, email sign-in, TOTP enrol and
   challenge, refuses to render anything until `is_admin()` is true.
+  *Verified 2026-10-07: hello@padilearn.com signed in, enrolled an
+  authenticator and passed the code. The database shows one verified TOTP
+  factor, no leftover unverified one, and a session with a `totp`
+  authentication method. Written 2026-10-07:*
+  - **The gate.** `admin_gate.dart` decides each step from the session
+    alone:
+    - no session: sign in;
+    - password only, no authenticator: set one up;
+    - password only, an authenticator: enter its code;
+    - code passed: call `is_admin()`, then show the panel or "not an admin".
+    It re-decides on sign-in, sign-out and verification, and a newer decision
+    beats one still in flight.
+  - **Setup.** The enrol screen clears any abandoned, unverified factor
+    first. It shows the QR code (via `qr_flutter`, the only new dependency)
+    and the key as text.
+  - **Lost authenticator.** There is deliberately no self-service reset: the
+    factor is removed in the Supabase dashboard.
+  - **The shell.** Navigation for every section, with the signed-in email and
+    sign-out. Overview lists what is waiting, which proves the whole chain.
+  - **Running it locally.** The `admin` entry in `.claude/launch.json` runs
+    `flutter run -d web-server -t lib/admin/main.dart` on port 5180.
+
+  Needs TOTP enabled under Authentication → Multi-Factor in the dashboard.
 - [ ] **12. Screens.** Overview, reports queue, courses, users, refunds owed,
   teacher balances and payouts, categories, audit log.
 - [ ] **13. Show the back office's effects in the main app.**

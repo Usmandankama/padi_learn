@@ -12,6 +12,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "website", "run", "preview", "--", "--port", "4329"],
       "port": 4329
+    },
+    {
+      "name": "admin",
+      "runtimeExecutable": "flutter",
+      "runtimeArgs": ["run", "-d", "web-server", "-t", "lib/admin/main.dart", "--web-hostname", "localhost", "--web-port", "5180"],
+      "port": 5180
     }
   ]
 }

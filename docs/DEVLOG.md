@@ -12,6 +12,59 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-10-07 — The admin app: a second entry point that stops at the code prompt
+
+**Admin panel item 11, verified end to end.** hello@padilearn.com signed in,
+enrolled an authenticator and passed the code. The database confirms one
+verified TOTP factor, no leftover unverified one, and a session carrying a
+`totp` authentication method. `lib/admin/main.dart` is a second entry point
+into the same codebase:
+
+```bash
+flutter run -d chrome -t lib/admin/main.dart
+```
+
+It shares the Supabase client, palette and models, and nothing outside
+`lib/admin` imports it, so the student app's bundle never contains an admin
+screen.
+
+**The gate is the security model, drawn.** `admin_gate.dart` decides each
+screen from the session alone:
+
+- **No session:** sign in.
+- **Password only, no authenticator:** set one up.
+- **Password only, with an authenticator:** enter its code.
+- **Code passed:** ask `is_admin()`, then show the panel or "not an admin".
+
+It re-decides on sign-in, sign-out and verification. A generation counter
+means a slow `is_admin()` cannot land after a sign-out and put the panel back
+on screen. None of this is the protection, which is in the database. The
+gate only keeps the app from drawing what the database would refuse.
+
+**Setting up the authenticator.** The enrol screen first removes any
+unverified factor left by an abandoned setup, so a reload always gets a fresh
+code. Supabase sends the QR code as SVG, which Flutter cannot draw without a
+package. `qr_flutter` (pure Dart, small) draws it from the `otpauth://` link
+instead, and the key is shown as text for typing in. It is the only new
+dependency, and only `lib/admin` imports it.
+
+**No self-service reset for a lost authenticator.** A bypass on the code
+screen would turn the second factor into decoration. The factor is removed in
+the Supabase dashboard instead, and the screen says so.
+
+**Verified in the browser pane:** the `admin` launch configuration runs
+`flutter run -d web-server` on port 5180. The sign-in screen renders in both
+themes and at phone width, and it refuses empty fields locally. Signing in,
+enrolling, the challenge, "not an admin" and the shell were not exercised:
+that needs the real admin password and an authenticator app.
+`flutter analyze lib/admin` is clean.
+
+### Still outstanding
+
+- Nothing for the shell. The screens behind it are item 12.
+
+---
+
 ## 2026-10-06 — Suspended means signed in but unable to act
 
 **Admin panel item 10, live.** The plan was a
