@@ -193,12 +193,12 @@ a `DEVLOG.md` entry.
   *Applied 2026-10-06 (`20261006000004_refund_records.sql`). 16 role-simulated
   checks passed on the live schema in a rolled-back transaction; on the real
   test sale the split came out ₦5,177.67 / ₦4,250 / ₦927.67.*
-  Known gaps, not fixed here: the app's teacher earnings screen
-  (`transaction_service.dart`) sums `transactions` and will not show a
-  clawback until item 5's balance replaces it. Deleting a course with paid
-  students is blocked only in the app (`course_service.dart`), not by RLS, so
-  a crafted call could still do it and leave refunds owed against a course
-  that no longer exists.
+  Known gaps at the time, both since closed:
+  - The teacher earnings screen summed `transactions` and ignored clawbacks.
+    Fixed by item 13 (`my_teacher_balance()`).
+  - Deleting a course with students was blocked only in the app.
+    `20261007000002` now refuses it in the database for API callers, while
+    leaving account deletion's cascade alone.
 
 - [x] **5. Payouts ledger.** New `payouts` table: teacher, amount in kobo, a
   copy of the bank account it went to, a unique transfer reference, paid_at,
@@ -273,6 +273,13 @@ a `DEVLOG.md` entry.
     "Admins can see every course".
 
   None of it matters at this size. Fix it in one pass before traffic does.
+  *Done 2026-10-07 in `20261007000003` and `20261007000004`:*
+  - **Policies.** All 27 now use `(select auth.uid())`. The statements were
+    generated from the live definitions and checked: what each of the 7
+    accounts can see in 12 tables was identical before and after.
+  - **Indexes.** All 15 foreign keys are indexed, including
+    `suspensions.suspended_by`, which arrived later.
+  - **Left alone.** The multiple permissive policies, on purpose.
 
 ### Phase B: account suspension
 
@@ -471,8 +478,18 @@ a `DEVLOG.md` entry.
 
 ### Phase D: hosting
 
-- [ ] **14. Hosting.** *Prepared 2026-10-07; waiting on the dashboard steps
-  below, which need your Cloudflare account.*
+- [ ] **14. Hosting.** *Live 2026-10-07, except one lock:*
+  - **Live and locked.** `admin.padilearn.com` and `www.admin.padilearn.com`
+    serve the admin build and redirect to Cloudflare Access.
+  - **Auto-deploy works.** Both GitHub deploys succeeded on the PR #3 merge,
+    once the repository secrets existed. The web app's deploy had been
+    failing on missing secrets until then.
+  - **Still open.** `padilearn-admin.pages.dev`, and each deploy's preview
+    address, still serve the sign-in page without Access. Fix: Pages →
+    padilearn-admin → Settings → Enable access policy, then in that Access
+    application add the hostname again without the `*`.
+
+  *Prepared earlier the same day:*
   - **Release build.** `flutter build web --release -t lib/admin/main.dart
     -o <abs>/build/admin-web` builds clean. `main.dart.js` is 2.8 MB, and no
     file outside `lib/admin` imports it.
@@ -550,11 +567,21 @@ already lists these as not yet deployed.
 
 One caveat, found later the same day: the only sale in the ledger (paid
 2026-10-06, card, test mode) was charged ₦5,177.67 for a ₦5,000 course,
-which is exactly the September gross-up. The deployed `initialize-payment`
-charges the bare price, so that payment either went through Paystack's own
-"customer pays the fee" setting or was initialised by code that is not
-deployed (a local function run, for instance). Check the Paystack dashboard
-setting before the payments deploy, or the fee could be added twice.
+which is exactly the September gross-up. **Paystack's own "customer pays the
+fee" setting is on.** The web app that day was the hand-deployed build,
+calling the live `initialize-payment` (version 2, June), which asks Paystack
+for exactly 500,000 kobo. Paystack added the fee itself. The repo's
+`initialize-payment` also adds the fee, so deploying it with that setting on
+would charge students the fee twice (about ₦5,358 for a ₦5,000 course).
+
+Payments deploy, in this order:
+
+1. Paystack → Settings → Preferences → set "who pays the transaction fee"
+   to the business, since the code now adds the fee itself.
+2. Paystack → Settings → API Keys & Webhooks → webhook URL
+   `https://wnxuxplzoddadjpwfhxe.supabase.co/functions/v1/paystack-webhook`.
+3. Then deploy `initialize-payment`, `verify-payment` and `paystack-webhook`
+   (`--no-verify-jwt` on the webhook) together.
 
 Deploying the repo's `initialize-payment` alone would mix the two models
 (students charged the grossed-up total, checked by the old verify). So the

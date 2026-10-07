@@ -12,6 +12,43 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-10-07 — Closing the loose ends: course deletes, RLS speed, a new APK
+
+**A teacher can no longer delete a course that has students**
+(`20261007000002`). It was blocked only in the app, and `enrollments`
+cascades, so a hand-made API call could still erase every student's access.
+A trigger now refuses the delete with "Archive it instead". It applies only
+when the request's role is `authenticated`, so account deletion is not
+blocked: that goes through Supabase Auth's own connection, and a teacher with
+only free students must still be able to delete their account, which Play
+requires.
+
+The dry run caught a bug in the first version. On a connection that once
+carried a request, `request.jwt.claims` reads back `''` rather than null, and
+`''::jsonb` throws, so every delete on such a connection would have failed.
+`nullif(…, '')`, as `auth.jwt()` itself does, fixed it.
+
+**RLS evaluates `auth.uid()` once per statement** (`20261007000003`). All 27
+flagged policies now wrap it as `(select auth.uid())`. The `ALTER POLICY`
+statements were generated from the live `pg_policies` text rather than
+retyped. The check was behavioural: the number of rows each of the 7 accounts
+can see in 12 tables was identical before the change, after the dry run, and
+after the real apply. The 15 unindexed foreign keys are indexed too
+(`…003` and `…004`).
+
+**Android 1.0.1.** A new APK carries item 13 (real earnings, takedown
+notices, the suspension banner) to sideloaded phones. The steps are those in
+`LAUNCH_WEB.md`.
+
+**Payments deploy: blocked, now with a cause.** The one live sale was charged
+₦5,177.67 through the June `initialize-payment`, which asks Paystack for
+exactly ₦5,000. So Paystack's own "customer pays the fee" setting is on, and
+deploying the repo's version, which adds the fee itself, would charge it
+twice. The steps are in `ADMIN_PANEL.md`, "Live payment functions": switch
+the setting, add the webhook URL, then deploy the three functions together.
+
+---
+
 ## 2026-10-07 — The main app learns about the back office, and the panel gets a deploy
 
 **Admin panel item 13.** Until now, every decision the back office made was
