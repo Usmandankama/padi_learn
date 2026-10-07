@@ -16,14 +16,13 @@ class OverviewScreen extends StatefulWidget {
   const OverviewScreen({
     super.key,
     required this.onOpen,
-    this.load = AdminApi.overview,
+    this.api = const AdminApi(),
   });
 
   /// Jumps to another section of the panel.
   final void Function(AdminSection section) onOpen;
 
-  /// Where the overview comes from. Only a test passes anything else.
-  final Future<Map<String, dynamic>> Function() load;
+  final AdminApi api;
 
   @override
   State<OverviewScreen> createState() => _OverviewScreenState();
@@ -36,7 +35,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
   Widget build(BuildContext context) {
     return AdminLoader<Map<String, dynamic>>(
       key: _loader,
-      load: widget.load,
+      load: widget.api.overview,
       builder: (context, overview) => _Overview(
         overview: overview,
         onOpen: widget.onOpen,

@@ -4,6 +4,7 @@ import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/utils/colors.dart';
 
 import '../screens/overview_screen.dart';
+import '../screens/reports_screen.dart';
 import 'sections.dart';
 
 /// The panel's frame: navigation down the side, the signed-in admin and a way
@@ -27,6 +28,7 @@ class _AdminShellState extends State<AdminShell> {
   Widget _screen() {
     return switch (_section) {
       AdminSection.overview => OverviewScreen(onOpen: _open),
+      AdminSection.reports => const ReportsScreen(),
       _ => _ComingSoon(section: _section.label),
     };
   }

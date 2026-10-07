@@ -350,8 +350,22 @@ a `DEVLOG.md` entry.
       kobo figure, checks a waiting item opens its screen, and checks a
       refused call explains itself and retries. It caught two bugs in
       `AdminLoader.reload()` before anyone saw them.
-  - [ ] **12b. Reports queue.** Act on, dismiss or reopen a report; delete a
+  - [x] **12b. Reports queue.** Act on, dismiss or reopen a report; delete a
     comment; take a course down from its report.
+    *Built 2026-10-07:*
+    - **Layout.** Tabs for open, dealt with and dismissed. Each card shows
+      the reported text and, if it changed since, what it says now; who
+      reported it and who wrote it; how many open reports share the target;
+      and, once resolved, by whom and why.
+    - **Actions.** Every action asks for a reason in a dialog whose confirm
+      button stays disabled until one is typed, and the list reloads from the
+      database afterwards. Taking a course down says how many paid sales it
+      just made refundable.
+    - **What changed underneath.** `AdminApi` became an instance that every
+      screen takes, so tests pass `FakeAdminApi` (`test/admin_fakes.dart`).
+      Report reasons reuse the app's `ReportReason` labels.
+    - **Tests.** `test/admin_reports_test.dart` pins what each button sends,
+      and that backing out sends nothing.
   - [ ] **12c. Users.** Search, the detail page, correct a role, suspend or
     lift a suspension.
   - [ ] **12d. Courses.** Every course including archived and taken-down

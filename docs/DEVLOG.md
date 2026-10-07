@@ -12,6 +12,39 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-10-07 — The reports queue, where every button says what it will do
+
+**Admin panel item 12b.** `ReportsScreen` lists reports by status (open,
+dealt with, dismissed); open ones come oldest first. Each card shows the text
+as it was reported and, if it has changed since, as it reads now. It also
+names the reporter and the author, says how many open reports share the
+target, and, once resolved, records who resolved it and why.
+
+**The destructive actions explain themselves before they run.**
+
+- **Delete comment** says the text survives in the report and the audit log.
+- **Take course down** says students who paid lose playback and are owed
+  refunds. Its confirmation then reports how many paid sales it just made
+  refundable, and for how much.
+- **Mark dealt with**, **dismiss** and **reopen** each ask for a reason too.
+  The confirm button stays disabled until one is typed, because the database
+  would refuse the call without it.
+
+After any action the list is reloaded from the database rather than patched
+locally, because acting on content can close other reports as well.
+
+**`AdminApi` became an instance**, passed to every screen, so a test can pass
+`FakeAdminApi`, which answers from memory and records each call.
+`test/admin_reports_test.dart` pins what each button sends (function, id and
+the reason typed), and that backing out of the dialog sends nothing. Report
+reasons reuse the app's own `ReportReason` labels, so the admin and the
+reporter see the same words. The full suite passes (62 tests).
+
+There are no reports on the live project yet, so the fixtures follow the
+exact columns `admin_list_reports` returns.
+
+---
+
 ## 2026-10-07 — The admin overview, and the test that has to stand in for signing in
 
 **Admin panel item 12a.** The overview screen shows, from one

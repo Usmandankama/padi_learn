@@ -4,14 +4,14 @@
 // broken layout or a wrong figure: money is shown to the kobo, a waiting item
 // links to the screen that deals with it, and a refused call explains itself.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:padi_learn/admin/screens/overview_screen.dart';
 import 'package:padi_learn/admin/shell/sections.dart';
 import 'package:padi_learn/admin/widgets/format.dart';
-import 'package:padi_learn/utils/colors.dart';
+
+import 'admin_fakes.dart';
 
 /// admin_overview() on the live project, 2026-10-07: one test-mode sale of a
 /// NGN 5,000 course, still inside the 7-day hold, and one category suggestion.
@@ -73,25 +73,6 @@ Map<String, dynamic> liveOverview() => {
       },
     };
 
-Future<void> pumpOverview(
-  WidgetTester tester, {
-  required Future<Map<String, dynamic>> Function() load,
-  void Function(AdminSection)? onOpen,
-}) async {
-  // A laptop, which is what the admin app is for.
-  tester.view.physicalSize = const Size(1440, 1000);
-  tester.view.devicePixelRatio = 1;
-  addTearDown(tester.view.reset);
-
-  await tester.pumpWidget(MaterialApp(
-    theme: ThemeData(extensions: const [AppPalette.light]),
-    home: Scaffold(
-      body: OverviewScreen(onOpen: onOpen ?? (_) {}, load: load),
-    ),
-  ));
-  await tester.pumpAndSettle();
-}
-
 void main() {
   group('formatKobo', () {
     test('shows the ledger to the kobo', () {
@@ -109,7 +90,8 @@ void main() {
   group('overview', () {
     testWidgets('renders the live figures without overflowing',
         (tester) async {
-      await pumpOverview(tester, load: () async => liveOverview());
+      final api = FakeAdminApi(overviewDoc: liveOverview);
+      await pumpAdminScreen(tester, OverviewScreen(onOpen: (_) {}, api: api));
 
       expect(tester.takeException(), isNull);
       expect(find.text('Waiting for you'), findsOneWidget);
@@ -124,10 +106,10 @@ void main() {
     testWidgets('a waiting item opens the screen that deals with it',
         (tester) async {
       AdminSection? opened;
-      await pumpOverview(
+      final api = FakeAdminApi(overviewDoc: liveOverview);
+      await pumpAdminScreen(
         tester,
-        load: () async => liveOverview(),
-        onOpen: (section) => opened = section,
+        OverviewScreen(onOpen: (section) => opened = section, api: api),
       );
 
       await tester.tap(find.text('Category suggestions'));
@@ -135,19 +117,17 @@ void main() {
     });
 
     testWidgets('a refused call says why, and can be retried', (tester) async {
-      var calls = 0;
-      await pumpOverview(tester, load: () async {
-        calls++;
-        throw const PostgrestException(
+      final api = FakeAdminApi(overviewDoc: liveOverview)
+        ..loadError = const PostgrestException(
           message: 'Admin access required',
           code: '42501',
         );
-      });
+      await pumpAdminScreen(tester, OverviewScreen(onOpen: (_) {}, api: api));
 
       expect(find.textContaining('session may have lapsed'), findsOneWidget);
       await tester.tap(find.text('Try again'));
       await tester.pumpAndSettle();
-      expect(calls, 2);
+      expect(api.count('overview'), 2);
     });
   });
 }
