@@ -12,6 +12,48 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-10-07 — The main app learns about the back office, and the panel gets a deploy
+
+**Admin panel item 13.** Until now, every decision the back office made was
+invisible to the person it affected:
+
+- **Earnings ignored refunds and payouts.** The earnings card summed the
+  ledger, which knows nothing about either. It now reads
+  `my_teacher_balance()` (migration `20261007000001`, dry-run and then
+  verified live). That is the same balance definition the admin panel pays
+  from, and the card says what was paid out, what is ready, and what is still
+  clearing the 7-day hold. One trap in writing it: `teacher_balance_rows(null)`
+  returns *every* teacher, so the function refuses a call with no signed-in
+  user rather than pass null through. The dry run checked exactly that.
+- **A taken-down course looked live to its teacher.** It now has a "Taken
+  down" chip, which wins over "archived", and a notice on the course page with
+  the reason and hello@padilearn.com. Students already got a clear message
+  from `get-course-video` when they pressed play.
+- **A suspended user met bare RLS errors.** `SuspensionFrame` wraps the home
+  shell's tabs and shows the reason and the appeal address. It reads the
+  user's own `suspensions` row and shows nothing when there is none, or when
+  offline: a banner that might be wrong is worse than none.
+- **A suspended teacher's delete reported success.** RLS filters a refused
+  delete rather than raising, so `CourseService.delete` now asks for the
+  deleted row back and fails clearly when it gets none. It also leaves the
+  media alone in that case.
+
+**Admin panel item 14, prepared.** The admin app builds in release mode,
+which is a different compiler from the debug server it had been tested on. No
+file outside `lib/admin` imports it, so the public bundle cannot contain it.
+`deploy-admin-app.yml` deploys it to its own Pages project and is separate
+from the main app's workflow, so neither can block the other. It runs the
+tests before building, because nothing in CI can sign in as an admin.
+
+The remaining steps need the Cloudflare account and are listed in
+`ADMIN_PANEL.md`: the Pages project, the custom domain, and an Access policy.
+The policy must cover `padilearn-admin.pages.dev` as well as
+`admin.padilearn.com`, or the pages.dev address walks around it.
+
+The suite stands at 97 tests.
+
+---
+
 ## 2026-10-07 — The rest of the admin panel: courses, refunds, payouts, categories, audit log
 
 **Admin panel items 12d–12h, which completes item 12.** Each screen has its

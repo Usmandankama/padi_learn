@@ -471,7 +471,38 @@ a `DEVLOG.md` entry.
 
 ### Phase D: hosting
 
-- [ ] **14.** Pages project `padilearn-admin`, custom domain
+- [ ] **14. Hosting.** *Prepared 2026-10-07; waiting on the dashboard steps
+  below, which need your Cloudflare account.*
+  - **Release build.** `flutter build web --release -t lib/admin/main.dart
+    -o <abs>/build/admin-web` builds clean. `main.dart.js` is 2.8 MB, and no
+    file outside `lib/admin` imports it.
+  - **CI.** `.github/workflows/deploy-admin-app.yml` runs analyze, the tests,
+    the admin build and `wrangler pages deploy` on every push to `main` that
+    touches the app. It is separate from `deploy-web-app.yml`, so neither
+    deploy can block the other.
+  - **Supabase.** Nothing to add to the redirect allowlist: the admin app
+    signs in with a password and an authenticator, and sends no email links.
+
+  One-time setup, in this order:
+
+  1. Create the Pages project: `npx wrangler@3 pages project create
+     padilearn-admin --production-branch main`, or Workers & Pages → Create →
+     Pages → Direct Upload.
+  2. Pages → `padilearn-admin` → Custom domains → `admin.padilearn.com`. The
+     zone is already on Cloudflare, so DNS and the certificate are automatic.
+  3. Zero Trust → Access → Applications → Add → Self-hosted:
+     - Domains: `admin.padilearn.com` **and** `padilearn-admin.pages.dev`.
+       The pages.dev address bypasses a policy that only covers the custom
+       domain.
+     - Policy: Allow; Include: Emails, `hello@padilearn.com`.
+     - Login method: One-time PIN.
+  4. First deploy: merge `feat/admin-panel` into `main`, or run the workflow
+     by hand (Actions → Deploy admin app → Run workflow).
+  5. Check it: a private window on admin.padilearn.com asks for Cloudflare's
+     email PIN before the sign-in page appears, and padilearn-admin.pages.dev
+     does the same.
+
+  Original plan: Pages project `padilearn-admin`, custom domain
   `admin.padilearn.com`, Cloudflare Access policy, a second job in
   `.github/workflows/deploy-web-app.yml` building with
   `-t lib/admin/main.dart`, and `https://admin.padilearn.com` in the Supabase
