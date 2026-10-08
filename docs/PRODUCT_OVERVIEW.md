@@ -1,8 +1,10 @@
 # PadiLearn — product overview and handoff
 
 Context for anyone picking up work on PadiLearn without having lived through
-the decisions. Written 30 September 2026. Pair it with `DEVLOG.md` (why things
-are the way they are) and `LAUNCH_ANDROID.md` (what is left to do).
+the decisions. Written 30 September 2026, brought up to date 8 October. Pair
+it with `STATUS.md` (where things stand today), `DEVLOG.md` (why things are
+the way they are) and the launch checklists (`LAUNCH_WEB.md`,
+`LAUNCH_ANDROID.md`).
 
 ---
 
@@ -13,13 +15,14 @@ pre-recorded courses; students buy one-off access and watch on their phone.
 Not a subscription, not live tuition, not certification.
 
 Mobile-first by choice: the audience is on Android phones in Nigeria, on data
-they pay for. The website exists for legal pages and, soon, for buying.
+they pay for. The same Flutter app also runs on the web at app.padilearn.com,
+which is where paid courses can be bought; padilearn.com is the marketing site
+and legal pages.
 
-**Stage: pre-launch.** The app works end to end but has never been on a store.
-The catalogue holds 17 courses and 49 lessons, but against only 4 accounts
-(2 teachers, 2 students) and 11 enrolments — development data, not traction.
-Four transactions exist, all Paystack **test mode** from development accounts;
-no real sale has been made.
+**Stage: onboarding the first tutors.** The web app and a sideloaded Android
+APK are live; nothing is on a store yet. The catalogue is demo content from
+the house account, and no real sale has been made. Current numbers are in
+`STATUS.md`.
 
 ---
 
@@ -44,8 +47,13 @@ and TypeScript out of necessity, and **the two must agree exactly**, because
 `initialize-payment` charges the total while `grantEntitlement` rejects
 anything under it.
 
-Teacher payouts are not built. `payout_accounts` and the `transactions` ledger
-exist; moving money to teachers is manual and undesigned.
+**Teacher payouts are manual but designed.** A sale becomes payable 7 days
+after it is paid. A teacher with at least NGN 1,000 ready asks for a payout in
+the app. PadiLearn sends a bank transfer to their Paystack-verified account by
+hand and records it in the admin panel, which closes the request and notifies
+them. Refunds after a payout take the balance negative, recovered from later
+sales. The rules live in the database (`ADMIN_PANEL.md`, decision 5 and items
+5, 12f and 15).
 
 ---
 
@@ -74,8 +82,9 @@ considered and rejected — roughly 5x less revenue per sale, two separate
 implementations, a new commission model, and merchant eligibility from Nigeria
 that has never been confirmed.
 
-In-app paid checkout is switched off behind `kPaidCheckoutEnabled` in
-`lib/config/features.dart`. The closed beta ships free courses only.
+`kPaidCheckoutEnabled` in `lib/config/features.dart` is set per build: on
+for the web app and the APK handed out from padilearn.com, off for anything
+uploaded to Google Play. The Play build will offer free courses only.
 
 **A consequence that drives architecture:** the app may not advertise where to
 buy, so search results are the main discovery route for a paid course. Web
@@ -113,7 +122,15 @@ ruled out.
 
 ---
 
-## The web build (the piece being handed over)
+## The web build
+
+*Superseded, 8 October.* The web build shipped differently: the Flutter app
+itself is built for the web and deployed to app.padilearn.com
+(`LAUNCH_WEB.md`), with its own Paystack round trip and callback route. The
+Astro storefront below was not built. One point from it still stands:
+**indexable course pages** are the only compliant way for a paid course to be
+found from outside the app, and a Flutter web app is not indexable. The
+original plan is kept for that reason.
 
 Turn the existing Astro site into a storefront. It is an addition to
 `website/`, not a new codebase, and **it never learns to play video** — that
@@ -155,15 +172,13 @@ Gotchas that cost a day each if unknown:
 
 ## Open questions, not yet decided
 
-- **Company registration.** CAC private company limited by shares, sole
-  director. Optional for launch, but Paystack will likely require a registered
-  business for marketplace payouts.
 - **Paystack's marketplace structure.** PadiLearn collects money on behalf of
-  teachers, which Paystack treats differently from an ordinary merchant.
-  Subaccounts, split payments or Transfers — a compliance review is open and
-  will decide it.
-- **Teacher payouts.** No mechanism, no schedule, no reconciliation.
-- **Refunds.** `website/src/pages/terms.md` still has a placeholder here.
+  teachers, which Paystack treats differently from an ordinary merchant. A
+  company Paystack account exists (8 October) and is going through
+  compliance. Automating payouts (Transfers, or subaccounts and split
+  payments) waits on what that review says.
+- **Refunds outside takedowns.** The draft terms promise them; the admin
+  panel can only record takedown refunds so far. See `STATUS.md`.
 - **Video hosting.** When does Supabase Storage stop being viable, and what is
   the trigger to move.
 
@@ -171,17 +186,16 @@ Gotchas that cost a day each if unknown:
 
 ## What is blocking launch
 
-The bottleneck is a calendar, not the code. A Google personal developer account
-must run a **closed test with 12 or more testers opted in for 14 consecutive
-days** before it can apply for production. That clock has not started.
+Not the store any more. The web app and the sideloaded APK put PadiLearn in
+front of people without Play, which waits on a D-U-N-S number (organisation
+account) or a personal account and its **14-day closed test with 12 or more
+testers**. The release keystore exists and is backed up.
 
-It needs: a release keystore (does not exist yet), a Play account with identity
-verification, and one uploaded build. Nothing else shortens it, and most
-remaining work can happen during the 14-day wait.
+What blocks taking money is the company Paystack account's compliance review,
+then one deliberate deploy of the payment functions (`STATUS.md`).
 
-The quieter risk is not an empty catalogue — there are 17 courses and 49
-lessons. It is that **16 of those 17 belong to one development account**, so
-the shelf is self-authored rather than evidence that teachers will publish.
-The closed test is meant to answer whether they will, and seeded content
-cannot answer it. Recruiting teachers who are not you is the real constraint
-on whether those 14 days produce any signal.
+The real constraint is the catalogue. **Every course belongs to the house
+account**, and their lessons are short demo clips, so the shelf shows what
+PadiLearn looks like, not that teachers will publish on it. Recruiting tutors
+who are not you, and getting a first real course from them, is the next
+thing to prove.

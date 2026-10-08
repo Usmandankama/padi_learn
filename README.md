@@ -2,9 +2,9 @@
 
 PadiLearn is an educational marketplace app aimed at a Nigerian audience. Users sign up as **teachers** to publish video courses, or as **students** to browse, enrol in, and learn from them. Built with **Flutter** on the front end and **Supabase** (Auth, Postgres, Storage, Edge Functions) on the back end.
 
-> **Status: pre-launch.** The app works end to end but has never been on a store. The closed test required before Play production has not started. Paid checkout is switched off (see [Payments](#payments)), so the beta ships free courses only. Current data is development-scale: 4 accounts, 17 courses, 49 lessons, 11 enrolments, and four **test-mode** Paystack transactions — no real sale has been made.
+> **Status: onboarding the first tutors.** The web app ([app.padilearn.com](https://app.padilearn.com)) and a sideloaded Android APK are live; the app is not on a store yet. The catalogue is demo content from the house account, no real sale has been made, and live payments wait on the company Paystack account. Today's numbers and next steps are in [`docs/STATUS.md`](docs/STATUS.md).
 >
-> For the business model, the store-billing constraint and what is left to do, see [`docs/PRODUCT_OVERVIEW.md`](docs/PRODUCT_OVERVIEW.md) and [`docs/LAUNCH_ANDROID.md`](docs/LAUNCH_ANDROID.md). [`docs/DEVLOG.md`](docs/DEVLOG.md) records why things are the way they are.
+> For the business model and the store-billing constraint, see [`docs/PRODUCT_OVERVIEW.md`](docs/PRODUCT_OVERVIEW.md). The checklists are [`docs/LAUNCH_WEB.md`](docs/LAUNCH_WEB.md), [`docs/LAUNCH_ANDROID.md`](docs/LAUNCH_ANDROID.md) and [`docs/ADMIN_PANEL.md`](docs/ADMIN_PANEL.md). [`docs/DEVLOG.md`](docs/DEVLOG.md) records why things are the way they are.
 
 ---
 
@@ -27,12 +27,13 @@ PadiLearn is an educational marketplace app aimed at a Nigerian audience. Users 
 - Create and edit courses: upload video and thumbnail to Supabase Storage with progress, set title, description, price, category and lessons.
 - A live earnings estimate while setting a price, showing what the student pays and what the teacher keeps.
 - **Notifications** on new comments and enrolments, delivered by database triggers over realtime.
-- Payout account details (payouts themselves are not yet built).
+- Payouts: a verified bank account, a balance that counts the 7-day hold, refunds and payouts, payout requests from the app, and a history of what was sent. Transfers are sent by hand and recorded in the admin panel.
 
 ### Foundation
 - Role-based navigation; the home shell loads the right screen set.
 - **Row Level Security is the authorisation layer** — the app talks to Postgres directly with a publishable key, and anything that must not be client-decided lives in an Edge Function using the service role.
 - In-app account deletion, removing storage objects and the auth user.
+- A separate **admin app** (`lib/admin/main.dart`) at admin.padilearn.com, behind Cloudflare Access and a second factor: reports, users and suspensions, courses and takedowns, refunds, payouts, categories and an audit log. See `docs/ADMIN_PANEL.md`.
 - Sentry error reporting, active only when a DSN is passed at build time.
 
 ---
@@ -45,7 +46,7 @@ The **card fee is fronted to the student**: a teacher's price is what settles, w
 
 The gross-up exists in both `lib/utils/pricing.dart` and `supabase/functions/_shared/paystack.ts` because Dart cannot run in an Edge Function. **The two must agree exactly** — `initialize-payment` charges the total and `grantEntitlement` rejects anything under it. `test/pricing_test.dart` covers the maths.
 
-**In-app paid checkout is disabled** behind `kPaidCheckoutEnabled` in `lib/config/features.dart`. Google Play and Apple require store billing for digital content consumed in-app, and forbid pointing users to an outside checkout, so paid courses will be sold on the web instead. The reasoning is in `docs/PRODUCT_OVERVIEW.md`.
+**Where paid checkout is on** is decided by `kPaidCheckoutEnabled` in `lib/config/features.dart`, set per build: on for the web app and the APK handed out from padilearn.com, off for anything uploaded to Google Play. Google Play and Apple require store billing for digital content consumed in-app, and forbid pointing users to an outside checkout. The reasoning is in `docs/PRODUCT_OVERVIEW.md`.
 
 ---
 
@@ -121,7 +122,7 @@ lib/
 
 supabase/                     # migrations, edge functions, seed, email templates
 website/                      # Astro site for padilearn.com
-docs/                         # DEVLOG, LAUNCH_ANDROID, PRODUCT_OVERVIEW, COSTS
+docs/                         # STATUS, DEVLOG, LAUNCH_WEB, LAUNCH_ANDROID, ADMIN_PANEL, REGION_MOVE, PRODUCT_OVERVIEW
 ```
 
 ---

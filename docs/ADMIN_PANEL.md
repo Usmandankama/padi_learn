@@ -525,6 +525,33 @@ a `DEVLOG.md` entry.
   `-t lib/admin/main.dart`, and `https://admin.padilearn.com` in the Supabase
   redirect allowlist.
 
+### Phase E: after the panel
+
+- [x] **15. Payout requests.** *Applied 2026-10-08 (`20261008000001`),
+  dry-run first with 20 checks, all passing.* Until now a payout began only
+  on the admin's side, and a teacher's only way to ask was email.
+  - **Database.** `payout_requests`, no grants, read and written only
+    through functions. `request_payout()` asks for everything payable. It
+    refuses a suspended teacher, a missing or unverified bank account, a
+    second open request (also a unique index, so two taps cannot race), and
+    anything under `payout_minimum()`, which is NGN 1,000.
+    `cancel_payout_request()` and `my_payouts()` serve the teacher;
+    `my_payouts()` leaves out the admin's note on a payout.
+  - **Admin side.** `admin_teacher_balances()` carries the open request and
+    lists requesters first, oldest first. `admin_record_payout()` closes the
+    open request as paid, even for a partial amount, and notifies the
+    teacher. `admin_decline_payout_request()` needs a reason, which the
+    teacher is shown, and is logged as `payout_request.decline`. The
+    overview's "Waiting for you" counts open requests.
+  - **Notifications** gained a third type, `payout`. Older app builds show
+    it with the purchase icon, which is harmless.
+  - **Main app.** Profile → Payouts, and "Get paid" on the earnings card,
+    open `TeacherPayoutsScreen`. It shows the balance, the bank account, one
+    next step (request, cancel, add an account, or why not), and the
+    payouts sent.
+  - **Tests.** `test/teacher_payouts_test.dart`, plus request and decline
+    cases in `test/admin_payouts_test.dart`.
+
 ---
 
 ## Later: version 2
@@ -535,8 +562,10 @@ Blocked on decisions outside the panel.
 - **Automated teacher transfers**, once the marketplace review settles on
   subaccounts, split payments or Transfers.
 - **Issuing refunds from the panel** through Paystack's refund API, and
-  refunds outside takedowns (revoking the enrolment), once
-  `website/src/pages/terms.md` has a refund policy. Item 4 only records refunds
+  refunds outside takedowns (revoking the enrolment). *More pressing since
+  2026-10-08:* the draft terms promise refunds for double charges and for
+  courses clearly not as described, and `admin_record_refund()` still
+  refuses anything but a taken-down course. Item 4 only records refunds
   issued by hand.
 - **Free grants**: give a student a course without a payment.
 
@@ -573,6 +602,12 @@ calling the live `initialize-payment` (version 2, June), which asks Paystack
 for exactly 500,000 kobo. Paystack added the fee itself. The repo's
 `initialize-payment` also adds the fee, so deploying it with that setting on
 would charge students the fee twice (about ₦5,358 for a ₦5,000 course).
+
+*Update 2026-10-08:* a **company Paystack account** now replaces the one
+that took the test sale. Its fee setting, webhook and keys start fresh, so
+the steps below apply to the new account. The full order, with the
+compliance checklist, is in `STATUS.md`. The fallback callback URL in the
+repo's `initialize-payment` now points at `app.padilearn.com` too.
 
 Payments deploy, in this order:
 

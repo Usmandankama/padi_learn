@@ -254,9 +254,14 @@ on web, replace the shim with Corbado's bundle:
 
 ## Known gaps
 
-- **Teacher payouts.** `payout_accounts` is empty. Money can be taken on web
-  today and there is no configured path to pay a teacher. This must work
-  before the first real sale, not after.
+- **Teacher payouts: manual, but complete.** The admin panel records
+  transfers against each teacher's balance (`ADMIN_PANEL.md`, item 12f), and
+  since 2026-10-08 teachers ask for a payout in the app (item 15). The
+  transfer itself is still sent by hand from the bank or Paystack.
+  `payout_accounts` is still empty: no teacher has added a bank account.
+- **Live payments wait on the company Paystack account.** The deployed
+  payment functions are older than the repo. The order for switching over
+  is in `STATUS.md`.
 - **Google sign-in is unavailable on web.** `SupabaseConfig.googleWebClientId`
   is empty, so the button is hidden by `isGoogleSignInConfigured` — on web
   this is graceful, not a crash. Email and password work. Enabling it needs a
@@ -266,8 +271,9 @@ on web, replace the shim with Corbado's bundle:
   CanvasKit variant), then cached. Confirm the host sends Brotli or gzip. The
   `canvaskit/*.symbols` files are debug artifacts and are never fetched by a
   browser.
-- **Supabase is in `ap-south-1` (Mumbai)**, a long way from Lagos. Moving
-  region means migrating the project, so it is far cheaper to decide before
-  there are real users than after.
-- **Leaked-password protection is disabled** in Supabase Auth. One toggle,
-  worth doing before public sign-ups.
+- **Supabase is in `ap-south-1` (Mumbai)**, a long way from Lagos (about
+  350 ms against 160 ms for London, measured 2026-10-08). The move to London
+  is written up in `REGION_MOVE.md`.
+- **Leaked-password protection is disabled** in Supabase Auth. It is a
+  paid-plan feature, and Supabase stays on the free plan until there are
+  users (`STATUS.md`).

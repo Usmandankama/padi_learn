@@ -12,6 +12,192 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-10-08 — Out of beta: customer policies on the website
+
+**PadiLearn is out of beta**, Usman's call: the web app and the APK are the
+product, and PadiLearn is taking payments. The website now says so. Nothing
+on it mentions a beta any more; that was checked page by page in the built
+site.
+
+**What a buyer can now read, and why each piece exists:**
+
+- **`/refunds`, new.** Paystack's reviewers and buyers look for a standalone
+  refund and cancellation policy. It covers:
+  - what is bought: access to a digital course, so there is no return;
+  - delivery: on confirmation, and what to do after 10 minutes;
+  - cancellations: there are no subscriptions;
+  - a table of when a refund applies, when it doesn't, and how to ask;
+  - timing: approved refunds sent within 5 working days, banks taking up to
+    10;
+  - card disputes, the teacher's share, and statutory rights under the FCCPA
+    2018 with the FCCPC as escalation.
+- **`/support`, new.** The reply time (2 working days, Monday to Friday),
+  what to include, and one entry per kind of problem with a pre-filled
+  email subject. It names the operator and the regulators for complaints we
+  can't resolve.
+- **Terms.** They name Groundwork Tech Ltd as the party to the agreement,
+  replace the beta notice with pointers to section 6, `/refunds` and
+  `/support`, and say:
+  - how payment and delivery work;
+  - that a suspension can be appealed;
+  - when approved refunds are sent, and that statutory rights stand.
+- **Privacy.** Groundwork Tech Ltd is the data controller. The web app's
+  browser storage and Paystack's own checkout page are disclosed.
+- **Footer.** It links to the terms, refund policy, privacy policy, account
+  deletion and support on every page, and says who operates PadiLearn.
+- **Landing page.** The teacher pitch states the 85%. The FAQ gains how
+  paying works, what happens if a course disappoints, and how to get help.
+  The sitemap lists the two new pages.
+
+**One place for the promises.** The company name, the reply time, the refund
+window and the refund turnaround live in `website/src/site.ts`, and the two
+new pages read them from there. `terms.md` (Markdown, which cannot read the
+file) and the FAQ repeat the numbers in prose; the comment in `site.ts` and
+the website README say to change them together.
+
+**Decided with Usman:** Groundwork Tech Ltd as the operator, and email only
+as the published contact (no RC number or address yet). Replies within 2
+working days. The commitments drafted earlier the same day (7-day refund
+window, payouts within 5 working days, 30 days' notice on the commission,
+NGN 1,000 minimum) are approved.
+
+**Not yet true behind the words:** the deployed payment functions are still
+the June versions on the old Paystack account. Refunds outside takedowns
+can't yet be recorded in the admin panel, so for now they are recorded by
+hand.
+
+---
+
+## 2026-10-08 — Free plan for now, and a written way out of Mumbai
+
+**Supabase stays on the free plan until PadiLearn has users.** Usman moved
+the project into the company organisation ("GroundworkTech") but won't pay
+USD 25 a month for an app with no users yet. The free plan's gaps each have a
+cover:
+
+- **50 MB uploads:** tutors keep lessons short and compressed.
+- **Pausing after a week idle:** `.github/workflows/keep-alive.yml` reads one
+  category every three days with the publishable key. Tested against the live
+  project: HTTP 200.
+- **No backups:** `tool/region_move/dump.sh`, run by hand, kept out of the
+  repo. Not GitHub artifacts, because the repo is public.
+
+**The region did not move with the organisation**, and cannot: a project's
+region is fixed at creation, and "restore to a new project" keeps the source
+region. Timed from Usman's laptop: Mumbai 347 ms, London 163 ms, Cape Town
+132 ms (TCP connect to each AWS region). A request to the current project
+takes 430 to 510 ms to its first byte. The target is London.
+
+`docs/REGION_MOVE.md` is the runbook, with scripts in `tool/region_move/`:
+
+- **`dump.sh`** runs `pg_dump` with exactly the flags and filters
+  `supabase db dump` uses. They were read from the CLI's own `--dry-run`
+  (2.117.0, installed into a scratch folder), so the result matches
+  Supabase's migration guide without needing Docker, which the CLI uses for
+  this step. `pg_dump`/`psql` 17.2 came from MSYS2's pacman.
+- **`restore.sh`** applies schema, data, the pieces the dump leaves out, and
+  the URL rewrite in one transaction, then diffs row counts, policies,
+  functions, triggers and realtime tables against the old project.
+- **`auth_storage.sql`** holds what lives in Supabase's own schemas and so
+  is never dumped: the `on_auth_user_created` trigger and the 8
+  `storage.objects` policies. It was generated from the live catalog. The 7
+  storage triggers are Supabase's own (owned by `supabase_storage_admin`) and
+  are left alone.
+- **`rewrite_urls.sql`**: 17 stored public image URLs name the old host.
+- **`copy_storage.mjs`** copies the 43 files over the Storage REST API with
+  no dependencies. It sends a secret key (`sb_secret_…`) only as `apikey`
+  and a legacy service_role JWT in both headers.
+
+Secrets never pass through Claude: the scripts read a git-ignored `.env`
+that Usman fills in and runs. Edge functions move **as deployed**, not from
+the repo, so the Paystack switch stays a separate, deliberate step.
+
+---
+
+## 2026-10-08 — Teachers ask to be paid, reports reach the player, and the docs catch up
+
+**Where things stand moved to `docs/STATUS.md`.** The README and
+`PRODUCT_OVERVIEW.md` each carried their own counts and "what is blocking"
+paragraph, and both had gone stale within a week: no keystore, no payouts, 17
+courses. They now point to one dated snapshot. The checklists stay where they
+were.
+
+Confirmed by Usman today, and ticked in `LAUNCH_ANDROID.md`: auth email
+through Resend works (one more outside-address test to settle it), password
+reset works, account deletion works, and the signing keystore is backed up off
+the laptop.
+
+**Payout requests (`20261008000001`, `ADMIN_PANEL.md` item 15).** A payout
+began only on the admin's side. A teacher can now ask for everything payable
+from Profile → Payouts or "Get paid" on the earnings card, and the request
+sits at the top of the admin's Payouts screen. Recording the transfer closes
+it and notifies the teacher. Declining needs a reason, which the teacher is
+shown. Money still moves by hand; the request moves none.
+
+- **The rules are the database's.** One open request, enforced by a unique
+  index as well as a check, so two taps cannot race. It needs a verified
+  account and no suspension, and NGN 1,000 or more ready, because a transfer
+  costs the same whether it carries NGN 200 or NGN 20,000. The screen only
+  reports which rule applies.
+- **The dry run caught nothing in the logic, but taught one thing about
+  testing it.** Inside one transaction `now()` never moves, so a cancelled
+  request and the paid one after it share a `resolved_at`, and "the last
+  closed request" was ambiguous. Real requests resolve in separate
+  transactions; the query gained a `created_at` tiebreak anyway.
+- `admin_teacher_balances()` changed its return type, so it was dropped and
+  recreated, with grants restored. The deployed admin build ignores the new
+  columns until the next deploy.
+
+**Course reports from the player.** The flag sat only on the course's sales
+page. An enrolled student opens a course straight into the player, from the
+dashboard or a notification, so they never passed it. Usman noticed it was
+missing. The player now has the same flag, hidden from the course's own
+teacher.
+
+**Payments, readied but not switched.** A company Paystack account now
+exists. Nothing was deployed, because the order matters (`STATUS.md`): the
+new account's fee setting, webhook and secret key first, then the three
+functions together.
+
+- All six edge functions now type-check. Deno 2.7.14 was installed through
+  npm into a scratch folder (npx's own install fails on Windows with
+  `ENOTEMPTY` while cleaning up `deno.exe`).
+- `initialize-payment`'s fallback callback pointed at `padilearn.com`, the
+  marketing site. Every current client sends its own URL, but the fallback
+  now matches it: `app.padilearn.com/payment-callback`.
+- Paystack's fees were checked against `pricing.dart` and `_shared/paystack.ts`
+  and still match.
+
+**The website, edited but not published.** Pushing to `main` publishes it,
+and these need Usman's sign-off first. `terms.md` loses the "every course is
+free" beta notice and gains section 6: buying, refunds, teacher earnings and
+payouts. It promises refunds for double charges and courses clearly not as
+described, which the admin panel cannot record yet (it only records takedown
+refunds). That is the first follow-up. `privacy.md` names Paystack as a
+current processor. The landing FAQ answers what courses cost and how teachers
+are paid. `site.legalUpdated` is 8 October. The site builds, and the new
+anchors resolve.
+
+**Supabase, decided as advice, not yet done.** Don't create a new account.
+Billing belongs to an organisation, and a project moves between
+organisations without downtime or new keys. Make a company organisation,
+put the company's billing on it, upgrade it to Pro, transfer the project,
+and add `hello@padilearn.com` as a second owner. Pro is needed before tutors
+upload anything real: the free plan's 50 MB per-file cap stops a lesson
+longer than a few minutes, and leaked-password protection turns out to be
+Pro-only.
+
+### Still outstanding
+
+- The Supabase organisation and Pro upgrade, then the bucket limit and
+  `kMaxVideoBytes`.
+- Paystack compliance, then the payments deploy and test in `STATUS.md`.
+- Refunds outside takedowns in the admin panel.
+- Sign-off and publishing of the terms, privacy and FAQ changes.
+- Testing the player's report flag on a phone.
+
+---
+
 ## 2026-10-07 — Repo cleanup: marketing media and business docs move out
 
 **The app repo now holds the app, its backend, its website and its docs —
