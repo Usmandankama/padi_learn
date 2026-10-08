@@ -6,6 +6,7 @@ import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 
 import 'package:padi_learn/screens/components/primary_button.dart';
+import 'package:padi_learn/screens/components/report_sheet.dart';
 import 'package:padi_learn/screens/videoplayer/components/comments_section.dart';
 import 'package:padi_learn/services/lesson_service.dart';
 import 'package:padi_learn/services/supabase.dart';
@@ -60,6 +61,14 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   void initState() {
     super.initState();
     _init();
+  }
+
+  /// Signed in and not the course's own teacher. Hidden until the course row
+  /// has loaded, so a teacher never sees it flash on their own course.
+  bool get _canReport {
+    final uid = supabase.auth.currentUser?.id;
+    final ownerId = _course['user_id']?.toString();
+    return uid != null && ownerId != null && ownerId != uid;
   }
 
   @override
@@ -366,6 +375,18 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
             fontWeight: FontWeight.w600,
           ),
         ),
+        // Enrolled students open a course here, straight from their
+        // dashboard, and never pass the description screen's flag, so the
+        // player carries its own. A teacher does not report their own course.
+        actions: [
+          if (_canReport)
+            IconButton(
+              icon: const Icon(Icons.flag_outlined),
+              tooltip: 'Report course',
+              onPressed: () =>
+                  showReportSheet(context, courseId: widget.courseId),
+            ),
+        ],
       ),
       body: _loading
           ? const AppLoader()

@@ -9,6 +9,7 @@ import 'package:padi_learn/screens/notifications/notification_bell.dart';
 import 'package:padi_learn/screens/settings/settings_screen.dart';
 import 'package:padi_learn/screens/teacher/editprofile_screen.dart';
 import 'package:padi_learn/screens/teacher/payout_account_screen.dart';
+import 'package:padi_learn/screens/teacher/payouts_screen.dart';
 import 'package:padi_learn/services/auth_service.dart';
 import 'package:padi_learn/utils/colors.dart';
 import 'package:padi_learn/utils/money.dart';
@@ -55,7 +56,7 @@ class TeacherProfileScreen extends StatelessWidget {
           SizedBox(height: 16.h),
           _buildStats(controller),
           SizedBox(height: 24.h),
-          // Two entries only. "My Courses" used to sit here as well — it is the
+          // Money and settings only. "My Courses" used to sit here as well — it is the
           // Courses tab in the bottom bar, a shorter route to the same screen —
           // and "Edit Profile" was a third, duplicating the button in the
           // header card directly above, which is where you look to change the
@@ -63,6 +64,16 @@ class TeacherProfileScreen extends StatelessWidget {
           SettingsSection(
             title: 'ACCOUNT',
             children: [
+              SettingsTile(
+                icon: Icons.account_balance_wallet_outlined,
+                title: 'Payouts',
+                subtitle: 'Ask to be paid, and see what was sent',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const TeacherPayoutsScreen()),
+                ),
+              ),
               SettingsTile(
                 icon: Icons.account_balance_outlined,
                 title: 'Payout Account',

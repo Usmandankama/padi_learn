@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:padi_learn/controller/teacher_controller.dart';
+import 'package:padi_learn/screens/teacher/payouts_screen.dart';
 import 'package:padi_learn/utils/colors.dart';
 
 import 'analytic_item.dart';
@@ -82,6 +83,25 @@ class EarningsWidget extends StatelessWidget {
                       fontSize: 12.sp,
                     ),
                   ),
+                ),
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const TeacherPayoutsScreen()),
+                    );
+                    // A payout may have been asked for or arrived meanwhile.
+                    controller.fetchTeacherEarningsAndCourses();
+                  },
+                  style: TextButton.styleFrom(
+                      foregroundColor: AppColors.appWhite),
+                  icon: const Icon(Icons.account_balance_wallet_outlined,
+                      size: 18),
+                  label: const Text('Get paid'),
                 ),
               ),
             ],

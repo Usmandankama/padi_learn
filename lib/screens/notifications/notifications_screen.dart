@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:padi_learn/screens/teacher/payouts_screen.dart';
 import 'package:padi_learn/screens/videoplayer/videoPlayer.dart';
 import 'package:padi_learn/services/notification_service.dart';
 import 'package:padi_learn/utils/colors.dart';
 
-/// Lecturer notification inbox: new comments and new enrollments, live.
+/// Lecturer notification inbox: new comments, new enrollments, and payouts
+/// sent or declined, live.
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
 
@@ -121,6 +123,7 @@ class _NotificationTile extends StatelessWidget {
     final unread = item['is_read'] != true;
     final type = (item['type'] ?? '').toString();
     final isComment = type == 'comment';
+    final isPayout = type == 'payout';
 
     return Dismissible(
       key: ValueKey(item['id']),
@@ -139,6 +142,14 @@ class _NotificationTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(14.r),
         onTap: () {
           if (unread) NotificationService.markRead(item['id'].toString());
+          // A payout was sent or a request declined: no course to open.
+          if (isPayout) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const TeacherPayoutsScreen()),
+            );
+            return;
+          }
           final courseId = (item['course_id'] ?? '').toString();
           if (courseId.isNotEmpty) {
             Navigator.push(
@@ -169,7 +180,9 @@ class _NotificationTile extends StatelessWidget {
                 child: Icon(
                   isComment
                       ? Icons.mode_comment_outlined
-                      : Icons.shopping_bag_outlined,
+                      : isPayout
+                          ? Icons.account_balance_wallet_outlined
+                          : Icons.shopping_bag_outlined,
                   size: 20.sp,
                   color: AppColors.primaryColor,
                 ),

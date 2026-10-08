@@ -19,6 +19,7 @@ Map<String, dynamic> balance(
   bool verified = true,
   bool suspended = false,
   bool hasAccount = true,
+  int? requested,
 }) =>
     {
       'teacher_id': id,
@@ -36,6 +37,9 @@ Map<String, dynamic> balance(
       'account_name': hasAccount ? name.toUpperCase() : null,
       'account_verified': hasAccount && verified,
       'suspended': suspended,
+      'request_id': requested == null ? null : 'r-$id',
+      'requested_kobo': requested,
+      'requested_at': requested == null ? null : '2026-10-08T08:00:00+00:00',
     };
 
 FakeAdminApi books() => FakeAdminApi()
@@ -94,16 +98,21 @@ void main() {
     expect(find.widgetWithText(FilledButton, 'Record payout'), findsOneWidget);
     expect(find.text('Payouts held while this teacher is suspended.'),
         findsOneWidget);
+    // The later cards are below the fold; the list builds lazily.
+    final list = find
+        .descendant(of: find.byType(ListView), matching: find.byType(Scrollable))
+        .first;
+    await tester.scrollUntilVisible(
+      find.text('Nothing payable yet: sales are held for 7 days.'),
+      300,
+      scrollable: list,
+    );
     expect(find.text('Nothing payable yet: sales are held for 7 days.'),
         findsOneWidget);
-    // The fourth card is below the fold; the list builds lazily.
     await tester.scrollUntilVisible(
       find.textContaining('No verified bank account yet'),
       300,
-      scrollable: find
-          .descendant(
-              of: find.byType(ListView), matching: find.byType(Scrollable))
-          .first,
+      scrollable: list,
     );
     expect(find.textContaining('No verified bank account yet'), findsOneWidget);
   });
@@ -164,5 +173,59 @@ void main() {
 
     expect(find.text('NGN 1,500.00 to Ada Teacher'), findsOneWidget);
     expect(find.textContaining('TRF-0001'), findsOneWidget);
+  });
+
+  group('payout requests', () {
+    FakeAdminApi asked() => FakeAdminApi()
+      ..balanceRows = [
+        balance('t1', 'Ada Teacher', available: 300000, requested: 200000),
+        balance('t2', 'Chidi Held',
+            available: 100000, suspended: true, requested: 100000),
+      ];
+
+    testWidgets('a request says how much and when, and prefills the payout',
+        (tester) async {
+      final api = asked();
+      await pumpAdminScreen(tester, PayoutsScreen(api: api));
+
+      expect(find.textContaining('Asked to be paid NGN 2,000.00'),
+          findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, 'Record payout'));
+      await tester.pumpAndSettle();
+      expect(find.text('2000.00'), findsOneWidget,
+          reason: 'the amount asked for, not the larger NGN 3,000 payable');
+    });
+
+    testWidgets('declining sends the reason, even for a held teacher',
+        (tester) async {
+      final api = asked();
+      await pumpAdminScreen(tester, PayoutsScreen(api: api));
+
+      // Chidi is suspended, so there is no Record button, but the request can
+      // still be answered.
+      expect(find.widgetWithText(OutlinedButton, 'Decline request'),
+          findsNWidgets(2));
+      final declineHeld =
+          find.widgetWithText(OutlinedButton, 'Decline request').last;
+      await tester.ensureVisible(declineHeld);
+      await tester.pumpAndSettle();
+      await tester.tap(declineHeld);
+      await tester.pumpAndSettle();
+      await tester.enterText(
+          find.descendant(
+              of: find.byType(AlertDialog), matching: find.byType(TextField)),
+          'Account is suspended pending review');
+      await tester.pump();
+      await tester.tap(find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Decline request'),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(api.calls,
+          contains('declinePayoutRequest:r-t2:Account is suspended pending review'));
+      expect(find.text('Payout request declined.'), findsOneWidget);
+      expect(api.count('teacherBalances'), 2, reason: 'reloaded');
+    });
   });
 }

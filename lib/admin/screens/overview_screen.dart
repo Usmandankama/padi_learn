@@ -115,6 +115,9 @@ class _Overview extends StatelessWidget {
                     AdminSection.categories),
                 waitingRow('Refunds owed', 'refunds_owed', AdminSection.refunds,
                     amountKey: 'refunds_owed_kobo'),
+                waitingRow('Payout requests', 'payout_requests',
+                    AdminSection.payouts,
+                    amountKey: 'payout_requests_kobo'),
                 waitingRow('Teachers to pay', 'teachers_payable',
                     AdminSection.payouts),
                 StatRow(

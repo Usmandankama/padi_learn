@@ -31,6 +31,7 @@ const _labels = {
   'comment.delete': 'Deleted a comment',
   'refund.record': 'Recorded a refund',
   'payout.record': 'Recorded a payout',
+  'payout_request.decline': 'Declined a payout request',
   'user.set_role': 'Changed a role',
   'user.suspend': 'Suspended an account',
   'user.unsuspend': 'Lifted a suspension',
@@ -48,6 +49,7 @@ const _areas = {
   'user': 'Users',
   'refund': 'Refunds',
   'payout': 'Payouts',
+  'payout_request': 'Payout requests',
   'category': 'Categories',
 };
 

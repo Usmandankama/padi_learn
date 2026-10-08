@@ -167,6 +167,12 @@ class FakeAdminApi extends AdminApi {
   }
 
   @override
+  Future<void> declinePayoutRequest(String requestId, String reason) async {
+    calls.add('declinePayoutRequest:$requestId:$reason');
+    if (actionError != null) throw actionError!;
+  }
+
+  @override
   Future<Map<String, dynamic>> recordPayout({
     required String teacherId,
     required int amountKobo,

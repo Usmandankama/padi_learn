@@ -169,14 +169,25 @@ class AdminApi {
 
   // --- Payouts ---------------------------------------------------------------
 
-  /// Every teacher with a sale or a payout, most payable first, with the bank
-  /// account a transfer goes to.
+  /// Every teacher with a sale or a payout, with the bank account a transfer
+  /// goes to. Teachers who asked to be paid come first, oldest request first,
+  /// with `request_id`, `requested_kobo` and `requested_at`; then the most
+  /// payable. Shape in 20261008000001, `admin_teacher_balances`.
   Future<List<Map<String, dynamic>>> teacherBalances() async {
     return _rows(await supabase.rpc('admin_teacher_balances'));
   }
 
-  /// Records a transfer already made. Returns `{payout_id, amount_kobo,
-  /// available_after_kobo}`.
+  /// Turns down a teacher's payout request. The teacher is shown [reason].
+  Future<void> declinePayoutRequest(String requestId, String reason) async {
+    await supabase.rpc('admin_decline_payout_request', params: {
+      'p_request_id': requestId,
+      'p_reason': reason,
+    });
+  }
+
+  /// Records a transfer already made, and closes the teacher's open request
+  /// if there is one. Returns `{payout_id, amount_kobo, available_after_kobo,
+  /// request_id}`.
   Future<Map<String, dynamic>> recordPayout({
     required String teacherId,
     required int amountKobo,

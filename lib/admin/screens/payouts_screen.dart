@@ -6,9 +6,10 @@ import 'package:padi_learn/utils/colors.dart';
 import '../data/admin_api.dart';
 import '../widgets/format.dart';
 import '../widgets/panel.dart';
+import '../widgets/reason_dialog.dart';
 
-/// Payouts (docs/ADMIN_PANEL.md, item 12f): what each teacher is owed, where
-/// to send it, and a record of what was sent.
+/// Payouts (docs/ADMIN_PANEL.md, items 12f and 15): who has asked to be paid,
+/// what each teacher is owed, where to send it, and a record of what was sent.
 ///
 /// Transfers are made from the bank or Paystack, not from here. The rules are
 /// decision 5's, enforced by the database: 7-day hold, verified accounts
@@ -66,6 +67,35 @@ class _PayoutsScreenState extends State<PayoutsScreen> {
     }
   }
 
+  Future<void> _decline(Map<String, dynamic> teacher) async {
+    final reason = await askForReason(
+      context,
+      title: 'Decline payout request',
+      message: '${teacher['teacher_name'] ?? 'The teacher'} asked for '
+          '${formatKobo(asCount(teacher['requested_kobo']))}. They are shown '
+          'this reason in the app, and can ask again.',
+      confirmLabel: 'Decline request',
+      destructive: true,
+    );
+    if (reason == null) return;
+    final id = teacher['teacher_id'] as String;
+
+    setState(() => _busy.add(id));
+    try {
+      await widget.api
+          .declinePayoutRequest(teacher['request_id'] as String, reason);
+      if (!mounted) return;
+      _snack('Payout request declined.');
+      setState(() {
+        _version++;
+      });
+    } catch (e) {
+      if (mounted) _snack(adminErrorMessage(e));
+    } finally {
+      if (mounted) setState(() => _busy.remove(id));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final palette = AppColors.of(context);
@@ -101,9 +131,10 @@ class _PayoutsScreenState extends State<PayoutsScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
             child: Text(
-              'Send the transfer from your bank or Paystack first, then record '
-              'it here with its reference. A sale becomes payable 7 days after '
-              'it was paid.',
+              'Teachers who asked to be paid come first. Send the transfer '
+              'from your bank or Paystack, then record it here with its '
+              'reference: that closes the request and tells the teacher. A '
+              'sale becomes payable 7 days after it was paid.',
               style: TextStyle(color: palette.inkSoft),
             ),
           ),
@@ -131,6 +162,7 @@ class _PayoutsScreenState extends State<PayoutsScreen> {
                         teacher: rows[i],
                         busy: _busy.contains(rows[i]['teacher_id']),
                         onRecord: () => _record(rows[i]),
+                        onDecline: () => _decline(rows[i]),
                       )
                     : _PayoutCard(payout: rows[i]),
               );
@@ -163,11 +195,13 @@ class _BalanceCard extends StatelessWidget {
     required this.teacher,
     required this.busy,
     required this.onRecord,
+    required this.onDecline,
   });
 
   final Map<String, dynamic> teacher;
   final bool busy;
   final VoidCallback onRecord;
+  final VoidCallback onDecline;
 
   @override
   Widget build(BuildContext context) {
@@ -175,6 +209,7 @@ class _BalanceCard extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final blocker = _blocker(teacher);
     final account = teacher['account_number'] as String?;
+    final requested = teacher['request_id'] != null;
 
     String kobo(String key) => formatKobo(asCount(teacher[key]));
 
@@ -186,6 +221,16 @@ class _BalanceCard extends StatelessWidget {
         children: [
           Text('${teacher['teacher_email'] ?? ''}',
               style: text.bodySmall?.copyWith(color: palette.inkSoft)),
+          if (requested) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Asked to be paid '
+              '${formatKobo(asCount(teacher['requested_kobo']))}, '
+              '${formatWhen(teacher['requested_at'])}',
+              style: text.bodyMedium?.copyWith(
+                  color: palette.ink, fontWeight: FontWeight.w600),
+            ),
+          ],
           const SizedBox(height: 8),
           StatRow(
               label: 'Earned from ${asCount(teacher['sales_count'])} sales',
@@ -235,13 +280,25 @@ class _BalanceCard extends StatelessWidget {
             ),
           const SizedBox(height: 10),
           if (blocker != null)
-            Text(blocker, style: text.bodySmall?.copyWith(color: palette.inkSoft))
-          else
-            Align(
-              alignment: Alignment.centerLeft,
-              child: FilledButton(
-                onPressed: busy ? null : onRecord,
-                child: const Text('Record payout'),
+            Text(blocker, style: text.bodySmall?.copyWith(color: palette.inkSoft)),
+          if (blocker == null || requested)
+            Padding(
+              padding: EdgeInsets.only(top: blocker == null ? 0 : 10),
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  if (blocker == null)
+                    FilledButton(
+                      onPressed: busy ? null : onRecord,
+                      child: const Text('Record payout'),
+                    ),
+                  if (requested)
+                    OutlinedButton(
+                      onPressed: busy ? null : onDecline,
+                      child: const Text('Decline request'),
+                    ),
+                ],
               ),
             ),
         ],
@@ -295,8 +352,15 @@ class _RecordPayoutDialog extends StatefulWidget {
 
 class _RecordPayoutDialogState extends State<_RecordPayoutDialog> {
   late final int _available = asCount(widget.teacher['available_kobo']);
+
+  /// What the teacher asked for, when they did and it is still payable;
+  /// otherwise everything payable.
+  late final int _prefill = () {
+    final requested = asCount(widget.teacher['requested_kobo']);
+    return requested > 0 && requested <= _available ? requested : _available;
+  }();
   late final _amount =
-      TextEditingController(text: koboToPlainNaira(_available));
+      TextEditingController(text: koboToPlainNaira(_prefill));
   final _reference = TextEditingController();
   final _note = TextEditingController();
 
