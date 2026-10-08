@@ -95,7 +95,10 @@ Deno.serve(async (req) => {
         email: user.email,
         amount: Math.round(chargeNaira * 100), // NGN -> kobo
         currency: "NGN",
-        callback_url: callbackUrl ?? "https://padilearn.com/payment-callback",
+        // Every current client sends this URL. The fallback matches it, so an
+        // older client still lands on the app's callback route, which
+        // verifies the payment, and not on the marketing site.
+        callback_url: callbackUrl ?? "https://app.padilearn.com/payment-callback",
         metadata: {
           user_id: user.id,
           course_id: course.id,
