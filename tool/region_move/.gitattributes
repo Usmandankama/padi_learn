@@ -1,0 +1,3 @@
+# Bash refuses scripts with Windows line endings, and this machine checks
+# files out as CRLF (core.autocrlf). Keep these LF everywhere.
+*.sh text eol=lf
