@@ -1,0 +1,30 @@
+# Keeps the Supabase project awake on the free plan.
+#
+# Supabase pauses a free project after a week with no activity, and a paused
+# project is an outage until someone restores it from the dashboard. One small
+# read every three days is enough to count as activity. It reads the public
+# category list with the publishable key, the same request the marketplace
+# makes, so it needs no secret beyond the two the web build already uses.
+#
+# Delete this file once the project is on a paid plan, which never pauses.
+name: Keep Supabase awake
+
+on:
+  schedule:
+    - cron: '17 6 */3 * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read one category
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          status=$(curl -s -o /dev/null -w '%{http_code}' \
+            -H "apikey: $SUPABASE_PUBLISHABLE_KEY" \
+            "$SUPABASE_URL/rest/v1/categories?select=id&limit=1")
+          echo "HTTP $status"
+          test "$status" = 200

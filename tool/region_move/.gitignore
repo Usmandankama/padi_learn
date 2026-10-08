@@ -1,0 +1,3 @@
+# Holds database passwords and service keys. Never commit it.
+.env
+.last_dump
