@@ -233,6 +233,9 @@ class _MyAppState extends State<MyApp> {
           designSize: responsiveDesignSize(screen),
           builder: (_, __) {
             return GetMaterialApp(
+              // On web this is the tab title; without it Flutter blanks the
+              // one index.html sets, and the tab shows the bare URL.
+              title: 'PadiLearn',
               debugShowCheckedModeBanner: false,
               // Binds the palette above the Navigator, so it is set before any
               // screen builds and re-set whenever the theme changes.

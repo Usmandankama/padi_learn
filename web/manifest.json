@@ -1,11 +1,11 @@
 {
-    "name": "padi_learn",
-    "short_name": "padi_learn",
+    "name": "PadiLearn",
+    "short_name": "PadiLearn",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#32936F",
+    "theme_color": "#32936F",
+    "description": "Learn from Nigerian teachers. Video courses on your phone, at your own pace.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

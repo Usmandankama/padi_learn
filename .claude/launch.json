@@ -18,6 +18,12 @@
       "runtimeExecutable": "flutter",
       "runtimeArgs": ["run", "-d", "web-server", "-t", "lib/admin/main.dart", "--web-hostname", "localhost", "--web-port", "5180"],
       "port": 5180
+    },
+    {
+      "name": "web-app-release",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["tool/serve_web.py", "8080"],
+      "port": 8080
     }
   ]
 }

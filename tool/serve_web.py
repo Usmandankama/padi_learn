@@ -42,4 +42,7 @@ if __name__ == "__main__":
     print(f"PadiLearn web  ->  http://127.0.0.1:{PORT}")
     print(f"Payment callback test  ->  http://127.0.0.1:{PORT}/payment-callback?reference=fake")
     print("Ctrl+C to stop.")
-    http.server.HTTPServer(("127.0.0.1", PORT), SinglePageApp).serve_forever()
+    # Threading, not plain HTTPServer: Chrome opens spare connections it may
+    # never use, and a single-threaded server blocks on the first idle one,
+    # so the page stalls after a few files.
+    http.server.ThreadingHTTPServer(("127.0.0.1", PORT), SinglePageApp).serve_forever()
