@@ -5,12 +5,17 @@ import { site } from '../site';
 <footer class="site-footer">
   <div class="container">
     <nav aria-label="Footer">
-      <a href="/privacy">Privacy Policy</a>
       <a href="/terms">Terms of Service</a>
+      <a href="/refunds">Refund Policy</a>
+      <a href="/privacy">Privacy Policy</a>
       <a href="/delete-account">Delete Your Account</a>
-      <a href={`mailto:${site.supportEmail}`}>Contact</a>
+      <a href="/support">Support</a>
     </nav>
-    <p>Copyright © 2026 PadiLearn. All rights reserved.</p>
+    <p>
+      PadiLearn is operated by {site.company.name}, {site.company.country}.
+      <a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>
+    </p>
+    <p>Copyright © 2026 {site.company.name}. All rights reserved.</p>
   </div>
 </footer>
 
@@ -48,5 +53,13 @@ import { site } from '../site';
 
   p {
     margin: 0;
+  }
+
+  p + p {
+    margin-top: 0.4rem;
+  }
+
+  p a {
+    color: var(--text-soft);
   }
 </style>

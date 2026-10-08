@@ -1,9 +1,9 @@
 import type { APIRoute } from 'astro';
 import { site } from '../site';
 
-// Hand-listed rather than an integration: five pages don't justify a dependency.
+// Hand-listed rather than an integration: a handful of pages doesn't justify a dependency.
 // Add a path here when you add an indexable page.
-const paths = ['/', '/privacy', '/terms', '/delete-account'];
+const paths = ['/', '/terms', '/refunds', '/privacy', '/delete-account', '/support'];
 
 export const GET: APIRoute = () => {
   const urls = paths

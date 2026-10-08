@@ -1,0 +1,119 @@
+---
+import Base from '../layouts/Base.astro';
+import { site, mailto } from '../site';
+
+// How to reach PadiLearn and what to include, by topic. The promises (reply
+// time, hours) come from site.ts so this page, /refunds and the terms agree.
+const { responseTime, hours } = site.support;
+
+const topics = [
+  {
+    title: 'A payment went through but the course is missing',
+    body: "Don't pay again. Send your payment reference (it is in Paystack's receipt email) and the course title.",
+    subject: 'Payment issue',
+  },
+  {
+    title: 'A refund',
+    body: `Read the refund policy first: it says when refunds apply. Requests about a course that isn't as described must arrive within ${site.refunds.windowDays} days of buying.`,
+    subject: 'Refund request',
+    link: { href: '/refunds', label: 'Refund policy' },
+  },
+  {
+    title: "Can't sign in",
+    body: 'Use "Forgot password" on the sign-in screen to get a reset link. If the email never arrives, check spam, then write to us from the address on your account.',
+    subject: 'Sign-in problem',
+  },
+  {
+    title: 'Something in the app is broken',
+    body: 'Tell us what you did, what happened, and whether you use the web app or the Android app. A screenshot helps.',
+    subject: 'Bug report',
+  },
+  {
+    title: 'Report a course or a comment',
+    body: 'Use Report on the course page or the comment, or email us. For copyright, say what the content is, where it is, what work you own and how to reach you.',
+    subject: 'Report',
+  },
+  {
+    title: 'Teaching and payouts',
+    body: 'Questions about publishing a course, your earnings, or a payout you asked for.',
+    subject: 'Teaching on PadiLearn',
+    link: { href: '/terms#teacher-earnings-and-payouts', label: 'How teachers are paid' },
+  },
+  {
+    title: 'Your data, or deleting your account',
+    body: 'Ask for a copy of your data, a correction or a deletion, from the address on your account. Data requests are answered within 30 days.',
+    subject: 'Privacy request',
+    link: { href: '/delete-account', label: 'Delete your account' },
+  },
+  {
+    title: 'An account suspension',
+    body: 'If your account was suspended and you think that was wrong, tell us why. A person reviews every appeal.',
+    subject: 'Suspension appeal',
+  },
+];
+---
+
+<Base title="Support" description="How to reach PadiLearn, how fast we reply, and what to include.">
+  <section class="container prose page">
+    <h1>Support</h1>
+    <p>
+      Email <a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>. We reply {responseTime}
+      ({hours}). In the app, <strong>Profile → Help &amp; Support</strong> opens an email to the same address.
+    </p>
+
+    <div class="callout">
+      <p>
+        <strong>To get help faster,</strong> write from the email address on your PadiLearn account, and include
+        the course title and, for anything about money, the payment reference.
+      </p>
+    </div>
+
+    <h2>What do you need?</h2>
+    {
+      topics.map((topic) => (
+        <div class="topic">
+          <h3>{topic.title}</h3>
+          <p>
+            {topic.body}{' '}
+            <a href={mailto(topic.subject)}>Email us</a>
+            {topic.link && (
+              <>
+                {' · '}
+                <a href={topic.link.href}>{topic.link.label}</a>
+              </>
+            )}
+          </p>
+        </div>
+      ))
+    }
+
+    <h2>If we can't resolve it</h2>
+    <p>
+      Nothing here takes away your rights under Nigerian law. You can take a consumer complaint to the Federal
+      Competition and Consumer Protection Commission (FCCPC), and a data protection complaint to the Nigeria Data
+      Protection Commission (NDPC).
+    </p>
+
+    <h2>Who we are</h2>
+    <p>
+      PadiLearn is operated by {site.company.name}, a company registered in {site.company.country}. Our policies:
+      <a href="/terms">terms of service</a>, <a href="/refunds">refund policy</a>,
+      <a href="/privacy">privacy policy</a>.
+    </p>
+  </section>
+</Base>
+
+<style>
+  .page {
+    padding-block: 3rem 1rem;
+  }
+
+  .topic {
+    border-top: 1px solid var(--line);
+    padding-top: 0.25rem;
+  }
+
+  .topic h3 {
+    margin-top: 1rem;
+  }
+</style>

@@ -11,7 +11,16 @@ import courseShot from '../assets/screens/course.png';
 const faqs = [
   {
     q: 'How much does it cost?',
-    a: 'Every course on PadiLearn is free today. When teachers begin publishing paid courses they set the price in naira, you pay once, and the course stays yours — it is not a subscription.',
+    a: 'Many courses are free. Teachers can also sell courses: they set the price in naira, you pay once by card or bank through Paystack, and the course stays yours. It is not a subscription.',
+  },
+  {
+    q: 'How do I pay, and when do I get the course?',
+    a: 'At checkout you see the course price and the card fee before you pay. Pay by card or bank transfer through Paystack; PadiLearn never sees your card details. The course opens in your account as soon as the payment is confirmed, usually within seconds.',
+  },
+  {
+    q: "What if a course isn't what I expected?",
+    a: 'Try the free preview where a course has one, and read the lesson list before you buy. If a course is clearly not what it described, ask for a refund within 7 days of buying. If you were charged twice, or charged without getting the course, we put it right.',
+    link: { href: '/refunds', label: 'Refund policy' },
   },
   {
     q: 'Is it on Google Play?',
@@ -28,6 +37,16 @@ const faqs = [
   {
     q: 'Who can teach?',
     a: 'Anyone with something worth teaching. Sign up as a teacher in the app. Courses that break our terms are removed.',
+  },
+  {
+    q: 'How do teachers get paid?',
+    a: 'You set your price and keep 85% of it on every sale. A sale clears after 7 days, then you ask for a payout in the app and we send it to your Nigerian bank account.',
+    link: { href: '/terms#teacher-earnings-and-payouts', label: 'The full rules' },
+  },
+  {
+    q: 'How do I get help?',
+    a: `Email ${site.supportEmail}, or tap Help & Support in your profile. We reply within 2 working days.`,
+    link: { href: '/support', label: 'Support' },
   },
   {
     q: 'How do I delete my account?',
@@ -88,7 +107,7 @@ const faqs = [
   <section id="teachers" class="teachers alt">
     <div class="container center">
       <h2>Teach what you know.</h2>
-      <p class="sub">Record your lessons on your phone. PadiLearn does the rest.</p>
+      <p class="sub">Record your lessons on your phone, set your price, and keep 85% of every sale.</p>
       <div class="columns">
         <div>
           <h3>Upload</h3>
@@ -108,7 +127,7 @@ const faqs = [
   </section>
 
   <!-- Get it -->
-  <section id="get" class="beta">
+  <section id="get">
     <div class="container center">
       <h2>Start learning today.</h2>
       <p class="sub">
@@ -125,7 +144,7 @@ const faqs = [
         that is normal for an app that does not come from the Play Store.
       </p>
       <p class="links">
-        <a class="more" href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a>
+        <a class="more" href="/support">Help and support</a>
       </p>
     </div>
   </section>

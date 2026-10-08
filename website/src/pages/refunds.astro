@@ -1,0 +1,147 @@
+---
+import Legal from '../layouts/Legal.astro';
+import { site, mailto } from '../site';
+
+// The full refund and cancellation policy. Section 6 of the terms summarises
+// it and links here; keep the two in step. The numbers come from site.ts.
+const { windowDays, issuedWithin } = site.refunds;
+const { responseTime } = site.support;
+---
+
+<Legal
+  frontmatter={{
+    title: 'Refund policy',
+    description: 'How buying a course works on PadiLearn, when you can get a refund, and how to ask for one.',
+  }}
+>
+  <p>
+    This policy covers courses bought on PadiLearn, in the web app at app.padilearn.com and in the Android app
+    downloaded from padilearn.com. PadiLearn is operated by {site.company.name}. This policy is part of our
+    <a href="/terms">terms of service</a>.
+  </p>
+
+  <div class="callout">
+    <p>
+      <strong>In short:</strong> if you were charged and didn't get your course, were charged twice, or the course
+      is clearly not what it said, email <a href={mailto('Refund request')}>{site.supportEmail}</a> with your
+      payment reference. For a course that isn't as described, ask within {windowDays} days of buying. We reply
+      {responseTime}.
+    </p>
+  </div>
+
+  <h2>What you are buying</h2>
+  <ul>
+    <li>
+      <strong>Access to a video course</strong>, for your own learning, for as long as your account is open and
+      the course stays on PadiLearn. It is a one-off payment in naira, not a subscription.
+    </li>
+    <li>
+      <strong>Courses are digital.</strong> Nothing is shipped, so there is nothing to return. Where a refund is
+      due, we refund the payment instead.
+    </li>
+    <li>
+      <strong>You see the full price before you pay:</strong> the course price set by its teacher, plus a card
+      processing fee that covers what our payment provider charges. The total shown is the total charged.
+    </li>
+    <li>
+      <strong>Try before you buy.</strong> Many courses have a free preview lesson, and every course lists its
+      lessons before you buy.
+    </li>
+  </ul>
+
+  <h2>Delivery</h2>
+  <p>
+    Payment is handled by <strong>Paystack</strong>. The course appears in your account as soon as Paystack
+    confirms the payment, usually within seconds. If it hasn't appeared after 10 minutes, don't pay again: email
+    us with your payment reference (it is in the receipt Paystack emails you) and we'll sort it out.
+  </p>
+
+  <h2>Cancellations</h2>
+  <p>
+    There are no subscriptions or automatic renewals, so there is nothing to cancel after you buy. If you leave
+    the checkout before paying, you are not charged.
+  </p>
+
+  <h2>When you can get a refund</h2>
+  <table>
+    <thead>
+      <tr><th>What happened</th><th>What we do</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>You were charged but the course never appeared</td>
+        <td>We give you the course. If we can't, we refund what you paid.</td>
+      </tr>
+      <tr>
+        <td>You were charged more than once for the same course</td>
+        <td>We refund every extra payment in full. You keep the course.</td>
+      </tr>
+      <tr>
+        <td>We removed the course because it broke our terms</td>
+        <td>Everyone who paid for it gets a full refund, card fee included. We contact you; you don't need to ask.</td>
+      </tr>
+      <tr>
+        <td>The course is clearly not what its description and preview showed</td>
+        <td>
+          Ask within {windowDays} days of buying. We review the request, and if it is upheld we refund what you paid.
+        </td>
+      </tr>
+      <tr>
+        <td>The course won't play because of a fault on our side that we can't fix</td>
+        <td>We refund what you paid.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    We don't refund a change of mind, a course you have mostly watched, or a request made more than {windowDays} days
+    after buying, except in the cases above or where the law says otherwise. Free courses cost nothing, so there is
+    nothing to refund.
+  </p>
+
+  <h2>How to ask for a refund</h2>
+  <ol>
+    <li>
+      Email <a href={mailto('Refund request')}>{site.supportEmail}</a> from the address on your PadiLearn account,
+      with the subject "Refund request".
+    </li>
+    <li>Include the course title, your payment reference, and what went wrong.</li>
+    <li>We reply {responseTime}, and tell you whether the refund is approved and why.</li>
+  </ol>
+
+  <h2>After a refund is approved</h2>
+  <ul>
+    <li>We send it through Paystack {issuedWithin}, back to the card or bank account you paid with.</li>
+    <li>Your bank may take up to 10 working days to show it. That part is outside our control.</li>
+    <li>
+      A refunded course is removed from your account, except when you were charged twice: then only the extra
+      payment is refunded, and the course stays yours.
+    </li>
+  </ul>
+
+  <h2>Card disputes</h2>
+  <p>
+    Please contact us before disputing a payment with your bank: we can usually fix things faster. If a dispute is
+    decided in your favour, the course is removed from your account.
+  </p>
+
+  <h2>Teachers</h2>
+  <p>
+    When a sale is refunded, the teacher's share of it is taken back. If they have already been paid for that sale,
+    it comes out of their future earnings. See
+    <a href="/terms#teacher-earnings-and-payouts">teacher earnings and payouts</a>.
+  </p>
+
+  <h2>Your rights</h2>
+  <p>
+    Nothing in this policy takes away your rights under the Federal Competition and Consumer Protection Act 2018 or
+    any other Nigerian law. If we can't resolve a complaint with you, you can contact the Federal Competition and
+    Consumer Protection Commission (FCCPC).
+  </p>
+
+  <h2>Contact</h2>
+  <p>
+    {site.company.name}, operator of PadiLearn ·
+    <a href={`mailto:${site.supportEmail}`}>{site.supportEmail}</a> · <a href="/support">Support</a>
+  </p>
+</Legal>

@@ -1,14 +1,17 @@
 # padilearn.com
 
-The PadiLearn website: landing page, privacy policy, terms, account-deletion page
-and the Paystack payment-callback fallback. Static [Astro](https://astro.build)
+The PadiLearn website: landing page, the customer policies (terms, refunds,
+privacy, account deletion), the support page, and the Paystack payment-callback
+fallback. Static [Astro](https://astro.build)
 site, hosted free on Cloudflare Pages.
 
 | Path | Source | Why it exists |
 |---|---|---|
-| `/` | `src/pages/index.astro` | Landing page, beta sign-up |
+| `/` | `src/pages/index.astro` | Landing page: open the web app, download the APK, FAQ |
+| `/terms` | `src/pages/terms.md` | Terms of service, including buying, refunds and teacher payouts (section 6) |
+| `/refunds` | `src/pages/refunds.astro` | Refund and cancellation policy: what Paystack's reviewers and buyers look for |
+| `/support` | `src/pages/support.astro` | How to reach us, reply time, what to include, escalation |
 | `/privacy` | `src/pages/privacy.md` | Play Console privacy policy URL; NDPA 2023 |
-| `/terms` | `src/pages/terms.md` | Terms of service |
 | `/delete-account` | `src/pages/delete-account.astro` | Play Console account-deletion URL |
 | `/payment-callback` | `src/pages/payment-callback.astro` | `PaymentService.callbackUrl`; only seen if the checkout WebView doesn't intercept it |
 | `/email-confirmed` | `src/pages/email-confirmed.astro` | `WebLinks.emailConfirmed`: where sign-up confirmation and email-change links land. Must be in Supabase's Redirect URLs |
@@ -16,6 +19,11 @@ site, hosted free on Cloudflare Pages.
 Keep the legal pages in step with the app. What `/delete-account` and `/privacy`
 say is deleted or kept must match `supabase/functions/delete-account`. The support
 email is set in `src/site.ts` and must match `lib/utils/app_info.dart`.
+
+**The promises live in `src/site.ts`:** the operating company, the support reply
+time, the refund window and how fast refunds are sent. `/refunds` and `/support`
+read them from there. `terms.md` and the FAQ in `index.astro` repeat them in
+prose, so change those too, and bump `legalUpdated`.
 
 ## App screenshots
 
@@ -72,5 +80,8 @@ Cloudflare, not in `npm run dev`.
   fingerprint of the Play app-signing key, which doesn't exist until the first
   upload. The app doesn't need them today: password reset uses
   `padilearn://`, and the checkout WebView intercepts the callback URL itself.
-- **Google Play badge.** Swap the "Join the beta" buttons for the Play link when
-  the app is public.
+- **Google Play badge.** Add the Play link beside the APK download once the app
+  is listed.
+- **Business details.** Only the company name and email are published. Add the
+  RC number and registered address to `site.company` and `/support` when they
+  should be public.

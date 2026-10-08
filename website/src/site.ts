@@ -10,8 +10,35 @@ export const site = {
   supportEmail: 'hello@padilearn.com',
   description:
     'Video courses from Nigerian teachers. Learn on your phone, at your own pace, and pick up where you left off.',
-  /** Date shown on the privacy policy and terms. Change it when they change. */
-  legalUpdated: '14 September 2026',
+  /** Date shown on the legal and policy pages. Change it when any of them change. */
+  legalUpdated: '8 October 2026',
+
+  /**
+   * The business behind PadiLearn, as the legal pages and footer name it.
+   * Paystack's reviewers and Nigerian consumer and data protection rules
+   * expect it. Add the RC number and a registered address here once they are
+   * to be published, and show them on /support.
+   */
+  company: {
+    name: 'Groundwork Tech Ltd',
+    country: 'Nigeria',
+  },
+
+  /**
+   * What /support and /refunds promise, read from here. `terms.md` and the
+   * FAQ in index.astro repeat the same numbers in prose: change them too, and
+   * bump `legalUpdated`.
+   */
+  support: {
+    responseTime: 'within 2 working days',
+    hours: 'Monday to Friday, except Nigerian public holidays',
+  },
+  refunds: {
+    /** How long after buying a "not as described" refund can be asked for. */
+    windowDays: 7,
+    /** How soon an approved refund is sent through Paystack. */
+    issuedWithin: 'within 5 working days of approving it',
+  },
 
   /** The Flutter web build. Works in any browser, nothing to install. */
   appUrl: 'https://app.padilearn.com',

@@ -4,11 +4,11 @@ title: Terms of service
 description: The rules for using PadiLearn as a student or a teacher.
 ---
 
-These terms are the agreement between you and PadiLearn when you use the PadiLearn app or padilearn.com. By creating an account you agree to them. If you don't agree, please don't use PadiLearn.
+These terms are the agreement between you and **Groundwork Tech Ltd**, a company registered in Nigeria that operates PadiLearn ("PadiLearn", "we", "us"), when you use the PadiLearn apps or padilearn.com. By creating an account you agree to them. If you don't agree, please don't use PadiLearn.
 
 <div class="callout">
 
-**PadiLearn is in beta.** During the beta every course is free, and nothing is bought or sold in the app. Things may change, break or be removed while we test. Before paid courses launch we'll update these terms with the rules for buying, refunds and teacher payouts, and tell you first.
+**Buying a course, refunds and teacher payouts** are in [section 6](#6-paid-courses-refunds-and-payouts), and our [refund policy](/refunds) has the full detail. For help, see [Support](/support): we reply within 2 working days.
 
 </div>
 
@@ -54,15 +54,40 @@ Keep comments on topic and respectful. Ratings should reflect your honest experi
 - **Report it in the app.** Use *Report* on a course page or on a comment.
 - **Or email us** at [hello@padilearn.com](mailto:hello@padilearn.com). For copyright complaints, include what the content is, where it is in the app, what work you own, and how to contact you.
 
-We review reports and may remove content, limit features, or suspend or close accounts that break these terms. Where it's appropriate, we'll tell the person affected why and let them respond. Repeated or serious violations lead to the account being closed.
+We review reports and may remove content, limit features, or suspend or close accounts that break these terms. Where it's appropriate, we'll tell the person affected why and let them respond. A suspended account is shown the reason in the app, and can appeal by emailing [hello@padilearn.com](mailto:hello@padilearn.com); a person reviews every appeal. Repeated or serious violations lead to the account being closed.
 
 ## 6. Paid courses, refunds and payouts
 
-Paid courses aren't available yet. When they are, this section will explain prices, fees, refunds and how teachers are paid. We will update these terms and tell you before any purchase or payout happens. Nothing in these terms takes away rights you have under Nigerian consumer protection law.
+### Buying a course
+
+- **Teachers set their own prices**, in naira. Before you pay, you see the course price and a card processing fee, which covers what our payment provider charges. The total you see is what you pay. It is a one-off payment, not a subscription.
+- **Payments are handled by Paystack**, by card, bank transfer or the other options Paystack offers at checkout. PadiLearn never sees your full card details.
+- **The course is yours once the payment is confirmed**, usually within seconds. You can watch it for as long as your account is open and the course stays on PadiLearn. It is for your own learning: don't share your account or the videos.
+- **There is nothing to cancel.** There are no subscriptions or automatic renewals.
+- **Preview lessons are free**, so you can see what a course is like before you buy it.
+
+### Refunds
+
+Courses are digital, so there is nothing to return; where a refund is due, we refund the payment. The full rules are in our [refund policy](/refunds). In short:
+
+- **Charged but no course, or charged twice?** Email us with the payment reference. We'll give you the course, or refund the extra payment.
+- **If we remove a course** because it breaks these terms, everyone who paid for it gets a full refund, card fee included.
+- **Not what it said?** If a course is clearly not what its description and preview lessons showed, email us within 7 days of buying it. We review every request, and when we refund, the course is removed from your account.
+- **Approved refunds** are sent through Paystack within 5 working days, back to the card or account you paid with. Your bank may take up to 10 working days to show it.
+- Nothing in these terms takes away your rights under the Federal Competition and Consumer Protection Act 2018 or any other Nigerian law.
+
+### Teacher earnings and payouts
+
+- **PadiLearn keeps 15% of the price you set.** The student pays the card fee on top, so you earn 85% of your price: NGN 4,250 on a NGN 5,000 course. We'll give teachers at least 30 days' notice before changing this.
+- **Sales clear after 7 days.** Money from a sale can be paid out 7 days after the sale. That leaves time for refunds and card disputes.
+- **Ask for a payout in the app** once at least NGN 1,000 is ready. We send it by bank transfer to the Nigerian bank account you add in the app. We check the account name with the bank before saving it. We aim to send payouts within 5 working days of your request, and the app tells you when one has been sent.
+- **Refunds come out of your earnings.** If a sale is refunded after you have been paid for it, the amount comes out of your future earnings. We won't ask you to pay it back separately.
+- **Payouts are held while an account is suspended.** Your balance is kept.
+- **You're responsible for your own taxes** on what you earn.
 
 ## 7. The service
 
-We work to keep PadiLearn running, but we can't promise it will always be available or error-free, especially during the beta. We may change or stop features. We are not responsible for the accuracy of what teachers teach. Courses are the teachers' own work and don't come from PadiLearn.
+We work to keep PadiLearn running, but we can't promise it will always be available or error-free. We may change or stop features. We are not responsible for the accuracy of what teachers teach. Courses are the teachers' own work and don't come from PadiLearn.
 
 ## 8. Liability
 
@@ -82,4 +107,4 @@ These terms are governed by the laws of the Federal Republic of Nigeria. Contact
 
 ## Contact
 
-[hello@padilearn.com](mailto:hello@padilearn.com)
+Groundwork Tech Ltd, operator of PadiLearn · [hello@padilearn.com](mailto:hello@padilearn.com) · [Support](/support). We reply within 2 working days.

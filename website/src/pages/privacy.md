@@ -10,7 +10,7 @@ If anything here is unclear, email us at [hello@padilearn.com](mailto:hello@padi
 
 ## Who we are
 
-PadiLearn is an online learning app where teachers publish video courses and students enrol in them. In this policy "PadiLearn", "we" and "us" mean the operator of the PadiLearn app and padilearn.com, who decides how your data is used (the data controller). You can reach us at [hello@padilearn.com](mailto:hello@padilearn.com).
+PadiLearn is an online learning app where teachers publish video courses and students enrol in them or buy them. It is operated by **Groundwork Tech Ltd**, a company registered in Nigeria. In this policy "PadiLearn", "we" and "us" mean Groundwork Tech Ltd, which decides how your data is used (the data controller). You can reach us at [hello@padilearn.com](mailto:hello@padilearn.com).
 
 ## What we collect
 
@@ -24,17 +24,17 @@ PadiLearn is an online learning app where teachers publish video courses and stu
 | Courses you create (teachers) | Videos, thumbnails, titles, descriptions, categories, prices | To host your course and show it to students |
 | Things you post | Comments, course ratings, reports about content | To run course discussions, show ratings, and review reports |
 | Learning activity | Courses you enrol in and your lesson progress | To show your courses and let you resume where you stopped |
-| Payout details (teachers only) | Bank name, account number, account name | To pay teachers once paid courses are available |
-| Purchase records | What was bought, when, the amount and the payment reference | To give you access to what you paid for, and for our financial records (only once paid courses are available) |
+| Payout details (teachers only) | Bank name, account number, account name, and the payouts we have sent you | To pay you what your courses earn |
+| Purchase records | What was bought, when, the amount and the payment reference | To give you access to what you paid for, and for our financial records |
 | Crash and error reports | What went wrong in the app, your phone model and Android version, and your account ID | To find and fix bugs |
 
 </div>
 
 **We do not collect** your location, contacts, phone number, or device identifiers for advertising. The app shows no ads, and we do not sell your information.
 
-The app stores some data on your phone, such as a list of your ongoing courses so they still appear when you're offline. It is removed if you uninstall the app or clear its data.
+The app stores some data on your phone, such as a list of your ongoing courses so they still appear when you're offline. It is removed if you uninstall the app or clear its data. The web app at app.padilearn.com keeps you signed in using your browser's storage; signing out or clearing your browser data removes it.
 
-This website does not use cookies, analytics or tracking scripts.
+This website and the web app use no advertising or analytics cookies and no tracking scripts. When you pay, you do so on Paystack's checkout page, which Paystack runs under its own privacy policy.
 
 ## Why we use it (legal basis)
 
@@ -52,7 +52,7 @@ We only email you about your account, such as password resets and important serv
   - **Cloudflare** hosts this website.
   - **Resend** sends account emails such as sign-up confirmations and password resets.
   - **Sentry** receives crash and error reports from the app, linked to your account ID but not your name or email, so we can find and fix bugs.
-  - **Paystack** will process card and bank payments once paid courses are available. We never see or store your full card details.
+  - **Paystack** processes card and bank payments, and checks the name on a teacher's bank account before we save it. We never see or store your full card details.
 - **Authorities**, where the law requires us to share information.
 
 We don't share your information with anyone else.
