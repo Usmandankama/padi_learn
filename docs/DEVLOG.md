@@ -77,6 +77,15 @@ separate from live.
   tolerates them instead of rolling back.
 - Edge functions that import `../_shared/` deploy through the Supabase MCP
   with files named `<fn>/index.ts` and `_shared/<file>.ts`.
+- **APK 1.0.2 shipped with paid checkout off**: `LAUNCH_WEB.md`'s build
+  command lacked `--dart-define=PAID_CHECKOUT=true`, which `LAUNCH_ANDROID.md`
+  requires for the APK from padilearn.com (1.0.1 was built the same way).
+  1.0.3, the same day, has it on; the command and a check are now in
+  `LAUNCH_WEB.md`.
+- Flutter's service worker serves a returning visitor the cached web app
+  first, so their first visit after the deploy still talked to Mumbai (a
+  new account looked missing, and reset emails were not sent). A reload
+  fixes it; pausing Mumbai ends it for everyone.
 
 **Touches:** `tool/region_move/*`, `docs/REGION_MOVE.md`, `docs/STATUS.md`,
 `docs/ADMIN_PANEL.md` (webhook URL), `docs/LAUNCH_WEB.md`,

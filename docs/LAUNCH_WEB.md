@@ -136,7 +136,7 @@ Two objects per release:
 The bucket and the custom domain already exist; this is the per-release part.
 
 ```bash
-flutter build apk --release --target-platform android-arm,android-arm64
+flutter build apk --release --target-platform android-arm,android-arm64 --dart-define=PAID_CHECKOUT=true
 APK=build/app/outputs/flutter-apk/app-release.apk
 CT=application/vnd.android.package-archive
 
@@ -144,6 +144,14 @@ cat $APK | npx wrangler@3 r2 object put padilearn-dl/padilearn-<version>.apk   -
 
 cat $APK | npx wrangler@3 r2 object put padilearn-dl/padilearn-latest.apk   --pipe --content-type $CT --cache-control "public, max-age=300"
 ```
+
+**`--dart-define=PAID_CHECKOUT=true` is not optional either.** Without it the
+APK says "Paid courses can't be bought in the app yet" (see
+`lib/config/features.dart`). 1.0.1 and 1.0.2 went out that way; 1.0.3 is the
+first with checkout on. It must never be passed to a build for Google Play.
+Check before uploading: the message must be absent from the build,
+`unzip -p $APK lib/arm64-v8a/libapp.so | grep -a -c "be bought in the app yet"`
+prints 0.
 
 **`--pipe` is not optional, and it is the part worth remembering.** Passing
 `--file` instead failed from this machine twice in a row, each time after about
