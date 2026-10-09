@@ -27,3 +27,23 @@ select 'triggers ' || n.nspname || ' = ' || count(*)
 
 select 'realtime = ' || coalesce(string_agg(schemaname || '.' || tablename, ', ' order by tablename), '(none)')
   from pg_publication_tables where pubname = 'supabase_realtime';
+
+-- Grants, which the row counts cannot see. Each object's privileges per role,
+-- grantor dropped (it differs between projects and changes nothing).
+with acls as (
+  select 'rel ' || n.nspname || '.' || c.relname as obj, c.relacl as acl
+    from pg_class c join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname in ('public', 'private') and c.relkind in ('r', 'v', 'm', 'S', 'f', 'p')
+  union all
+  select 'col ' || n.nspname || '.' || c.relname || '.' || a.attname, a.attacl
+    from pg_attribute a join pg_class c on c.oid = a.attrelid join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname in ('public', 'private') and a.attacl is not null and not a.attisdropped
+  union all
+  select 'fn ' || n.nspname || '.' || p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')', p.proacl
+    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname in ('public', 'private')
+)
+select 'grants ' || obj || ' :: ' ||
+       coalesce((select string_agg(regexp_replace(e::text, '/.*$', ''), ' ' order by e::text)
+                   from unnest(acl) e), '(default)')
+  from acls order by obj;

@@ -41,8 +41,23 @@ function auth(project, extra = {}) {
   return headers;
 }
 
+/// fetch, retried when the connection drops ("fetch failed": ECONNRESET and
+/// the like). On a patchy line one reset otherwise fails every file after it.
+async function fetchRetry(url, init, attempts = 5) {
+  for (let i = 1; ; i++) {
+    try {
+      return await fetch(url, init);
+    } catch (e) {
+      if (i >= attempts) throw e;
+      const wait = 2000 * 2 ** (i - 1);
+      console.log(`  (connection dropped: ${e.cause?.code ?? e.message}; retrying in ${wait / 1000}s)`);
+      await new Promise((r) => setTimeout(r, wait));
+    }
+  }
+}
+
 async function call(project, path, init = {}) {
-  const res = await fetch(`${project.url}/storage/v1/${path}`, {
+  const res = await fetchRetry(`${project.url}/storage/v1/${path}`, {
     ...init,
     headers: auth(project, init.headers),
   });
@@ -76,7 +91,7 @@ async function listFiles(bucket, prefix = '') {
 
 /// The restore normally brings the buckets; this covers running out of order.
 async function ensureBucket(bucket) {
-  const res = await fetch(`${NEW.url}/storage/v1/bucket/${encodeURIComponent(bucket.id)}`, {
+  const res = await fetchRetry(`${NEW.url}/storage/v1/bucket/${encodeURIComponent(bucket.id)}`, {
     headers: auth(NEW),
   });
   if (res.ok) return;
@@ -129,13 +144,23 @@ for (const bucket of buckets) {
   const files = await listFiles(bucket.id);
   console.log(`${bucket.id}: ${files.length} files`);
   for (const file of files) {
-    try {
-      bytes += await copyFile(bucket.id, file);
-      copied++;
-      console.log(`  ok  ${file.name}`);
-    } catch (e) {
-      failed.push(`${bucket.id}/${file.name}: ${e.message}`);
-      console.log(`  ERR ${file.name}: ${e.message}`);
+    // A drop while a video's bytes are streaming surfaces outside fetch, so
+    // the whole file is retried too.
+    for (let attempt = 1; ; attempt++) {
+      try {
+        bytes += await copyFile(bucket.id, file);
+        copied++;
+        console.log(`  ok  ${file.name}`);
+        break;
+      } catch (e) {
+        if (attempt < 3) {
+          console.log(`  (${file.name}: ${e.message}; trying again)`);
+          continue;
+        }
+        failed.push(`${bucket.id}/${file.name}: ${e.message}`);
+        console.log(`  ERR ${file.name}: ${e.message}`);
+        break;
+      }
     }
   }
 }

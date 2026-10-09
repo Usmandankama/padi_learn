@@ -25,7 +25,7 @@ data_internal='information_schema|pg_*|graphql|graphql_public|pgsodium|pgsodium_
 echo "Dumping the schema..."
 pg_dump --dbname "$OLD_DB_URL" \
     --schema-only \
-    --quote-all-identifier \
+    --quote-all-identifiers \
     --role postgres \
     --exclude-schema "$internal" \
 | sed -E 's/^\\(un)?restrict .*$/-- &/' \
@@ -57,11 +57,18 @@ pg_dump --dbname "$OLD_DB_URL" \
 > "$out/schema.sql"
 
 echo "Dumping the data (accounts and storage metadata included)..."
+# Inserts that skip rows already there, rather than COPY: a copy_storage.mjs
+# run before the restore leaves buckets and files in the new project, and
+# COPY would fail on them and roll the whole restore back. Column names are
+# spelled out because the two projects can run different Supabase versions.
 {
   echo "SET session_replication_role = replica;"
   pg_dump --dbname "$OLD_DB_URL" \
       --data-only \
-      --quote-all-identifier \
+      --column-inserts \
+      --rows-per-insert 100 \
+      --on-conflict-do-nothing \
+      --quote-all-identifiers \
       --role postgres \
       --exclude-schema "$data_internal" \
       --exclude-table "auth.schema_migrations" \
