@@ -45,6 +45,25 @@ class PayoutAccount {
   }
 }
 
+/// Whether the signed-in teacher can charge for a course, from
+/// `my_selling_status()`.
+///
+/// Selling needs a verified bank account with a Paystack subaccount behind it,
+/// because each sale is split to that subaccount at checkout. An account saved
+/// before subaccounts existed has the bank but not the subaccount; saving it
+/// again creates one.
+class SellingStatus {
+  final bool canSell;
+  final bool hasBank;
+
+  const SellingStatus({required this.canSell, required this.hasBank});
+
+  factory SellingStatus.fromJson(Map<String, dynamic> json) => SellingStatus(
+        canSell: json['can_sell'] == true,
+        hasBank: json['has_bank'] == true,
+      );
+}
+
 /// Reads and updates the signed-in teacher's payout destination.
 ///
 /// Every write goes through the `payout-account` edge function, which resolves
@@ -102,6 +121,12 @@ class PayoutAccountService {
       'accountNumber': accountNumber,
     });
     return (data['account_name'] ?? '').toString();
+  }
+
+  /// Whether a paid course can be published now.
+  static Future<SellingStatus> sellingStatus() async {
+    final result = await supabase.rpc('my_selling_status');
+    return SellingStatus.fromJson(Map<String, dynamic>.from(result as Map));
   }
 
   /// Removes the payout account. Allowed directly — RLS limits it to the owner.

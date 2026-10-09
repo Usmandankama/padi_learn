@@ -152,7 +152,8 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
         _existing = refreshed;
         _editing = false;
       });
-      _notify('Payout account saved.');
+      _notify('Bank account saved. Your share of each sale will be paid '
+          'into it.');
     } catch (e) {
       _notify(e.toString().replaceFirst('Exception: ', ''), isError: true);
     } finally {
@@ -166,7 +167,8 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Remove payout account'),
         content: const Text(
-          'We will have nowhere to send your earnings until you add another.',
+          'Students cannot buy your paid courses until you add another, '
+          'because there will be nowhere to pay your share.',
         ),
         actions: [
           TextButton(
@@ -299,8 +301,9 @@ class _PayoutAccountScreenState extends State<PayoutAccountScreen> {
         ),
         SizedBox(height: 16.h),
         _infoNote(
-          'Earnings are sent here. Make sure the name matches your bank '
-          'records — transfers cannot be reversed.',
+          'Paystack pays your share of each sale straight into this account. '
+          'Make sure the name matches your bank records — payments cannot be '
+          'reversed.',
         ),
         SizedBox(height: 20.h),
         PrimaryButton(

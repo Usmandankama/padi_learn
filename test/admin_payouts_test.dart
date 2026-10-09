@@ -20,6 +20,9 @@ Map<String, dynamic> balance(
   bool suspended = false,
   bool hasAccount = true,
   int? requested,
+  int direct = 0,
+  String? subaccount,
+  bool house = false,
 }) =>
     {
       'teacher_id': id,
@@ -40,11 +43,15 @@ Map<String, dynamic> balance(
       'request_id': requested == null ? null : 'r-$id',
       'requested_kobo': requested,
       'requested_at': requested == null ? null : '2026-10-08T08:00:00+00:00',
+      'settled_direct_kobo': direct,
+      'subaccount_code': subaccount,
+      'house': house,
     };
 
 FakeAdminApi books() => FakeAdminApi()
   ..balanceRows = [
-    balance('t1', 'Ada Teacher', available: 200000),
+    balance('t1', 'Ada Teacher',
+        available: 200000, direct: 425000, subaccount: 'ACCT_ada'),
     balance('t2', 'Chidi Held', available: 100000, suspended: true),
     balance('t3', 'Dayo New', pending: 425000),
     balance('t4', 'Efe Unbanked', available: 30000, hasAccount: false),
@@ -115,6 +122,30 @@ void main() {
       scrollable: list,
     );
     expect(find.textContaining('No verified bank account yet'), findsOneWidget);
+  });
+
+  testWidgets('a split teacher shows what Paystack paid, and their subaccount',
+      (tester) async {
+    await pumpAdminScreen(tester, PayoutsScreen(api: books()));
+
+    expect(tester.takeException(), isNull);
+    expect(find.textContaining('paid by Paystack at checkout'), findsOneWidget);
+    expect(find.text('Paystack subaccount ACCT_ada'), findsOneWidget);
+    // Chidi has none, so his paid courses cannot be bought.
+    expect(find.textContaining('No Paystack subaccount'), findsWidgets);
+  });
+
+  testWidgets('a house account is not flagged for having no subaccount',
+      (tester) async {
+    final api = FakeAdminApi()
+      ..balanceRows = [
+        balance('h1', 'PadiLearn', available: 500000, house: true),
+      ];
+    await pumpAdminScreen(tester, PayoutsScreen(api: api));
+
+    expect(find.text('House account: its sales stay with PadiLearn.'),
+        findsOneWidget);
+    expect(find.textContaining('No Paystack subaccount'), findsNothing);
   });
 
   testWidgets('recording sends the amount in kobo, the reference and a note',

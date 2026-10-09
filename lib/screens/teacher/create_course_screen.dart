@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/screens/teacher/components/category_picker.dart';
 import 'package:padi_learn/screens/teacher/components/earnings_hint.dart';
+import 'package:padi_learn/screens/teacher/components/paid_course_gate.dart';
 import 'package:padi_learn/screens/teacher/components/upload_progress_card.dart';
 import 'package:padi_learn/screens/teacher/course_detail_screen.dart';
 import 'package:padi_learn/services/lesson_service.dart';
@@ -185,6 +186,12 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       return;
     }
 
+    // Before the upload, not after: a paid course needs a bank account, and
+    // the video can take minutes to send.
+    final price = double.tryParse(_price.text.trim()) ?? 0;
+    if (price > 0 && !await ensureCanSellPaid(context)) return;
+    if (!mounted) return;
+
     setState(() {
       _saving = true;
       _progress = null;
@@ -207,7 +214,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
           .insert({
             'title': _title.text.trim(),
             'description': _description.text.trim(),
-            'price': double.tryParse(_price.text.trim()) ?? 0,
+            'price': price,
             'category': _category,
             'author': _author.text.trim(),
             'thumbnail_url': upload.thumbnailUrl,

@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { customerTotalNaira } from "../_shared/paystack.ts";
+import { platformFeePercent, splitFor } from "../_shared/paystack.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -80,10 +80,44 @@ Deno.serve(async (req) => {
     const price = Number(course.price ?? 0);
     if (price <= 0) return json({ error: "This course is free." }, 400);
 
+    // Where the teacher's share goes. A house course settles wholly to
+    // PadiLearn; anyone else's is split to their Paystack subaccount, and
+    // cannot be sold until they have one.
+    const { data: terms, error: termsErr } = await admin.rpc("checkout_terms", {
+      p_teacher_id: course.user_id,
+    });
+    if (termsErr || !terms) {
+      return json({ error: "Could not check this purchase." }, 500);
+    }
+    const subaccountCode = terms.house ? null : terms.subaccount_code;
+    if (!terms.house && !subaccountCode) {
+      return json({
+        error: "This teacher hasn't finished setting up payouts, so the " +
+          "course can't be bought yet. Please try again later.",
+      }, 409);
+    }
+
     // The student covers Paystack's fee, so the charge is grossed up and the
-    // teacher's list price settles in full. `grantEntitlement` re-derives this
-    // identically and rejects anything short, so the two must never diverge.
-    const chargeNaira = customerTotalNaira(price);
+    // teacher's list price settles in full. `grantEntitlement` re-derives the
+    // total identically and rejects anything short, so the two must never
+    // diverge.
+    const split = splitFor(
+      price,
+      Number(terms.debt_kobo ?? 0),
+      platformFeePercent(),
+    );
+
+    // Only split when the teacher has something to receive: a sale that goes
+    // entirely to repaying their debt settles to PadiLearn like a house sale.
+    const splitParams = subaccountCode && split.subaccountKobo > 0
+      ? {
+        subaccount: subaccountCode,
+        transaction_charge: split.transactionChargeKobo,
+        // PadiLearn's account pays Paystack's fee, out of what the student
+        // paid on top, so the teacher's share arrives whole.
+        bearer: "account",
+      }
+      : {};
 
     const initRes = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
@@ -93,19 +127,27 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         email: user.email,
-        amount: Math.round(chargeNaira * 100), // NGN -> kobo
+        amount: split.chargeKobo,
         currency: "NGN",
         // Every current client sends this URL. The fallback matches it, so an
         // older client still lands on the app's callback route, which
         // verifies the payment, and not on the marketing site.
         callback_url: callbackUrl ?? "https://app.padilearn.com/payment-callback",
+        ...splitParams,
         metadata: {
           user_id: user.id,
           course_id: course.id,
           course_title: course.title,
           // Recorded so support can see what was added on top, and why.
           list_price_kobo: Math.round(price * 100),
-          card_fee_kobo: Math.round((chargeNaira - price) * 100),
+          card_fee_kobo: split.chargeKobo - Math.round(price * 100),
+          // The split as decided here; `grantEntitlement` records the
+          // teacher's share from it.
+          teacher_share_kobo: split.teacherShareKobo,
+          recover_kobo: split.recoverKobo,
+          transaction_charge_kobo: "subaccount" in splitParams
+            ? split.transactionChargeKobo
+            : split.chargeKobo,
         },
       }),
     });

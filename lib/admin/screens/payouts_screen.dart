@@ -239,6 +239,11 @@ class _BalanceCard extends StatelessWidget {
               label: 'taken back by refunds',
               value: kobo('clawback_kobo'),
               indent: true),
+          if (asCount(teacher['settled_direct_kobo']) > 0)
+            StatRow(
+                label: 'paid by Paystack at checkout',
+                value: kobo('settled_direct_kobo'),
+                indent: true),
           StatRow(label: 'paid out', value: kobo('paid_out_kobo'), indent: true),
           StatRow(label: 'Balance', value: kobo('balance_kobo')),
           StatRow(
@@ -278,6 +283,16 @@ class _BalanceCard extends StatelessWidget {
                 ),
               ],
             ),
+          const SizedBox(height: 6),
+          SelectableText(
+            teacher['house'] == true
+                ? 'House account: its sales stay with PadiLearn.'
+                : teacher['subaccount_code'] == null
+                    ? 'No Paystack subaccount: their paid courses cannot be '
+                        'bought.'
+                    : 'Paystack subaccount ${teacher['subaccount_code']}',
+            style: text.bodySmall?.copyWith(color: palette.inkSoft),
+          ),
           const SizedBox(height: 10),
           if (blocker != null)
             Text(blocker, style: text.bodySmall?.copyWith(color: palette.inkSoft)),

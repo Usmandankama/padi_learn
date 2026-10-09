@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { platformFeePercent } from "../_shared/paystack.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,6 +23,23 @@ async function paystack(path: string, key: string) {
   return await res.json();
 }
 
+async function paystackWrite(
+  method: "POST" | "PUT",
+  path: string,
+  key: string,
+  body: Record<string, unknown>,
+) {
+  const res = await fetch(`https://api.paystack.co${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  return { httpStatus: res.status, body: await res.json() };
+}
+
 /// Owns everything about a teacher's payout destination:
 ///
 ///   { action: "banks" }                                  -> the bank list
@@ -31,6 +49,12 @@ async function paystack(path: string, key: string) {
 /// Saving goes through here rather than straight to the table so the stored
 /// `account_name` provably came from the bank. Nigerian transfers are
 /// irreversible; a typo'd digit must not silently become a stranger's account.
+///
+/// Saving also creates the teacher's Paystack subaccount, or points their
+/// existing one at the new bank. Sales of their courses are split to it at
+/// checkout, so the teacher's share is settled to this account by Paystack.
+/// Paystack holds a new or changed subaccount's first payout until PadiLearn
+/// verifies it on the dashboard.
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -89,7 +113,23 @@ Deno.serve(async (req) => {
     // A suspended teacher's payouts are held, and changing where the money
     // goes mid-suspension is exactly what must not happen. The service role
     // sees past the RLS rule that blocks the same thing in the app.
+    //
+    // Only teachers get a subaccount: a student has nothing to be paid.
+    let teacherName = "";
     if (action === "save") {
+      const { data: profile, error: profileErr } = await admin
+        .from("profiles")
+        .select("name, role")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (profileErr) {
+        return json({ error: "Could not check your account." }, 500);
+      }
+      if (profile?.role !== "Teacher") {
+        return json({ error: "Only teachers can add a payout account." }, 403);
+      }
+      teacherName = String(profile?.name ?? "").trim();
+
       const { data: suspension, error: suspensionErr } = await admin
         .from("suspensions")
         .select("user_id")
@@ -142,6 +182,82 @@ Deno.serve(async (req) => {
     const bank = (bankList.data ?? []).find(
       (b: { code?: string }) => b.code === bankCode,
     );
+
+    // The subaccount comes first: if Paystack refuses it, nothing is saved,
+    // so the bank account shown in the app is always the one Paystack pays.
+    // House accounts never split, so they need none.
+    const { data: house } = await admin
+      .from("house_accounts")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!house) {
+      const { data: existing, error: existingErr } = await admin
+        .from("paystack_subaccounts")
+        .select("subaccount_code")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (existingErr) {
+        return json({ error: "Could not check your account." }, 500);
+      }
+
+      const details = {
+        business_name: `${teacherName || accountName} (PadiLearn teacher)`,
+        // Paystack's reference names this `bank_code`; its examples, and older
+        // integrations, use `settlement_bank`. Both carry the same code.
+        settlement_bank: bankCode,
+        bank_code: bankCode,
+        account_number: accountNumber,
+        description: `PadiLearn teacher ${user.id}`,
+      };
+
+      let code: string | null = existing?.subaccount_code ?? null;
+      if (code) {
+        const updated = await paystackWrite(
+          "PUT",
+          `/subaccount/${encodeURIComponent(code)}`,
+          paystackKey,
+          details,
+        );
+        // A code from test mode does not exist in live mode: start afresh.
+        if (updated.httpStatus === 404) {
+          code = null;
+        } else if (!updated.body?.status) {
+          return json({
+            error: updated.body?.message ??
+              "Paystack could not update your payout account.",
+          }, 502);
+        }
+      }
+      if (!code) {
+        const created = await paystackWrite("POST", "/subaccount", paystackKey, {
+          ...details,
+          // A default only: checkout always sets the exact split.
+          percentage_charge: platformFeePercent(),
+          primary_contact_email: user.email,
+          primary_contact_name: teacherName || accountName,
+          metadata: JSON.stringify({ user_id: user.id }),
+        });
+        code = created.body?.data?.subaccount_code ?? null;
+        if (!created.body?.status || !code) {
+          return json({
+            error: created.body?.message ??
+              "Paystack could not set up your payout account.",
+          }, 502);
+        }
+      }
+
+      const { error: subErr } = await admin.from("paystack_subaccounts").upsert(
+        {
+          user_id: user.id,
+          subaccount_code: code,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" },
+      );
+      if (subErr) return json({ error: subErr.message }, 500);
+    }
 
     const { error: saveErr } = await admin.from("payout_accounts").upsert(
       {

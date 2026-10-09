@@ -51,6 +51,65 @@ export function customerTotalNaira(listPrice: number): number {
   // Past the cap the fee stops growing, so it is simply added on.
   return Math.ceil(listPrice + PAYSTACK_FEE_CAP);
 }
+
+/// PadiLearn's commission, in percent.
+///
+/// Defaults to the agreed 15% so a missing secret cannot silently hand over
+/// 100% of every sale. Override per-environment if it ever changes; past
+/// rows keep whatever split they were written with.
+export function platformFeePercent(): number {
+  return Math.min(
+    100,
+    Math.max(0, Number(Deno.env.get("PLATFORM_FEE_PERCENT") ?? "15") || 0),
+  );
+}
+
+export type Split = {
+  /// What the student is charged.
+  chargeKobo: number;
+  /// The teacher's share of the list price.
+  teacherShareKobo: number;
+  /// Kept back from the share to repay `debtKobo`.
+  recoverKobo: number;
+  /// What Paystack settles to the teacher's subaccount.
+  subaccountKobo: number;
+  /// What stays with PadiLearn's account, which also pays Paystack's fee:
+  /// Paystack's `transaction_charge`.
+  transactionChargeKobo: number;
+};
+
+/// How one sale of a `listPrice` course divides between teacher and platform.
+///
+/// The teacher's share is fixed against the list price, not the settled
+/// amount: the student pays the card fee on top, PadiLearn's account bears
+/// Paystack's actual fee, and any rounding in the gross-up stays with
+/// PadiLearn rather than coming out of the teacher's money.
+///
+/// `debtKobo` is what the teacher owes back after a refund of a sale Paystack
+/// had already settled to them. It is kept back from this sale's share, up to
+/// all of it.
+export function splitFor(
+  listPrice: number,
+  debtKobo: number,
+  feePercent: number,
+): Split {
+  const chargeKobo = Math.round(customerTotalNaira(listPrice) * 100);
+  const listKobo = Math.round(listPrice * 100);
+  const teacherShareKobo = listKobo - Math.round((listKobo * feePercent) / 100);
+  const recoverKobo = Math.min(
+    Math.max(0, Math.floor(debtKobo) || 0),
+    teacherShareKobo,
+  );
+  const subaccountKobo = teacherShareKobo - recoverKobo;
+  return {
+    chargeKobo,
+    teacherShareKobo,
+    recoverKobo,
+    subaccountKobo,
+    transactionChargeKobo: chargeKobo - subaccountKobo,
+  };
+}
+
 export function adminClient(): SupabaseClient {
   return createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -125,14 +184,34 @@ export async function grantEntitlement(
   const paystackFeeKobo = Number(tx.fees ?? 0) || 0;
   const netKobo = Math.max(0, amountKobo - paystackFeeKobo);
 
-  // Defaults to the agreed 15% so a missing secret cannot silently hand over
-  // 100% of every sale. Override per-environment if it ever changes; past
-  // rows keep whatever split they were written with.
-  const feePercent = Math.min(
-    100,
-    Math.max(0, Number(Deno.env.get("PLATFORM_FEE_PERCENT") ?? "15") || 0),
+  let teacherEarningKobo = netKobo - Math.round(
+    (netKobo * platformFeePercent()) / 100,
   );
-  const platformFeeKobo = Math.round((netKobo * feePercent) / 100);
+  let settledDirectKobo = 0;
+
+  // A split sale: Paystack settles the teacher's part straight to their
+  // subaccount (`subaccount` is `{}` on a sale that was not split). The
+  // teacher earned the share fixed at checkout; what Paystack actually sent
+  // them is recorded beside it, and the difference (debt kept back, or any
+  // surprise in Paystack's split) is what the balance carries.
+  const subaccountCode = typeof tx.subaccount?.subaccount_code === "string" &&
+      tx.subaccount.subaccount_code
+    ? String(tx.subaccount.subaccount_code)
+    : null;
+  if (subaccountCode) {
+    const fromSplit = Number(tx.fees_split?.subaccount);
+    settledDirectKobo = Number.isFinite(fromSplit) && fromSplit >= 0
+      ? Math.round(fromSplit)
+      : Math.max(
+        0,
+        amountKobo - (Number(meta.transaction_charge_kobo) || amountKobo),
+      );
+    const share = Number(meta.teacher_share_kobo);
+    teacherEarningKobo = Number.isFinite(share) && share >= 0
+      ? Math.round(share)
+      : settledDirectKobo + Math.max(0, Number(meta.recover_kobo) || 0);
+  }
+  const platformFeeKobo = netKobo - teacherEarningKobo;
 
   // Recorded before the entitlement, so a retry can never grant access
   // without leaving a financial record.
@@ -149,7 +228,9 @@ export async function grantEntitlement(
       currency: tx.currency ?? "NGN",
       paystack_fee_kobo: paystackFeeKobo,
       platform_fee_kobo: platformFeeKobo,
-      teacher_earning_kobo: netKobo - platformFeeKobo,
+      teacher_earning_kobo: teacherEarningKobo,
+      subaccount_code: subaccountCode,
+      settled_direct_kobo: settledDirectKobo,
       status: "success",
       channel: tx.channel ?? null,
       paid_at: tx.paid_at ?? null,

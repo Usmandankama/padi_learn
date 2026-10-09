@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/screens/teacher/components/category_picker.dart';
 import 'package:padi_learn/screens/teacher/components/earnings_hint.dart';
+import 'package:padi_learn/screens/teacher/components/paid_course_gate.dart';
 import 'package:padi_learn/screens/teacher/components/upload_progress_card.dart';
 import 'package:padi_learn/services/course_service.dart';
 import 'package:padi_learn/services/supabase.dart';
@@ -141,6 +142,15 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
       return;
     }
 
+    // Turning a free course paid needs a bank account; the database refuses
+    // it otherwise. A course that is already paid can be edited regardless.
+    final price = double.tryParse(_price.text.trim()) ?? 0;
+    final previousPrice = (widget.courseData['price'] as num?)?.toDouble() ?? 0;
+    if (price > 0 && previousPrice <= 0 && !await ensureCanSellPaid(context)) {
+      return;
+    }
+    if (!mounted) return;
+
     setState(() {
       _saving = true;
       _progress = null;
@@ -164,7 +174,7 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
         courseId: widget.courseId,
         title: _title.text.trim(),
         description: _description.text.trim(),
-        price: double.tryParse(_price.text.trim()) ?? 0,
+        price: price,
         category: _category,
         author: _author.text.trim(),
         thumbnailUrl: upload.thumbnailUrl,

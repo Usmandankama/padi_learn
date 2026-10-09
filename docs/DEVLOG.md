@@ -12,6 +12,74 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-10-09 — Teachers paid by Paystack subaccounts
+
+**Each teacher gets a Paystack subaccount, created when they save a bank
+account, and every sale of their course is split at checkout.** Until now
+every sale settled into PadiLearn's account and teachers were paid by hand
+from a balance. Paystack approved PadiLearn on the split model (its approval
+email names subaccounts), so the code now matches what was approved. Paying
+teachers with Paystack Transfers from money PadiLearn holds was considered
+and dropped: that is holding third parties' money, which Paystack reviews
+separately from the approval PadiLearn has.
+
+**How a sale divides.** The student pays the list price plus the card fee,
+as before. Checkout passes `subaccount`, a flat `transaction_charge` (what
+stays with PadiLearn) and `bearer: "account"`, so PadiLearn's part pays
+Paystack's fee and the teacher's 85% of the list price arrives whole. The
+share is fixed against the list price at checkout (`splitFor()` in
+`_shared/paystack.ts`, tested in `paystack_test.ts`), and any rounding in the
+gross-up stays with PadiLearn. For NGN 5,000: the student pays NGN 5,178, the
+teacher's subaccount gets NGN 4,250.
+
+**The ledger.** `transactions` gains `subaccount_code` and
+`settled_direct_kobo`, what Paystack sent the teacher, read from the verified
+transaction's `fees_split`. The balance keeps its meaning, what PadiLearn
+itself owes: a split sale adds its share and its settlement, so it nets to
+zero. A refund of a split sale takes the balance negative, because the
+teacher already has the money; `checkout_terms()` reports that as debt and
+checkout keeps it back from the teacher's next sales (all of a sale's share
+if need be, in which case the sale is not split). That is rule 2 of the
+payouts ledger, now automatic.
+
+**Selling needs a subaccount.** `initialize-payment` refuses to sell a
+non-house teacher's course without one. A trigger refuses creating a paid
+course, or turning a free one paid, without one; the create and edit screens
+ask for the bank account first so a teacher is not refused after uploading a
+video. A teacher who removes their bank account can still edit an existing
+paid course; it just cannot be bought. **House accounts** (`house_accounts`,
+the "PadiLearn" teacher) never split: their sales stay with PadiLearn.
+
+**Why a separate `paystack_subaccounts` table:** a teacher can delete their
+`payout_accounts` row from the app. Re-adding a bank then updates the same
+subaccount instead of leaving an orphan on Paystack.
+
+**What Paystack does on its side:** a new or updated subaccount's first
+payout is held until PadiLearn verifies it on the dashboard. Settlement is
+next business day by default. Weekly or manual settlement is set by Paystack
+support, and the API has no documented call to release a manual subaccount's
+money, so the 7-day hold the terms promise is a question for Paystack (email
+drafted 9 October), not code.
+
+**Only teachers get a subaccount:** `payout-account` now refuses a student.
+
+**Touches:** `supabase/migrations/20261009000001_paystack_subaccounts.sql`,
+`_shared/paystack.ts`, `initialize-payment`, `payout-account`,
+`lib/screens/teacher/components/paid_course_gate.dart`, the create and edit
+course screens, the teacher payouts and payout account screens, the admin
+payouts screen, and their tests.
+
+**Live the same day:** Usman ran the migration in the SQL editor (this
+session's auto mode refused every database write, even a rolled-back dry
+run), and the four payment functions went out at version 4.
+
+**Outstanding:** Paystack's answer on settlement timing; the terms and `/refunds`
+rewritten to match; verify each subaccount on the dashboard; a first live
+NGN 100 sale; a new APK. Suspending a teacher does not yet pause their
+subaccount (deactivating one holds its pending payout until re-enabled).
+
+---
+
 ## 2026-10-09 — Supabase moves to Ireland and the company account; Paystack goes company
 
 **The project now lives in Ireland (`eu-west-1`), ref

@@ -69,6 +69,10 @@ class TeacherBalance {
   final int pendingKobo;
   final int availableKobo;
 
+  /// What Paystack split straight to the teacher's bank at checkout. Already
+  /// theirs, so it is not part of what PadiLearn pays out.
+  final int settledDirectKobo;
+
   /// Payouts are held while the account is suspended.
   final bool payoutsHeld;
 
@@ -80,6 +84,7 @@ class TeacherBalance {
     required this.pendingKobo,
     required this.availableKobo,
     required this.payoutsHeld,
+    this.settledDirectKobo = 0,
   });
 
   factory TeacherBalance.fromJson(Map<String, dynamic> json) {
@@ -91,6 +96,7 @@ class TeacherBalance {
       paidOutKobo: kobo('paid_out_kobo'),
       pendingKobo: kobo('pending_kobo'),
       availableKobo: kobo('available_kobo'),
+      settledDirectKobo: kobo('settled_direct_kobo'),
       payoutsHeld: json['payouts_held'] == true,
     );
   }
@@ -98,7 +104,11 @@ class TeacherBalance {
   /// Everything earned, less what refunds took back, in naira.
   double get earned => (earnedKobo - clawbackKobo) / 100;
 
+  /// Payouts PadiLearn sent by hand, in naira.
   double get paidOut => paidOutKobo / 100;
+
+  /// Sent to the teacher's bank by Paystack at checkout, in naira.
+  double get paidByPaystack => settledDirectKobo / 100;
 
   /// Earned, but still inside the 7-day hold.
   double get clearing => pendingKobo / 100;

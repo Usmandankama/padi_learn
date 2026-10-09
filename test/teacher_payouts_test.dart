@@ -67,6 +67,30 @@ Future<Taps> pumpPanel(
 }
 
 void main() {
+  group('TeacherBalance', () {
+    test('a split sale is earned and already paid, so nothing is payable', () {
+      final balance = TeacherBalance.fromJson(const {
+        'sales_count': 1,
+        'earned_kobo': 425000,
+        'clawback_kobo': 0,
+        'paid_out_kobo': 0,
+        'pending_kobo': 0,
+        'balance_kobo': 0,
+        'available_kobo': 0,
+        'settled_direct_kobo': 425000,
+        'payouts_held': false,
+      });
+      expect(balance.earned, 4250);
+      expect(balance.paidByPaystack, 4250);
+      expect(balance.payable, 0);
+      expect(balance.paidOut, 0, reason: 'PadiLearn sent nothing by hand');
+    });
+
+    test('a database without the column reads as nothing settled', () {
+      expect(balanceOf(200000).settledDirectKobo, 0);
+    });
+  });
+
   group('PayoutSummary', () {
     test('reads my_payouts() as the database returns it', () {
       final summary = PayoutSummary.fromJson(const {

@@ -227,6 +227,11 @@ class _BalanceCard extends StatelessWidget {
             ),
           ),
           SizedBox(height: 8.h),
+          if (balance.settledDirectKobo > 0) ...[
+            Text('Sent to your bank by Paystack '
+                '${formatNaira(balance.paidByPaystack)}', style: soft),
+            SizedBox(height: 2.h),
+          ],
           Text('Clearing ${formatNaira(balance.clearing)}: a sale is held '
               'for 7 days before it can be paid out.', style: soft),
           SizedBox(height: 2.h),
