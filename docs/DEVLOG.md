@@ -12,6 +12,40 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-10-09 — padilearn.com/teach, and the terms catch up with subaccounts
+
+**A page to send tutors.** Recruiting starts now, and the landing page's
+teacher section was three lines and a mailto. `/teach` says what a tutor
+earns (a table of four prices, worked from `splitFor()`, the code checkout
+runs), the four steps from sign-up to a first course, recording tips for a
+phone, what happens after publishing, and a teachers' FAQ. The header's
+"Teachers" link and the landing page's teacher section now point to it.
+
+**What it does not claim:** when Paystack's payment reaches a teacher's
+bank. Paystack has been asked about weekly or held settlement; until it
+answers, the site says only "on Paystack's payout schedule".
+
+**The terms said the old thing.** Section 6 still promised a 7-day hold
+and payouts on request, which stopped being true for new sales when
+subaccounts went live. It now says Paystack pays teachers directly, a bank
+account is needed to charge, the first payment to a new or changed account
+waits for our check, refunds after payment are kept back from later sales,
+and requests remain only for money PadiLearn holds. The landing page FAQ
+says the same. `legalUpdated` is 9 October.
+
+**Found on the way: uploading does not work in a browser.** The create-
+course and lesson screens read the picked file with `dart:io` `File`, which
+the web build cannot use. So a tutor on an iPhone or a computer cannot
+publish; the page says lessons are uploaded from the Android app. Fixing it
+means reading the picked file as bytes (`XFile.readAsBytes` or a stream) on
+web and uploading those.
+
+**Touches:** `website/src/pages/teach.astro`, `index.astro`, `terms.md`,
+`components/Header.astro`, `sitemap.xml.ts`, `site.ts` (`legalUpdated`),
+`assets/screens/marketplace-web.png` (a real capture from 6 October).
+
+---
+
 ## 2026-10-09 — A house account cannot be suspended
 
 Trying the admin panel, Usman suspended the "PadiLearn" house account

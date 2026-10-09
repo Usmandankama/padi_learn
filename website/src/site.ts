@@ -11,7 +11,7 @@ export const site = {
   description:
     'Video courses from Nigerian teachers. Learn on your phone, at your own pace, and pick up where you left off.',
   /** Date shown on the legal and policy pages. Change it when any of them change. */
-  legalUpdated: '8 October 2026',
+  legalUpdated: '9 October 2026',
 
   /**
    * The business behind PadiLearn, as the legal pages and footer name it.

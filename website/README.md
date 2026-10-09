@@ -8,6 +8,7 @@ site, hosted free on Cloudflare Pages.
 | Path | Source | Why it exists |
 |---|---|---|
 | `/` | `src/pages/index.astro` | Landing page: open the web app, download the APK, FAQ |
+| `/teach` | `src/pages/teach.astro` | For tutors: what they earn (worked from `splitFor()`), the steps to a first course, recording tips, FAQ. The page to send a tutor you are recruiting |
 | `/terms` | `src/pages/terms.md` | Terms of service, including buying, refunds and teacher payouts (section 6) |
 | `/refunds` | `src/pages/refunds.astro` | Refund and cancellation policy: what Paystack's reviewers and buyers look for |
 | `/support` | `src/pages/support.astro` | How to reach us, reply time, what to include, escalation |

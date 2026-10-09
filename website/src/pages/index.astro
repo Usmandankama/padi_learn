@@ -1,7 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import Device from '../components/Device.astro';
-import { site, mailto } from '../site';
+import { site } from '../site';
 
 // Real captures from the Android app (Pixel 9 emulator, 1080×2424).
 import homeShot from '../assets/screens/home.png';
@@ -40,8 +40,8 @@ const faqs = [
   },
   {
     q: 'How do teachers get paid?',
-    a: 'You set your price and keep 85% of it on every sale. A sale clears after 7 days, then you ask for a payout in the app and we send it to your Nigerian bank account.',
-    link: { href: '/terms#teacher-earnings-and-payouts', label: 'The full rules' },
+    a: 'You set your price and keep 85% of it on every sale. Add your Nigerian bank account in the app, and Paystack splits each sale at checkout and pays your share straight into it.',
+    link: { href: '/teach', label: 'Teaching on PadiLearn' },
   },
   {
     q: 'How do I get help?',
@@ -122,7 +122,7 @@ const faqs = [
           <p>Your courses stay yours. We host them and show them to students.</p>
         </div>
       </div>
-      <a class="more" href={mailto('I want to teach on PadiLearn')}>Talk to us about teaching</a>
+      <a class="more" href="/teach">How teaching works</a>
     </div>
   </section>
 

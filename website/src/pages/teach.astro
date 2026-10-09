@@ -1,0 +1,551 @@
+---
+import Base from '../layouts/Base.astro';
+import Device from '../components/Device.astro';
+import { site, mailto } from '../site';
+
+// A real capture of the web app's marketplace at phone width (390 CSS px),
+// taken with Playwright on 6 October 2026. Teacher screens are not captured
+// yet: they need a signed-in teacher session.
+import marketplaceShot from '../assets/screens/marketplace-web.png';
+
+// Worked from splitFor() in supabase/functions/_shared/paystack.ts, the code
+// checkout runs: the student pays the price plus the card fee, the teacher
+// gets 85% of the price. Recompute if Paystack's fees or the 15% change.
+const examples = [
+  { price: '₦1,000', pays: '₦1,016', you: '₦850' },
+  { price: '₦2,000', pays: '₦2,031', you: '₦1,700' },
+  { price: '₦5,000', pays: '₦5,178', you: '₦4,250' },
+  { price: '₦10,000', pays: '₦10,254', you: '₦8,500' },
+];
+
+const steps = [
+  {
+    title: 'Sign up as a teacher',
+    body: 'Install the PadiLearn Android app from padilearn.com, create an account and choose Teacher.',
+  },
+  {
+    title: 'Add your bank account',
+    body: 'In your profile, open Payout Account. We check the name on the account with your bank before saving it, and set up your Paystack payouts. You only need this to charge for a course.',
+  },
+  {
+    title: 'Create your course',
+    body: 'Give it a title, a description, a category, a price and a cover image, then upload the first lesson. Make it a free preview so students can try before they buy.',
+  },
+  {
+    title: 'Add the rest of your lessons',
+    body: 'Each lesson is one video of up to 300 MB, about 20 minutes of 720p. Students see new lessons as soon as you add them.',
+  },
+];
+
+const tips = [
+  'Keep lessons short: 5 to 15 minutes, one idea each.',
+  'Record in landscape, in a quiet room, with the light in front of you.',
+  '720p is plenty, and keeps lessons light for students on mobile data.',
+  'Over 300 MB? Compress it with a web preset such as HandBrake’s Fast 720p30, or split it into two lessons.',
+  'Your free preview is your advert. Make it one of your best lessons.',
+];
+
+const faqs = [
+  {
+    q: 'Does it cost anything to teach?',
+    a: 'No. There is no sign-up fee and no monthly charge. PadiLearn keeps 15% of a paid course’s price when it sells, and nothing from free courses.',
+  },
+  {
+    q: 'When does the money reach my bank?',
+    a: 'Each sale is split by Paystack at checkout, and Paystack pays your share into your bank account on its payout schedule. The first payment to a bank account you have just added or changed waits until we have checked the account.',
+  },
+  {
+    q: 'What if a student gets a refund?',
+    a: 'Refunds follow our refund policy. If a sale is refunded after Paystack has paid you, the same amount is kept back from your next sales. We won’t ask you to pay it back separately.',
+    link: { href: '/refunds', label: 'Refund policy' },
+  },
+  {
+    q: 'Do I need a registered business?',
+    a: 'No. You can teach as an individual, paid into your own Nigerian bank account. You are responsible for your own taxes on what you earn.',
+  },
+  {
+    q: 'Can I change my price later?',
+    a: 'Yes. The new price applies to new purchases. Students who already bought the course keep it.',
+  },
+  {
+    q: 'Can I teach for free?',
+    a: 'Yes, and a free course needs no bank account. Free courses are the fastest way to find your first students.',
+  },
+  {
+    q: 'Can I upload from my iPhone or a computer?',
+    a: 'Not yet. For now, lessons are uploaded from the PadiLearn Android app. Students can watch on any phone or in any browser.',
+  },
+  {
+    q: 'What can’t I teach?',
+    a: 'Anything that isn’t yours to teach, or that breaks our terms: other people’s copyrighted work, sexual content, graphic violence, hate speech, scams and “get rich quick” schemes, or misleading promises about results.',
+    link: { href: '/terms#3-content-teachers-upload', label: 'The content rules' },
+  },
+];
+---
+
+<Base
+  title="Teach on PadiLearn"
+  description="Record lessons on your phone, set your price in naira, and keep 85% of every sale, paid by Paystack straight into your bank account."
+>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container center">
+      <p class="product">PadiLearn for teachers</p>
+      <h1>Teach what you know.</h1>
+      <p class="sub">
+        Record lessons on your phone, set your own price, and keep 85% of every sale, paid by Paystack
+        straight into your bank account.
+      </p>
+      <div class="links">
+        <a class="button" href={site.android.apkUrl}>Get the Android app</a>
+        <a class="more" href="#how">See how it works</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Earnings -->
+  <section id="earnings" class="alt">
+    <div class="container narrow">
+      <h2>You keep 85%.</h2>
+      <p class="lead">
+        You set the price in naira and PadiLearn keeps 15% of it. The card fee is added on top for the student,
+        so it never comes out of your share.
+      </p>
+      <table class="earn">
+        <thead>
+          <tr>
+            <th scope="col">Your price</th>
+            <th scope="col">Student pays</th>
+            <th scope="col">You receive</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            examples.map((row) => (
+              <tr>
+                <td>{row.price}</td>
+                <td>{row.pays}</td>
+                <td class="you">{row.you}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+      <p class="note">
+        Price a course at ₦2,461 or less and the student pays under ₦2,500. One naira more and Paystack’s card fee
+        rises by about ₦100, for the student, not for you.
+      </p>
+      <ul class="points">
+        <li><strong>Paid straight to you.</strong> Paystack splits each sale at checkout and pays your share into your bank account.</li>
+        <li><strong>Free courses are free to publish.</strong> PadiLearn only earns when you do.</li>
+        <li><strong>No surprises.</strong> We’ll give you at least 30 days’ notice before the 15% changes.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section id="how">
+    <div class="container">
+      <h2 class="center">From sign-up to your first course.</h2>
+      <ol class="steps">
+        {
+          steps.map((step, i) => (
+            <li>
+              <span class="num" aria-hidden="true">{i + 1}</span>
+              <h3>{step.title}</h3>
+              <p>{step.body}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </section>
+
+  <!-- Where students find it -->
+  <section class="alt">
+    <div class="container split">
+      <div class="copy">
+        <h2>Students find you in the marketplace.</h2>
+        <p>
+          Your course goes live as soon as you create it, with your name on it, beside courses in the same
+          category. Students can search for it, try the free preview, and buy it in the app or in their browser.
+        </p>
+      </div>
+      <Device src={marketplaceShot} alt="The PadiLearn marketplace on a phone, with courses filtered by category" width={290} />
+    </div>
+  </section>
+
+  <!-- Tips -->
+  <section>
+    <div class="container narrow">
+      <h2>Recording that works on a phone.</h2>
+      <ul class="tips">
+        {tips.map((tip) => <li>{tip}</li>)}
+      </ul>
+    </div>
+  </section>
+
+  <!-- After publishing -->
+  <section class="alt">
+    <div class="container center">
+      <h2>Stay close to your students.</h2>
+      <div class="columns">
+        <div>
+          <h3>Know who joins</h3>
+          <p>You’re notified when a student enrols in your course or asks a question.</p>
+        </div>
+        <div>
+          <h3>Answer once</h3>
+          <p>Reply in the comments under your lessons, and pin the best answers to the top.</p>
+        </div>
+        <div>
+          <h3>See your sales</h3>
+          <p>Every sale, and what you earned from it, is in the app.</p>
+        </div>
+      </div>
+      <p class="own">
+        <strong>Your course stays yours.</strong> We host it and show it to students while it’s on PadiLearn. Delete
+        it, and our permission to show it ends. <a class="more" href="/terms#3-content-teachers-upload">Terms for teachers</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <div class="container narrow">
+      <h2>Questions teachers ask</h2>
+      {
+        faqs.map((item) => (
+          <details>
+            <summary>{item.q}</summary>
+            <p>
+              {item.a}
+              {item.link && (
+                <>
+                  {' '}
+                  <a class="more" href={item.link.href}>
+                    {item.link.label}
+                  </a>
+                </>
+              )}
+            </p>
+          </details>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- Start -->
+  <section class="alt">
+    <div class="container center">
+      <h2>Start your first course today.</h2>
+      <p class="sub">Install the app, sign up as a teacher, and upload your first lesson.</p>
+      <div class="links">
+        <a class="button" href={site.android.apkUrl}>Get the Android app</a>
+        <a class="more" href={mailto('I want to teach on PadiLearn')}>Talk to us first</a>
+      </div>
+      <p class="note">
+        Android {site.android.minAndroid} or later · {site.android.apkSize}. Questions? Email
+        {' '}<a href={mailto('Teaching on PadiLearn')}>{site.supportEmail}</a>.
+      </p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  section {
+    padding-block: clamp(4rem, 9vw, 6.5rem);
+  }
+
+  .alt {
+    background: var(--bg-alt);
+  }
+
+  .center {
+    text-align: center;
+  }
+
+  .narrow {
+    max-width: 44rem;
+  }
+
+  h2 {
+    font-size: clamp(2.1rem, 5vw, 3.25rem);
+  }
+
+  .sub {
+    font-size: clamp(1.2rem, 2.4vw, 1.5rem);
+    line-height: 1.35;
+    color: var(--text-soft);
+    max-width: 40rem;
+    margin: 1rem auto 0;
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem 2rem;
+    margin-top: 2rem;
+    font-size: 1.0625rem;
+  }
+
+  .note {
+    margin: 1.5rem auto 0;
+    max-width: 36rem;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--text-soft);
+  }
+
+  /* Hero ------------------------------------------------------------------ */
+  .product {
+    color: var(--green-text);
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin: 0 0 0.5rem;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.75rem, 8vw, 5rem);
+  }
+
+  /* Earnings -------------------------------------------------------------- */
+  .lead {
+    font-size: 1.25rem;
+    line-height: 1.45;
+    color: var(--text-soft);
+    margin: 1.25rem 0 2rem;
+  }
+
+  .earn {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1.125rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .earn th {
+    text-align: left;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text-soft);
+    padding: 0 0.75rem 0.75rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .earn td {
+    padding: 0.9rem 0.75rem 0.9rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .earn .you {
+    color: var(--green-text);
+    font-weight: 700;
+  }
+
+  #earnings .note {
+    margin-inline: 0;
+    max-width: none;
+  }
+
+  .points {
+    list-style: none;
+    padding: 0;
+    margin: 2rem 0 0;
+    display: grid;
+    gap: 0.9rem;
+  }
+
+  .points li {
+    color: var(--text-soft);
+  }
+
+  .points strong {
+    color: var(--text);
+  }
+
+  /* Steps ----------------------------------------------------------------- */
+  .steps {
+    list-style: none;
+    padding: 0;
+    margin: 3rem auto 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+  }
+
+  .steps li {
+    border-top: 1px solid var(--line);
+    padding-top: 1.25rem;
+  }
+
+  .num {
+    display: inline-grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: var(--green);
+    color: #ffffff;
+    font-weight: 600;
+    margin-bottom: 0.9rem;
+  }
+
+  .steps h3 {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .steps p {
+    color: var(--text-soft);
+    margin: 0;
+  }
+
+  @media (max-width: 900px) {
+    .steps {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 560px) {
+    .steps {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Marketplace row ------------------------------------------------------- */
+  .split {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: clamp(2.5rem, 8vw, 6rem);
+  }
+
+  .copy h2 {
+    margin-bottom: 1.25rem;
+  }
+
+  .copy p {
+    font-size: 1.25rem;
+    line-height: 1.45;
+    color: var(--text-soft);
+    max-width: 30rem;
+  }
+
+  @media (max-width: 760px) {
+    .split {
+      grid-template-columns: 1fr;
+      justify-items: center;
+      text-align: center;
+    }
+
+    .copy p {
+      margin-inline: auto;
+    }
+  }
+
+  /* Tips ------------------------------------------------------------------ */
+  .tips {
+    margin: 2rem 0 0;
+    padding-left: 1.25rem;
+  }
+
+  .tips li {
+    font-size: 1.125rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .tips li::marker {
+    color: var(--green-text);
+  }
+
+  /* After publishing ------------------------------------------------------ */
+  .columns {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.5rem;
+    max-width: 56rem;
+    margin: 3rem auto 2.5rem;
+    text-align: left;
+  }
+
+  .columns > div {
+    border-top: 1px solid var(--line);
+    padding-top: 1.25rem;
+  }
+
+  .columns h3 {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .columns p {
+    color: var(--text-soft);
+    margin: 0;
+  }
+
+  .own {
+    max-width: 40rem;
+    margin: 0 auto;
+    color: var(--text-soft);
+  }
+
+  .own strong {
+    color: var(--text);
+  }
+
+  @media (max-width: 760px) {
+    .columns {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+  }
+
+  /* FAQ ------------------------------------------------------------------- */
+  #faq h2 {
+    margin-bottom: 2rem;
+  }
+
+  details {
+    border-top: 1px solid var(--line);
+  }
+
+  details:last-of-type {
+    border-bottom: 1px solid var(--line);
+  }
+
+  summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.25rem 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary::after {
+    content: '+';
+    font-weight: 300;
+    font-size: 1.6rem;
+    line-height: 1;
+    color: var(--text-soft);
+  }
+
+  details[open] summary::after {
+    content: '−';
+  }
+
+  details p {
+    color: var(--text-soft);
+    margin: 0 0 1.5rem;
+    max-width: 38rem;
+  }
+</style>

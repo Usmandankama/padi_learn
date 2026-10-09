@@ -74,7 +74,7 @@ the new ones from the start while Mumbai keeps the June ones. In order:
 | 6 | ~~Test-mode purchase of "Test 15", then once more with only the webhook to grant the course.~~ Done on Ireland, 9 October, with two throwaway students against the functions directly: charged NGN 5,178 (5,000 + card fee); split Paystack 177.67, PadiLearn 750.05, teacher 4,250.28; verify path and webhook-only path both recorded the sale and enrolled the student. The first webhook try failed because the test-mode webhook URL was not saved in Paystack. The app's own checkout screens are checked after the switch-over, still on the test key. | Usman and Claude |
 | 7 | Publish the website's customer policies (8 October): terms with section 6, `/refunds`, `/support`, privacy, footer and FAQ, all naming Groundwork Tech Ltd. Paystack's reviewers read the website. | Push to `main` |
 | 8 | ~~Once Paystack approves the account: swap in the **live** secret key and repeat step 3 for live mode.~~ Done by Usman, 9 October. | Usman |
-| 9 | Delete the test-mode rows from `transactions`, and the enrolments they granted, so test money never shows up as a teacher's balance. Then archive "Test 15". SQL written 9 October (the 3 test sales, the 3 Test 15 enrolments, the 2 `paystack-test-*` accounts); Usman runs it in the SQL editor. | Usman |
+| 9 | ~~Delete the test-mode rows from `transactions`, and the enrolments they granted, then archive "Test 15".~~ Done 9 October by Usman in the SQL editor: the 3 test sales, their enrolments and the 2 `paystack-test-*` accounts are gone; "Test 15" and the NGN 100 test course "New course" are archived. The one remaining sale is the real NGN 102 split test. | Usman |
 
 ### Teachers paid by Paystack subaccounts (live on Ireland, 9 October)
 
@@ -89,7 +89,7 @@ money PadiLearn already holds. Details in `DEVLOG.md`, 9 October.
 | 1 | ~~Apply `supabase/migrations/20261009000001_paystack_subaccounts.sql` to Ireland.~~ Run by Usman in the SQL editor, 9 October (so it is not in Supabase's migration history); checked afterwards. | Usman |
 | 2 | ~~Deploy `payout-account`, `initialize-payment`, `verify-payment` and `paystack-webhook` together.~~ All at version 4, 9 October; the webhook still has JWT verification off. | Claude |
 | 3 | Ask Paystack (support@paystack.com) whether subaccounts can settle weekly or after a 7-day hold, and who funds a refund once a split has settled. The terms promise a 7-day hold; Paystack's default is next business day. | Usman |
-| 4 | Update the terms, `/refunds` and `website/src/site.ts` to how teachers are actually paid once step 3 is answered. | Claude |
+| 4 | ~~Update the terms to how teachers are actually paid.~~ Done 9 October without a timing: section 6, the landing FAQ and `/teach` say Paystack pays "on its payout schedule". Add the timing once Paystack answers step 3. | Claude |
 | 5 | Every new or changed subaccount: Paystack holds its **first payout until you verify it** on the dashboard (Subaccounts). Check that the name matches the teacher. | Usman, per teacher |
 | 6 | ~~First live check: a throwaway teacher with your own bank account, a NGN 100 course, one purchase.~~ Passed 9 October: NGN 102 charged, NGN 85.00 to subaccount `ACCT_gt6ezivhvaowtz8`, NGN 15.47 to PadiLearn, NGN 1.53 Paystack fee. | Usman and Claude |
 | 7 | A new APK and web deploy carry the "add your bank account first" prompt; without them the database still refuses a paid course, but only after the upload. | Claude |

@@ -79,10 +79,10 @@ Courses are digital, so there is nothing to return; where a refund is due, we re
 ### Teacher earnings and payouts
 
 - **PadiLearn keeps 15% of the price you set.** The student pays the card fee on top, so you earn 85% of your price: NGN 4,250 on a NGN 5,000 course. We'll give teachers at least 30 days' notice before changing this.
-- **Sales clear after 7 days.** Money from a sale can be paid out 7 days after the sale. That leaves time for refunds and card disputes.
-- **Ask for a payout in the app** once at least NGN 1,000 is ready. We send it by bank transfer to the Nigerian bank account you add in the app. We check the account name with the bank before saving it. We aim to send payouts within 5 working days of your request, and the app tells you when one has been sent.
-- **Refunds come out of your earnings.** If a sale is refunded after you have been paid for it, the amount comes out of your future earnings. We won't ask you to pay it back separately.
-- **Payouts are held while an account is suspended.** Your balance is kept.
+- **Paystack pays you directly.** To charge for a course, add a Nigerian bank account in the app. We check the account name with the bank before saving it, and set up a Paystack subaccount for you. Each sale of your course is then split at checkout, and Paystack pays your share into that bank account on its payout schedule. The first payment to a bank account you have just added or changed is held until we have checked the account. Free courses need no bank account.
+- **Money we hold for you.** If any of your earnings are held by PadiLearn rather than paid by Paystack, you can ask for them in the app once at least NGN 1,000 is ready. We send them by bank transfer, aiming to do so within 5 working days of your request, and the app tells you when they have been sent.
+- **Refunds come out of your earnings.** If a sale is refunded after Paystack has paid you for it, the same amount is kept back from your next sales. We won't ask you to pay it back separately.
+- **While an account is suspended,** its courses cannot be bought, and any money we hold for it is held. Your balance is kept.
 - **You're responsible for your own taxes** on what you earn.
 
 ## 7. The service
