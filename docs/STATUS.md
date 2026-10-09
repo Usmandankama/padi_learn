@@ -135,7 +135,7 @@ What Pro changes, and what goes with it:
 | | |
 |---|---|
 | Uploads | 300 MB per lesson: the global limit (Storage → Settings), the `course-media` bucket (`20261009000002_raise_video_limit.sql`, run by Usman) and the app's `kMaxVideoBytes` (APK 1.0.4 and the web app) all agree. |
-| Pausing | Never. `.github/workflows/keep-alive.yml` is now redundant and can go. |
+| Pausing | Never. The keep-alive workflow was deleted on 9 October. |
 | Backups | Daily, kept 7 days (Database → Backups). Storage **files** are not in them, and deleting the project deletes its backups. |
 | Egress | 250 GB a month included, video being most of it. Keep the **spend cap on**: going over then brings a warning and restrictions, not a bill. |
 | Dashboard | Done by Usman, 9 October: leaked-password protection on (the advisor no longer flags it), compute Nano to Micro, billing address and company TIN, spend cap on. |

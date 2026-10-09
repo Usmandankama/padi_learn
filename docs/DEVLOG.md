@@ -32,9 +32,9 @@ in APK 1.0.4 and the next web deploy; a build with the higher limit facing a
 bucket still at 50 MB would refuse files between the two with a 413 after
 the whole upload.
 
-**Kept for now:** the keep-alive workflow (redundant on Pro, harmless), and
-`dump.sh`, because Pro's backups leave out Storage files and go when the
-project is deleted.
+**The keep-alive workflow is deleted**: a Pro project never pauses.
+`dump.sh` stays, because Pro's backups leave out Storage files and go when
+the project is deleted.
 
 **Touches:** `supabase/migrations/20261009000002_raise_video_limit.sql`,
 `lib/services/supabase_storage_service.dart`, `pubspec.yaml` (1.0.4+5),
