@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 
+import 'package:padi_learn/controller/ongoing_courses_controller.dart';
 import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/screens/components/report_sheet.dart';
 import 'package:padi_learn/screens/videoplayer/components/comments_section.dart';
@@ -47,10 +48,15 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   /// overwrite the one the user has since chosen.
   int _loadToken = 0;
 
-  /// Throttle: progress is written to the server at most once every 15s while
-  /// playing, plus once when leaving the lesson.
+  /// Throttle: progress is written to the server every 15s while playing, on
+  /// pause, the moment a lesson is finished, and once when leaving it.
   int _lastSyncedSecond = -1;
   static const int _syncEverySeconds = 15;
+
+  /// The lesson whose finish has already been sent, so reaching the end saves
+  /// once rather than on every frame after it.
+  String? _finishSentFor;
+  bool _wasPlaying = false;
 
   int _userRating = 0;
   double _avgRating = 0;
@@ -176,6 +182,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       _videoError = null;
       _current = lesson;
       _lastSyncedSecond = -1;
+      _finishSentFor = null;
+      _wasPlaying = false;
     });
 
     // Tear the old player down before building the new one.
@@ -248,9 +256,41 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
 
   void _onTick() {
     final controller = _videoController;
-    if (controller == null || !controller.value.isInitialized) return;
+    final lesson = _current;
+    if (controller == null ||
+        lesson == null ||
+        !controller.value.isInitialized) {
+      return;
+    }
 
-    final seconds = controller.value.position.inSeconds;
+    final value = controller.value;
+    final seconds = value.position.inSeconds;
+    final duration = value.duration.inSeconds;
+
+    // Finishing is saved the moment it happens. The end of a lesson rarely
+    // lands on a 15-second mark, so waiting for the next one meant a finished
+    // lesson stayed unticked, and the course's percentage unchanged, until
+    // the student left the player.
+    if (duration > 0 &&
+        seconds >= duration * 0.95 &&
+        _finishSentFor != lesson.id &&
+        _progress[lesson.id]?.completed != true) {
+      _finishSentFor = lesson.id;
+      _lastSyncedSecond = seconds;
+      _wasPlaying = value.isPlaying;
+      _syncProgress();
+      return;
+    }
+
+    // A pause is a natural moment to save where they got to.
+    final paused = _wasPlaying && !value.isPlaying;
+    _wasPlaying = value.isPlaying;
+    if (paused && seconds != _lastSyncedSecond) {
+      _lastSyncedSecond = seconds;
+      _syncProgress();
+      return;
+    }
+
     if (seconds == _lastSyncedSecond) return;
     if (seconds % _syncEverySeconds != 0) return;
 
@@ -283,6 +323,11 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       positionSeconds: position,
       completed: completed,
     ).then((_) {
+      // The save itself recomputed the course's percentage (a database
+      // trigger), so the home screen's card can show it now instead of
+      // waiting for realtime. Runs after dispose too: leaving the player is
+      // often the save that finishes a lesson.
+      if (completed) OngoingCoursesController.forCurrentUser()?.reload();
       if (!mounted) return;
       final previous = _progress[lesson.id];
       if (completed && previous?.completed != true) {
@@ -316,7 +361,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         'user_id': uid,
         'course_id': widget.courseId,
         'rating': value,
-        'updated_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
       }, onConflict: 'user_id,course_id');
 
       final updated = await supabase

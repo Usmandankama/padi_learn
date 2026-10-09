@@ -12,6 +12,48 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-10-09 — Finishing a lesson now counts straight away
+
+**Reported:** the course progress bar had stopped moving. Traced through the
+logs of Usman's own test that evening: the database side was right (a
+finished lesson recomputed the enrolment to 50%), but nothing in the app
+asked for it in time.
+
+**Why.** The player saved progress only when the position hit a multiple of
+15 seconds, and when the student left the lesson. A lesson counts as
+finished from 95% of its length, and the end of a video rarely lands on a
+15-second mark: a 20-second lesson saved once, at 75%. So a finished lesson
+stayed unticked, the "x of y done" count and the percentage stayed put, and
+the home card's progress bar waited on a realtime update of a save that had
+not happened yet. Short lessons, like the demo clips and test uploads, hit
+it every time.
+
+**Now:** the player saves the moment a lesson reaches 95%, on pause, every
+15 seconds, and on leaving. Any save that finishes a lesson reloads the home
+screen's list straight away rather than relying on realtime alone.
+
+**Also fixed, found on the way:**
+
+- Timestamps were sent as phone-local time with no zone
+  (`DateTime.now().toIso8601String()`), which Postgres reads as UTC, so
+  lesson progress, archive dates, comment pins and rating updates were
+  stored an hour ahead in Nigeria. They are now sent in UTC. Rows already
+  written stay an hour out; nothing depends on them to the minute.
+- A preview lesson finished before buying did not count: the percentage was
+  recomputed only on lesson progress changes, and the enrolment did not
+  exist yet. `20261009000003_progress_on_enrol.sql` recomputes it when the
+  enrolment is created.
+
+**Touches:** `lib/screens/videoplayer/videoPlayer.dart`,
+`lib/services/lesson_service.dart`, `comment_service.dart`,
+`course_service.dart`, `supabase/migrations/20261009000003_progress_on_enrol.sql`.
+
+**The ₦100 live split test passed the same evening:** NGN 102 charged,
+NGN 85.00 settled to the teacher's subaccount, NGN 15.47 to PadiLearn, NGN
+1.53 to Paystack, one ledger row from the two fulfilment paths.
+
+---
+
 ## 2026-10-09 — Supabase Pro, and lessons up to 300 MB
 
 **The organisation went to Pro**, a day after deciding to wait for users. It

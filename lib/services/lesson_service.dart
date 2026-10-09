@@ -198,8 +198,8 @@ class LessonService {
         'lesson_id': lessonId,
         'course_id': courseId,
         'position_seconds': positionSeconds,
-        if (completed) 'completed_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
+        if (completed) 'completed_at': DateTime.now().toUtc().toIso8601String(),
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
       },
       onConflict: 'user_id,lesson_id',
     );

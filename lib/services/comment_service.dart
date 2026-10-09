@@ -53,7 +53,7 @@ class CommentService {
   static Future<void> setPinned(String commentId, bool pinned) async {
     await supabase.from('course_comments').update({
       'is_pinned': pinned,
-      'pinned_at': pinned ? DateTime.now().toIso8601String() : null,
+      'pinned_at': pinned ? DateTime.now().toUtc().toIso8601String() : null,
     }).eq('id', commentId);
   }
 

@@ -91,7 +91,7 @@ money PadiLearn already holds. Details in `DEVLOG.md`, 9 October.
 | 3 | Ask Paystack (support@paystack.com) whether subaccounts can settle weekly or after a 7-day hold, and who funds a refund once a split has settled. The terms promise a 7-day hold; Paystack's default is next business day. | Usman |
 | 4 | Update the terms, `/refunds` and `website/src/site.ts` to how teachers are actually paid once step 3 is answered. | Claude |
 | 5 | Every new or changed subaccount: Paystack holds its **first payout until you verify it** on the dashboard (Subaccounts). Check that the name matches the teacher. | Usman, per teacher |
-| 6 | First live check: a throwaway teacher with your own bank account, a NGN 100 course, one purchase. The subaccount should get NGN 85. | Usman and Claude |
+| 6 | ~~First live check: a throwaway teacher with your own bank account, a NGN 100 course, one purchase.~~ Passed 9 October: NGN 102 charged, NGN 85.00 to subaccount `ACCT_gt6ezivhvaowtz8`, NGN 15.47 to PadiLearn, NGN 1.53 Paystack fee. | Usman and Claude |
 | 7 | A new APK and web deploy carry the "add your bank account first" prompt; without them the database still refuses a paid course, but only after the upload. | Claude |
 
 Steps 2 to 4 must be done before the apps point at Ireland. Mumbai's
