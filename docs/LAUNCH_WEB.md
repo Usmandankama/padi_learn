@@ -283,5 +283,5 @@ on web, replace the shim with Corbado's bundle:
   350 ms against about 175 ms for Ireland, measured 2026-10-09). The move to
   Ireland is written up in `REGION_MOVE.md`.
 - **Leaked-password protection is disabled** in Supabase Auth. It is a
-  paid-plan feature, and Supabase stays on the free plan until there are
-  users (`STATUS.md`).
+  paid-plan feature; Supabase has been on Pro since 9 October, so it can be
+  switched on (Authentication, password security).

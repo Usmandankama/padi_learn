@@ -149,10 +149,10 @@ Most of the code work in section B can happen during step 7.
 
 - [x] **Authentication → URL Configuration.** *Done 2026-09-16:* Site URL is `https://padilearn.com`, and both `padilearn://reset-callback` and `https://padilearn.com/email-confirmed` are in the Redirect URLs allow list. Verified against the code — those are the only two the app asks for (`deep_links.dart`, `web_links.dart`), the Android intent filter matches the scheme and host, and all four site pages return 200. A redirect that isn't listed silently falls back to the Site URL.
 - [x] Set up **custom SMTP** with Resend. *Working, per Usman on 2026-10-08; one more signup and reset from an outside address will settle it.* *DNS complete 2026-09-16:* `send` and `rsend` now resolve to Resend (`forge.rmta.net`), DKIM is published at `resend._domainkey` with `d=padilearn.com` so DMARC aligns on DKIM, and `send.padilearn.com` carries Resend's SPF — the root SPF correctly still lists only Hostinger, because Resend's envelope sender is the `send` subdomain. MX is untouched, so inbound mail to `hello@padilearn.com` still goes to Hostinger. **Still to do:** confirm the domain shows Verified in Resend, point Supabase Auth's SMTP settings at Resend, and send a real reset and a real signup to prove it end to end — correct DNS does not mean Supabase is using it.
-- [ ] Turn on **leaked password protection**. *It is a paid-plan feature (Supabase docs, checked 2026-10-08), so it waits for the upgrade.*
+- [ ] Turn on **leaked password protection**. *A paid-plan feature; possible since the Pro upgrade on 2026-10-09.*
 - [ ] Decide whether signups need **email confirmation**, and test signing up with that setting.
-- [ ] **Back up the database yourself** before launch: `bash tool/region_move/dump.sh` (Git Bash; `pg_dump` 17 is installed through MSYS2). The free plan has no automatic backups.
-- [ ] **Stay on the free plan until there are users** (decided 2026-10-08). Covered meanwhile: lessons under 50 MB, the keep-alive workflow, and `tool/region_move/dump.sh` as the backup. The project is in the company organisation "GroundworkTech", so upgrading later is one click. Move it from Mumbai to Ireland first (`REGION_MOVE.md`).
+- [x] **Database backups.** *Daily since the Pro upgrade on 2026-10-09, kept 7 days.* `bash tool/region_move/dump.sh` (Git Bash; `pg_dump` 17 through MSYS2) is still the copy to take before a risky change.
+- [x] **Supabase plan.** *Pro since 2026-10-09; lessons up to 300 MB. The free-plan decision of 2026-10-08 is superseded.*
 - [x] Rewrite the RLS policies to use `(select auth.uid())`, and add the missing foreign-key indexes. *Done 2026-10-07 (`20261007000003`, `…004`).*
 
 ### Google sign-in

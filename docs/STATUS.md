@@ -33,7 +33,7 @@ share 14 short clips of about 18 seconds each.
 | Enrolments | 2 |
 | Transactions | 1, Paystack **test mode** |
 | Payout accounts | 0 |
-| Supabase | Free plan. Ireland project `bouhrbjdxxqeylrxxmdl`, in the company account's organisation (9 October); Mumbai kept until the switch-over is checked |
+| Supabase | **Pro** since 9 October. Ireland project `bouhrbjdxxqeylrxxmdl`, in the company account's organisation; Mumbai kept until the switch-over is checked |
 
 ---
 
@@ -41,11 +41,9 @@ share 14 short clips of about 18 seconds each.
 
 1. **Move the project to Ireland** (`REGION_MOVE.md`), before tutors start
    using it. Every request from Nigeria to Mumbai pays about 350 ms.
-   **Supabase stays on the free plan until there are users** (Usman's
-   decision, 8 October). That means: tell tutors to keep each lesson under
-   50 MB (short, compressed 720p, split if long); the keep-alive workflow
-   stops the project being paused; `tool/region_move/dump.sh` is the backup;
-   leaked-password protection stays off.
+   **Supabase is on Pro since 9 October.** Tutors can upload lessons up to
+   300 MB each (20 to 25 minutes of compressed 720p; split anything longer),
+   the project never pauses, and the database is backed up daily.
 2. **Keep "Test 15" until the payment test below is done, then archive it.**
    It is a NGN 5,000 development course with a cat photo, live in the
    marketplace. It is also the only paid course, which is why it is useful
@@ -128,12 +126,22 @@ dashboard's Compliance page, which is the authority.
 
 ## The Supabase account
 
-Done on 8 October: the project moved into the **"GroundworkTech"**
-organisation. It stays on the **free plan** until PadiLearn has users. The
-upgrade, when it comes, is Billing → Pro on that organisation (USD 25 a
-month), paid with the company's card and TIN on the invoices, and nothing
-else changes. Still worth doing now: invite `hello@padilearn.com` as a
-second Owner, and turn on MFA for both logins.
+**On Pro since 9 October** (USD 25 a month; the included compute credit
+covers one Micro project). On 8 October the plan was to wait for users;
+Usman upgraded the next day.
+
+What Pro changes, and what goes with it:
+
+| | |
+|---|---|
+| Uploads | 300 MB per lesson: the global limit (Storage → Settings), the `course-media` bucket (`20261009000002_raise_video_limit.sql`, run by Usman) and the app's `kMaxVideoBytes` (APK 1.0.4 and the web app) all agree. |
+| Pausing | Never. `.github/workflows/keep-alive.yml` is now redundant and can go. |
+| Backups | Daily, kept 7 days (Database → Backups). Storage **files** are not in them, and deleting the project deletes its backups. |
+| Egress | 250 GB a month included, video being most of it. Keep the **spend cap on**: going over then brings a warning and restrictions, not a bill. |
+| Dashboard | Done by Usman, 9 October: leaked-password protection on (the advisor no longer flags it), compute Nano to Micro, billing address and company TIN, spend cap on. |
+
+Still worth doing: invite `hello@padilearn.com` as a second Owner, and turn
+on MFA for both logins.
 
 ## Moving out of Mumbai
 
@@ -180,7 +188,7 @@ On the website, with the numbers kept in `website/src/site.ts`:
 
 - Course reporting from the player: added 8 October; test it on a phone.
 - Sentry: wired in, but no DSN in either CI build, so crashes go unseen.
-- Database backups: none taken yet. Run `tool/region_move/dump.sh` (it doubles as the backup script).
+- Database backups: daily on Pro. `tool/region_move/dump.sh` is still worth running before a risky change, and it is the only copy that survives deleting the project.
 - Supabase region is Mumbai until `REGION_MOVE.md` is done.
 - Google sign-in: no OAuth clients yet. Email and password work.
 - `padilearn-admin.pages.dev` still serves the admin sign-in page without

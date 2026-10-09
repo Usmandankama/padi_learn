@@ -217,20 +217,15 @@ and add a dev log entry.
 
 ---
 
-## Staying on the free plan
+## The free plan, and then Pro
 
-What the free plan means for PadiLearn, and what covers each gap:
+The move was done on the free plan. Its gaps were covered by a 50 MB cap on
+lessons, `.github/workflows/keep-alive.yml` against pausing, and `dump.sh`
+as the only backup. The organisation went to **Pro on 9 October**, which
+lifts all three: uploads up to the global limit (set to 300 MB), no pausing,
+and daily backups. `STATUS.md` (The Supabase account) has what Pro changes.
 
-- **Uploads are capped at 50 MB per file.** Tell tutors to keep each lesson
-  short and compressed (720p, exported with a web preset such as HandBrake's).
-  A long lesson can be split in two. Revisit when tutors hit the limit.
-- **A project with no activity for a week is paused.**
-  `.github/workflows/keep-alive.yml` reads one category every three days.
-  GitHub stops scheduled workflows in a repo with no commits for 60 days.
-- **No automatic backups.** `bash tool/region_move/dump.sh` is also a backup
-  script: run it monthly, and before any risky change, keeping the output out
-  of the repo. Do not back up into GitHub Actions artifacts: the repo is
-  public.
-- **Leaked-password protection** is a paid feature and stays off.
-- **Limits** (check the usage page monthly): 500 MB database, 1 GB storage,
-  5 GB bandwidth a month. Video is what will reach the bandwidth limit first.
+`bash tool/region_move/dump.sh` is still worth running before any risky
+change: Pro's backups do not include Storage files and are deleted with the
+project. Keep its output out of the repo, and never in GitHub Actions
+artifacts: the repo is public.

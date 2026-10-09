@@ -19,10 +19,11 @@ const String _videoFolder = 'videos';
 const String _thumbnailFolder = 'thumbnails';
 
 /// Size ceilings, mirroring the bucket limits set in
-/// `supabase/migrations/20260801000001_harden_storage.sql`. Checking client-side
+/// `supabase/migrations/20260801000001_harden_storage.sql` (thumbnails) and
+/// `20261009000002_raise_video_limit.sql` (videos). Checking client-side
 /// means an oversized file is rejected in milliseconds instead of after a long
 /// upload that the server was always going to refuse.
-const int kMaxVideoBytes = 50 * 1024 * 1024; // 52428800
+const int kMaxVideoBytes = 300 * 1024 * 1024; // 314572800
 const int kMaxThumbnailBytes = 10 * 1024 * 1024; // 10485760
 
 /// Human-readable byte count, e.g. `48.2 MB`.
@@ -343,7 +344,7 @@ Future<MediaUploadResult> uploadCourseMedia({
       },
     );
     if (!outcome.ok) {
-      // Best-effort removal so a failed save doesn't orphan a 50 MB video.
+      // Best-effort removal so a failed save doesn't orphan a large video.
       if (videoPath != null) {
         try {
           await supabase.storage.from(videoBucket).remove(<String>[videoPath]);

@@ -12,6 +12,44 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-10-09 — Supabase Pro, and lessons up to 300 MB
+
+**The organisation went to Pro**, a day after deciding to wait for users. It
+lifts the three free-plan gaps the 8 October entry worked around: uploads
+capped at 50 MB, pausing after a week idle, and no automatic backups.
+
+**The lesson limit is 300 MB, not Pro's 500 GB.** 300 MB holds a 20 to 25
+minute lesson in compressed 720p. Two things argue against going higher
+before video moves to a streaming host: uploads go up in a single request
+with no resume, so a dropped mobile connection restarts a big file from
+zero; and every view is egress, of which Pro includes 250 GB a month.
+
+Three places hold the number and must agree: the project's global limit
+(Storage → Settings, set by Usman), the `course-media` bucket
+(`20261009000002_raise_video_limit.sql`), and `kMaxVideoBytes` in the app,
+which refuses a bigger file before the upload starts. The app's limit ships
+in APK 1.0.4 and the next web deploy; a build with the higher limit facing a
+bucket still at 50 MB would refuse files between the two with a 413 after
+the whole upload.
+
+**Kept for now:** the keep-alive workflow (redundant on Pro, harmless), and
+`dump.sh`, because Pro's backups leave out Storage files and go when the
+project is deleted.
+
+**Touches:** `supabase/migrations/20261009000002_raise_video_limit.sql`,
+`lib/services/supabase_storage_service.dart`, `pubspec.yaml` (1.0.4+5),
+`STATUS.md`, `REGION_MOVE.md`, `LAUNCH_WEB.md`, `LAUNCH_ANDROID.md`.
+
+**Done the same day:** Usman set the global limit and ran the bucket
+migration in the SQL editor, switched on leaked-password protection, moved
+compute from Nano to Micro, added the billing address and TIN, and left the
+spend cap on. **APK 1.0.4** carries the 300 MB limit and the subaccount
+screens, with checkout on: uploaded as `padilearn-1.0.4.apk` and
+`padilearn-latest.apk`, 42,818,009 bytes, MD5 `9b8d2210...54cf`, matching
+R2's ETag.
+
+---
+
 ## 2026-10-09 — Teachers paid by Paystack subaccounts
 
 **Each teacher gets a Paystack subaccount, created when they save a bank
