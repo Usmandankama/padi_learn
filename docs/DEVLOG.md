@@ -12,6 +12,21 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-10-09 — A house account cannot be suspended
+
+Trying the admin panel, Usman suspended the "PadiLearn" house account
+(reason "Test"), and its 12 courses, the whole demo catalogue, left the web
+app and the APK; only a test teacher's "New course" remained. Suspension
+hides a teacher's courses by design, so nothing was lost: lifting it from
+the admin panel brings them back.
+
+`admin_suspend_user()` now refuses a house account
+(`20261009000004_house_accounts_cannot_be_suspended.sql`) and says to take
+a course down instead. The admin panel shows the database's message as it
+is, so no app change was needed.
+
+---
+
 ## 2026-10-09 — Finishing a lesson now counts straight away
 
 **Reported:** the course progress bar had stopped moving. Traced through the
