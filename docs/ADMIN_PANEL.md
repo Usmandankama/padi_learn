@@ -614,7 +614,8 @@ Payments deploy, in this order:
 1. Paystack → Settings → Preferences → set "who pays the transaction fee"
    to the business, since the code now adds the fee itself.
 2. Paystack → Settings → API Keys & Webhooks → webhook URL
-   `https://wnxuxplzoddadjpwfhxe.supabase.co/functions/v1/paystack-webhook`.
+   `https://bouhrbjdxxqeylrxxmdl.supabase.co/functions/v1/paystack-webhook`
+   (the Ireland project, since 9 October).
 3. Then deploy `initialize-payment`, `verify-payment` and `paystack-webhook`
    (`--no-verify-jwt` on the webhook) together.
 

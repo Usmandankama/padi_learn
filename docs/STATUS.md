@@ -1,6 +1,6 @@
 # Where PadiLearn stands
 
-A snapshot, not a plan. **Last updated 8 October 2026.** The checklists live
+A snapshot, not a plan. **Last updated 9 October 2026.** The checklists live
 in `LAUNCH_WEB.md`, `LAUNCH_ANDROID.md` and `ADMIN_PANEL.md`. `DEVLOG.md`
 says why things are the way they are. When this page and a checklist
 disagree, trust the checklist and fix this page.
@@ -33,13 +33,13 @@ share 14 short clips of about 18 seconds each.
 | Enrolments | 2 |
 | Transactions | 1, Paystack **test mode** |
 | Payout accounts | 0 |
-| Supabase plan | Free, in organisation "GroundworkTech" (moved 8 October) |
+| Supabase | Free plan. Ireland project `bouhrbjdxxqeylrxxmdl`, in the company account's organisation (9 October); Mumbai kept until the switch-over is checked |
 
 ---
 
 ## Before showing tutors the product
 
-1. **Move the project to London** (`REGION_MOVE.md`), before tutors start
+1. **Move the project to Ireland** (`REGION_MOVE.md`), before tutors start
    using it. Every request from Nigeria to Mumbai pays about 350 ms.
    **Supabase stays on the free plan until there are users** (Usman's
    decision, 8 October). That means: tell tutors to keep each lesson under
@@ -59,24 +59,28 @@ share 14 short clips of about 18 seconds each.
 
 ## Payments: what stands between us and live money
 
-A **company Paystack account** now exists. In order:
+A **company Paystack account** now exists, **approved on 9 October**. The
+switch is happening on the Ireland project, together with the region move:
+Ireland has no traffic until the apps point at it, so its functions can be
+the new ones from the start while Mumbai keeps the June ones. In order:
 
 | # | Step | Who |
 |---|---|---|
-| 1 | Complete Paystack's compliance for a registered business (checklist below). The account can take test payments meanwhile. | Usman |
+| 1 | ~~Complete Paystack's compliance for a registered business (checklist below).~~ Approved 9 October. | Usman |
 | 2 | In the **new** account: Settings → Preferences → transaction fees paid by **the business**. The code adds the card fee itself, so "customer pays" would charge it twice. | Usman |
-| 3 | In the new account's API Keys & Webhooks: webhook URL `https://wnxuxplzoddadjpwfhxe.supabase.co/functions/v1/paystack-webhook`, callback URL `https://app.padilearn.com/payment-callback`. | Usman |
-| 4 | Put the new account's **test** secret key in Supabase → Edge Functions → Secrets as `PAYSTACK_SECRET_KEY`, replacing the old account's. | Usman |
-| 5 | Deploy `initialize-payment`, `verify-payment` and `paystack-webhook` together, the webhook with JWT verification off. All three type-check clean (Deno 2.7.14, 8 October). | Claude, once 2–4 are done |
-| 6 | Test-mode purchase of "Test 15" end to end on the web, then once more with the tab closed on Paystack's page, so that only the webhook can grant the course. | Usman and Claude |
+| 3 | In the new account's API Keys & Webhooks: webhook URL `https://bouhrbjdxxqeylrxxmdl.supabase.co/functions/v1/paystack-webhook` (the Ireland project), callback URL `https://app.padilearn.com/payment-callback`. | Usman |
+| 4 | Put the new account's **test** secret key in the **Ireland** project's Edge Functions → Secrets as `PAYSTACK_SECRET_KEY`. | Usman |
+| 5 | ~~Deploy `initialize-payment`, `verify-payment` and `paystack-webhook` together, the webhook with JWT verification off.~~ Done on Ireland, 9 October, from the repo as of `a56e7d9`. | Claude |
+| 6 | ~~Test-mode purchase of "Test 15", then once more with only the webhook to grant the course.~~ Done on Ireland, 9 October, with two throwaway students against the functions directly: charged NGN 5,178 (5,000 + card fee); split Paystack 177.67, PadiLearn 750.05, teacher 4,250.28; verify path and webhook-only path both recorded the sale and enrolled the student. The first webhook try failed because the test-mode webhook URL was not saved in Paystack. The app's own checkout screens are checked after the switch-over, still on the test key. | Usman and Claude |
 | 7 | Publish the website's customer policies (8 October): terms with section 6, `/refunds`, `/support`, privacy, footer and FAQ, all naming Groundwork Tech Ltd. Paystack's reviewers read the website. | Push to `main` |
 | 8 | Once Paystack approves the account: swap in the **live** secret key and repeat step 3 for live mode. | Usman |
 | 9 | Delete the test-mode rows from `transactions`, and the enrolments they granted, so test money never shows up as a teacher's balance. Then archive "Test 15". | Claude, on request |
 
-Steps 2 to 5 must happen together. The deployed `initialize-payment` dates
-from June, charges the bare list price and falls back to a callback domain
-PadiLearn does not own. The repo version adds the card fee, so pairing it
-with a "customer pays" setting double-charges.
+Steps 2 to 4 must be done before the apps point at Ireland. Mumbai's
+`initialize-payment` dates from June, charges the bare list price and falls
+back to a callback domain PadiLearn does not own. Ireland's adds the card
+fee, so pairing it with a "customer pays" setting double-charges. Step 6 can
+run before the switch-over, from a local build pointed at Ireland.
 
 ### Paystack compliance, registered business
 
@@ -114,13 +118,16 @@ second Owner, and turn on MFA for both logins.
 ## Moving out of Mumbai
 
 A project's region is fixed when it is created, so moving means a new project
-in London and a copy of everything. The runbook, with scripts in
+in Ireland and a copy of everything. The runbook, with scripts in
 `tool/region_move/`, is **`REGION_MOVE.md`**. It works on the free plan.
 
 Measured from Usman's laptop on 8 October, best of five TCP connects to each
 AWS region: Mumbai 347 ms, London 163 ms, Paris 169 ms, Frankfurt 180 ms,
 Ireland 201 ms, Cape Town 132 ms. A request to the current project takes
-430 to 510 ms to its first byte. **Target: London (`eu-west-2`).**
+430 to 510 ms to its first byte. **Target: Ireland (`eu-west-1`)**, project
+`bouhrbjdxxqeylrxxmdl` in the company account's organisation. London was the
+first choice; on 9 October the two timed the same (Ireland 174 ms, London
+186 ms), and Usman kept Ireland.
 
 ## Customer policies (decided 8 October)
 

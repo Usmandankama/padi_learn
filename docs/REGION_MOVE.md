@@ -1,14 +1,32 @@
-# Moving the Supabase project from Mumbai to London
+# Moving the Supabase project from Mumbai to Ireland
 
 A runbook for a one-off move, written 8 October 2026. The project's region is
-fixed when it is created, so moving means a **new project in London** and a
+fixed when it is created, so moving means a **new project in Ireland** and a
 copy of everything into it. It is done on the **free plan**: Usman decided not
 to pay for Supabase until PadiLearn has users, and nothing here needs a paid
 plan.
 
-Why: from Usman's laptop, Mumbai answers in about 350 ms and London in about
-160 ms, and every query the app makes pays that difference. It is cheapest
+Why: from Usman's laptop, Mumbai answers in about 350 ms and Ireland in about
+175 ms, and every query the app makes pays that difference. It is cheapest
 now, with 6 accounts and 43 files.
+
+Ireland, not London: London was the first target, but the project first came
+up in Ireland and on 9 October the two timed the same (Ireland 174 ms,
+London 186 ms, best of five connects to Supabase's servers in each). Usman
+chose to keep the Ireland project.
+
+**Progress, 9 October:** steps 1 to 6 are done. The restore's counts matched
+Mumbai's exactly, and all 43 files (50.2 MB) are in Ireland with matching
+sizes. The dump is `~/padilearn-backups/20261009-110946`. Anything written
+to Mumbai after 11:09 that day is not in Ireland.
+
+The restore at first left Ireland **less locked down than Mumbai**: a new
+project grants `anon` and `authenticated` everything on each object created
+in `public`, and the dump only adds grants. 42 functions became callable
+signed out and every column of `profiles` writable. Fixed the same day (82
+revokes, Ireland's grants now identical to Mumbai's), `restore.sh` now
+switches those defaults off first, and `counts.sql` compares grants too.
+Next: step 7.
 
 **Who does what.** Usman does anything that needs a password, a secret key or
 a dashboard. Claude does the rest. The scripts read secrets from
@@ -36,28 +54,41 @@ with its own keys.
 | Auth settings, SMTP, email templates, MFA | Dashboard, by hand | Usman |
 | The apps' Supabase URL and key | GitHub secrets, local config, redeploys, APK 1.0.2 | Usman + Claude |
 
+Nothing else lives in the old project. Checked on 8 October: no cron jobs,
+database webhooks, `pg_net`, Vault secrets or auth hooks; only Supabase's
+default extensions; every account signs in by email.
+
 ---
 
 ## Steps
 
 ### 1. Create the new project (Usman)
 
-Dashboard → organisation **GroundworkTech** → New project:
+Log in as the **company account** and create the project in its own
+organisation, so the move also takes PadiLearn out of Usman's personal
+account. Mumbai stays in "GroundworkTech" until step 10.
 
-- Name `padilearn`, region **West EU (London)**, `eu-west-2`.
+- Name `padilearn`, region **West EU (Ireland)**, `eu-west-1`. Done on
+  9 October: the ref is **`bouhrbjdxxqeylrxxmdl`**.
 - Generate a database password and keep it in your password manager. Don't
   paste it into chat.
-- Plan: Free. The old project is the other free project allowed; the two
-  paused ones in "Usmandankama" don't count.
+- Plan: Free. The company login has its own two free projects; make sure it
+  has no other active one.
 
 Then tell Claude the new project's **ref** (the part before `.supabase.co`).
-That is not a secret.
+That is not a secret. Claude checks the region from the database's address
+before anything is copied in.
 
 ### 2. Fill in `tool/region_move/.env` (Usman)
 
 Copy `tool/region_move/env.example` to `tool/region_move/.env` and follow the
 comments in it: both database URLs (Connect → Session pooler) and both service
 keys (Project Settings → API Keys).
+
+Two things that went wrong the first time: the **Direct connection** string
+(`db.<ref>.supabase.co`) does not work from Usman's laptop, which has no
+IPv6, so it must be the Session pooler one (`postgres.<ref>@aws-…pooler…`);
+and the brackets in `[YOUR-PASSWORD]` go too.
 
 ### 3. Dump the old project (Usman)
 
@@ -99,21 +130,35 @@ differs.
 
 ### 6. Edge functions (Claude)
 
-Copied **as currently deployed**, not from the repo. The repo's payment
-functions are newer, and they must not go live until the Paystack switch in
-`STATUS.md`, which charges the card fee differently. Moving like for like
-keeps that switch a separate, deliberate step.
+**Done 9 October.** The plan below was to copy everything as deployed and
+keep the Paystack switch for later. Paystack approved the company account
+the same day, so Ireland got the **new** payment functions instead
+(`initialize-payment`, `verify-payment`, and `paystack-webhook` with JWT
+verification off), from the repo as of `a56e7d9`. The other three are
+identical either way. Mumbai keeps the June ones until it is retired.
 
-- `initialize-payment` (v2), `verify-payment` (v5), `get-course-video`,
-  `payout-account`, `delete-account`, all with JWT verification on, as today.
+The original plan, for reference: each deployed function was compared with git on 8 October and matches one
+commit exactly, so it is deployed from that commit
+(`git show <commit>:supabase/functions/<name>/index.ts`):
+
+| Function | Deployed | Commit |
+|---|---|---|
+| `initialize-payment` | v2 | `2d06c7f` |
+| `verify-payment` | v5 | `52aa0fc` |
+| `get-course-video` | v4 | `bd9356b` |
+| `payout-account` | v2 | `bd9356b` |
+| `delete-account` | v1 | `1e046bd` |
+
+All with JWT verification on, as today. If anything is deployed to Mumbai
+after 8 October, the versions above no longer match; compare again first.
+
+- Claude deploys through the project-scoped Supabase server in `.mcp.json`,
+  signed in with the company login. It sees only the new project, which is
+  all this step needs.
 - Then Usman copies each **secret** from the old project (Edge Functions →
   Secrets) to the new one: at least `PAYSTACK_SECRET_KEY`, and
   `PLATFORM_FEE_PERCENT` if it is set. `SUPABASE_URL` and the service key
   are provided automatically.
-
-If Claude's Supabase connection cannot see the new project (it only lists the
-"Usmandankama" organisation), reconnect the Supabase connector and include
-GroundworkTech.
 
 ### 7. Dashboard settings on the new project (Usman)
 
@@ -134,7 +179,7 @@ Open the old project in another tab and copy across:
   entered without it.
 - **Authentication → Rate Limits.** Match the old project.
 
-### 8. Point the apps at London (Usman + Claude)
+### 8. Point the apps at Ireland (Usman + Claude)
 
 - **GitHub** → Settings → Secrets → Actions: update `SUPABASE_URL` and
   `SUPABASE_PUBLISHABLE_KEY` (Usman).
@@ -162,7 +207,7 @@ Open the old project in another tab and copy across:
 
 Pause the old project first and keep it a week or two as a fallback. Then
 delete it; a deletion cannot be undone. Pausing also frees its free-project
-slot.
+slot. Once it is deleted, "GroundworkTech" is empty and can be deleted too.
 
 ### 11. Afterwards (Claude)
 

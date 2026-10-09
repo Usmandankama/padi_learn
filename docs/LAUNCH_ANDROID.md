@@ -152,7 +152,7 @@ Most of the code work in section B can happen during step 7.
 - [ ] Turn on **leaked password protection**. *It is a paid-plan feature (Supabase docs, checked 2026-10-08), so it waits for the upgrade.*
 - [ ] Decide whether signups need **email confirmation**, and test signing up with that setting.
 - [ ] **Back up the database yourself** before launch: `bash tool/region_move/dump.sh` (Git Bash; `pg_dump` 17 is installed through MSYS2). The free plan has no automatic backups.
-- [ ] **Stay on the free plan until there are users** (decided 2026-10-08). Covered meanwhile: lessons under 50 MB, the keep-alive workflow, and `tool/region_move/dump.sh` as the backup. The project is in the company organisation "GroundworkTech", so upgrading later is one click. Move it from Mumbai to London first (`REGION_MOVE.md`).
+- [ ] **Stay on the free plan until there are users** (decided 2026-10-08). Covered meanwhile: lessons under 50 MB, the keep-alive workflow, and `tool/region_move/dump.sh` as the backup. The project is in the company organisation "GroundworkTech", so upgrading later is one click. Move it from Mumbai to Ireland first (`REGION_MOVE.md`).
 - [x] Rewrite the RLS policies to use `(select auth.uid())`, and add the missing foreign-key indexes. *Done 2026-10-07 (`20261007000003`, `…004`).*
 
 ### Google sign-in

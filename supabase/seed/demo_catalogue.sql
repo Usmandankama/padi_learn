@@ -112,7 +112,7 @@ select
     order by created_at
     limit 1
   ) as student_id,
-  'https://wnxuxplzoddadjpwfhxe.supabase.co/storage/v1/object/public/course-thumbnails/demo/'
+  'https://bouhrbjdxxqeylrxxmdl.supabase.co/storage/v1/object/public/course-thumbnails/demo/'
     as thumb_base;
 
 do $$

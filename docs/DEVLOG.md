@@ -12,6 +12,86 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-10-09 — Supabase moves to Ireland and the company account; Paystack goes company
+
+**The project now lives in Ireland (`eu-west-1`), ref
+`bouhrbjdxxqeylrxxmdl`**, in the organisation of the company's own Supabase
+login rather than Usman's personal one. Mumbai (`wnxuxplzoddadjpwfhxe`) stays
+up, untouched, until the switch-over is checked; then it is paused, and
+deleted a week or two later.
+
+**Why Ireland and not London**, which the 8 October entry named: the first
+new project came up in Ireland by mistake (both regions say "West EU" in the
+dashboard). Timed from Usman's laptop on 9 October the two were level:
+Ireland 174 ms, London 186 ms, best of five connects to Supabase's servers in
+each, against Mumbai's 335. A full read through the API takes 0.39 to 0.43 s
+from Ireland and 0.47 to 0.52 s from Mumbai: Supabase's edge absorbs part
+of the distance. Usman kept Ireland.
+
+**Why the company login:** creating the new project there moved ownership out
+of a personal account for free, as part of a move that had to happen anyway.
+
+**What was copied, and how it was checked.** `dump.sh` and `restore.sh`
+moved schema, data, accounts (password hashes and the admin's authenticator
+included) and storage metadata; `copy_storage.mjs` moved the 43 files. Row
+counts, policies, functions, triggers and realtime tables matched exactly,
+and every file's size matched.
+
+**What the counts missed: grants.** A new Supabase project grants `anon` and
+`authenticated` everything on each table and function created in `public`.
+`pg_dump` writes the grants an object has, never the revocation of those
+defaults, so the restored project was quietly more open than Mumbai: 42
+`SECURITY DEFINER` functions callable signed out (the admin ones included,
+though each checks `is_admin()` itself), and `profiles` writable in every
+column where Mumbai allows `name` and `profile_image_url` only. Supabase's
+security advisor caught it before any traffic did. Fixed by diffing every
+table, column and function grant against Mumbai and revoking the extra (82
+revokes); the two are now identical. So it cannot recur, `restore.sh` turns
+those defaults off for the restore (the dump turns them back on at its end),
+and `counts.sql` now compares grants too. This matters beyond the move:
+`dump.sh` is also the backup, and a restore from it would have hit the same
+thing.
+
+**Paystack, in the same move.** The company Paystack account was approved on
+9 October. Ireland had no traffic yet, so it got the **new** payment
+functions from the start (`initialize-payment`, `verify-payment`,
+`paystack-webhook`, from the repo at `a56e7d9`) instead of copying Mumbai's
+June versions and replacing them later. Tested in test mode with two
+throwaway students against the functions directly: NGN 5,178 charged for the
+NGN 5,000 "Test 15" (fee carried by the student), split Paystack 177.67,
+PadiLearn 750.05, teacher 4,250.28. The verify path and the webhook-only path
+each recorded the sale and enrolled the student. The webhook only started
+arriving once its URL was saved in Paystack's **test** mode, which is
+separate from live.
+
+**Smaller things learned:**
+
+- The session-pooler URL is the one to use from Usman's laptop, which has no
+  IPv6; the direct `db.<ref>` host is IPv6-only. The brackets in
+  `[YOUR-PASSWORD]` are not part of the password.
+- `pg_dump` here does not accept abbreviated long options:
+  `--quote-all-identifier` had to become `--quote-all-identifiers`.
+- The line drops connections mid-upload, so `copy_storage.mjs` retries.
+- A partial copy run before the restore left files in the new project; the
+  data dump now uses `INSERT … ON CONFLICT DO NOTHING` so the restore
+  tolerates them instead of rolling back.
+- Edge functions that import `../_shared/` deploy through the Supabase MCP
+  with files named `<fn>/index.ts` and `_shared/<file>.ts`.
+
+**Touches:** `tool/region_move/*`, `docs/REGION_MOVE.md`, `docs/STATUS.md`,
+`docs/ADMIN_PANEL.md` (webhook URL), `docs/LAUNCH_WEB.md`,
+`docs/LAUNCH_ANDROID.md`, `supabase/seed/demo_catalogue.sql` (thumbnail
+host), `pubspec.yaml` and `website/src/site.ts` (APK 1.0.2, which has Ireland
+built in; 1.0.1 has Mumbai).
+
+**Outstanding:** redeploy the web and admin apps (the GitHub secrets already
+name Ireland); check the app's own checkout on app.padilearn.com while still
+on the test key; then the live key and live webhook; the runbook's step 9
+checks; delete the test students, test transactions and the enrolments they
+granted, and archive "Test 15"; pause Mumbai, then delete it.
+
+---
+
 ## 2026-10-08 — Out of beta: customer policies on the website
 
 **PadiLearn is out of beta**, Usman's call: the web app and the APK are the

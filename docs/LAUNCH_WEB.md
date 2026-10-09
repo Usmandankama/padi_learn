@@ -272,8 +272,8 @@ on web, replace the shim with Corbado's bundle:
   `canvaskit/*.symbols` files are debug artifacts and are never fetched by a
   browser.
 - **Supabase is in `ap-south-1` (Mumbai)**, a long way from Lagos (about
-  350 ms against 160 ms for London, measured 2026-10-08). The move to London
-  is written up in `REGION_MOVE.md`.
+  350 ms against about 175 ms for Ireland, measured 2026-10-09). The move to
+  Ireland is written up in `REGION_MOVE.md`.
 - **Leaked-password protection is disabled** in Supabase Auth. It is a
   paid-plan feature, and Supabase stays on the free plan until there are
   users (`STATUS.md`).
