@@ -19,11 +19,12 @@ button next to upload that says save to drafts or upload". So the create
 screen keeps its one-step shape and gains a second button. It was not
 rebuilt into "save the course first, add lessons later".
 
-**Half live.** The same day, after this was written: Usman ran the
-migration in the SQL editor, and `get-course-video` (version 4) and
-`initialize-payment` (version 5) were deployed. The app itself is not on
-`main`, so no teacher can save a draft yet. The order is under Outstanding,
-and it matters.
+**Live the same day.** After this was written: Usman ran the migration in
+the SQL editor, `get-course-video` (version 4) and `initialize-payment`
+(version 5) were deployed, the branch went to `main` (the web and admin
+apps deployed from `a3eb85c`), and APK 1.0.7 was built and uploaded. The
+order those happened in is under Outstanding, and it mattered. No teacher
+has saved a draft on the live project yet.
 
 **What a teacher sees.**
 
@@ -175,13 +176,18 @@ migration adds.
   Done 10 October, and checked with reads: 16 courses, none a draft.
   (2) ~~`get-course-video` and `initialize-payment` are deployed.~~ Done
   10 October. Not before (1): they select a column that would not have
-  existed, and every playback and purchase would have failed. (3) The app
-  is pushed and a new APK built. Not before (1): "Save to drafts" would fail on a missing column,
+  existed, and every playback and purchase would have failed. (3) ~~The
+  app is pushed and a new APK built.~~ Done 10 October. The live
+  `main.dart.js` carries "Save to drafts" and `/teach` the new wording.
+  APK 1.0.7 (build 8): 44,997,113 bytes, MD5 7e322471...801b, matching
+  R2's ETag on both objects; signed by Groundwork Tech Ltd, checkout on,
+  built with `sentry_dsn.json`. Not installed on a phone. Not before (1): "Save to drafts" would fail on a missing column,
   and so would the admin's Courses screen.
 - **An old APK does not know what a draft is.** A teacher who saves a
   draft in a browser and opens it in 1.0.6 or earlier sees it listed with
   no badge, and labelled Live on its own screen. It is not live, and that
-  APK cannot upload it. A new APK fixes this.
+  APK cannot upload it. APK 1.0.7 fixes this, for those who install it:
+  nothing tells an installed app that there is a newer one.
 - **No deletion of abandoned drafts.** A draft keeps its files until its
   teacher deletes it. Follow-up: tell teachers about drafts untouched for
   some weeks, then delete them.
