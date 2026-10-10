@@ -219,6 +219,8 @@ preflight request, which shows it starts; neither has been called by a
 signed-in user since.
 
 **Found on the way: free self-enrolment is refused on the live project.**
+(Fixed the same day; see "Free enrolment was refused by the database"
+below. What follows is as it was found.)
 `insert into enrollments` by a signed-in student fails with "infinite
 recursion detected in policy for relation enrollments": the self-enrol
 policy reads `courses`, and the courses policy reads `enrollments` back
@@ -279,6 +281,140 @@ migration adds.
 the admin's `admin_api.dart`, `courses_screen.dart`, `users_screen.dart`
 and `overview_screen.dart`, the tests named above, `STATUS.md`,
 `ADMIN_PANEL.md`, and `website/src/pages/teach.astro`.
+
+---
+
+## 2026-10-10 — Free enrolment was refused by the database
+
+**Live since 10 October.** Usman ran
+`supabase/migrations/20261010000002_free_enrolment_policy_recursion.sql`
+in the SQL editor that day. No app or function changes: the web app and
+every installed APK can enrol again. What was checked on the live project
+afterwards is under "Checked on live" below.
+
+**What was wrong.** A signed-in student tapping Enrol on a free course got
+a database error, `42P17: infinite recursion detected in policy for
+relation "enrollments"`, and was not enrolled. Paid enrolment was never
+affected: `verify-payment` and the webhook write with the service role,
+which row-level security does not apply to. That is also why the 9 October
+payment test passed with this bug present.
+
+**Why.** Two policies read each other.
+
+- "Users can self-enroll in free courses" on `enrollments` reads `courses`,
+  for the price and (since drafts) for `published_at`.
+- "Courses are viewable by signed-in users" on `courses` reads
+  `enrollments`, for "or you are enrolled in it". That branch came with
+  course archiving (`20260801000004`), and takedowns, suspension, the
+  `auth.uid()` tidy-up and drafts each recreated the policy by copying the
+  text forward.
+
+Postgres expands policies before it runs anything, and refuses when a chain
+of them comes back to the table it started from. It does not consider that
+the inner read is harmless. So the error does not depend on the course or
+the student: every self-enrolment is refused at planning.
+
+Nobody noticed because nothing exercised it. The catalogue is the house
+account's demo, the two enrolments on the live project were written by the
+seed and by the payment test, and both bypass row-level security. It was
+found on 10 October by the drafts work, testing its own enrolment rule.
+
+**The fix.** The `courses` policy no longer reads `enrollments` itself. It
+asks `private.my_enrolled_course_ids()`, a security definer function that
+returns the caller's own enrolled course ids, and the third branch becomes
+`id in (select private.my_enrolled_course_ids())`. The function takes no
+argument and answers only for `auth.uid()`, which is what "Users can view
+their own enrollments" already lets the caller read. It is in `private`,
+so it is not an RPC, and only `authenticated` may execute it.
+
+**Why that side of the cycle.** The cycle could equally be cut in the
+enrolment policy, with a function that answers "is this course free and
+uploaded". But that policy reads `courses` through row-level security on
+purpose: it is the reason a student cannot enrol in a free course that is
+archived, taken down, or a suspended teacher's. None of those rules is
+written in the enrolment policy. They hold because the student cannot see
+the row. A function there would bypass them and have to restate each one,
+and the next rule about hiding a course would have to remember a second
+place. Cutting the `courses` side changes how one read is made and nothing
+about what it returns.
+
+**Why a set and not `is_enrolled(course_id)`.** A function taking the
+course would be called once per row of `courses` on every catalogue read.
+`id in (select ...)` with no reference to the row is evaluated once per
+statement and hashed (the plan shows a hashed SubPlan).
+
+**Checked,** on a throwaway local Postgres 17.2 built from the live catalog
+as it stood after the drafts migration. All 29 policies on `courses`,
+`enrollments`, `lessons`, `course_comments` and `course_ratings` matched
+the live text by hash before the fix went on.
+
+- Before: the insert is refused with the same error as live.
+- Who sees which course and which lesson is identical before and after,
+  for eight accounts (two students, a suspended student, a student already
+  enrolled in an archived, a taken-down and a suspended teacher's course,
+  three teachers of whom one is suspended, an admin) across live, paid,
+  archived, taken-down, draft and suspended-teacher courses.
+- After: a student enrols in a free live course with the statement the
+  app's upsert produces, and a second tap adds nothing. The course's count
+  goes up and its teacher is notified. Refused: a paid course, a draft
+  (the owner's own included), an archived or taken-down free course, a
+  suspended teacher's, enrolling someone else, and a suspended student.
+- An enrolled student still sees a course, and its lessons, after it is
+  archived. An account that is not enrolled does not. A suspended
+  teacher's courses stay hidden, except from that teacher and from a
+  student already enrolled in one.
+- Comments and ratings work for an enrolled student and are refused for
+  one who is not.
+- Running the file twice changes nothing.
+
+On the live project, before the fix, only the plan was checked: an
+`EXPLAIN` without `ANALYZE`, in a transaction that was rolled back, gave
+the error.
+
+**Checked on live,** after Usman ran it, with reads only:
+
+- The function is there as written, security definer with an empty
+  search path, executable by `authenticated` and its owner only.
+- The courses policy has the new third branch and still has
+  `published_at is not null`. The other 28 policies on the five tables
+  are unchanged by hash, the enrolment policy among them. No policy on
+  `courses` reads `enrollments`.
+- The same `EXPLAIN` now returns a plan instead of the error.
+- Read as each of the two accounts that hold an enrolment, and as an
+  account with none: each sees exactly the courses the old rule gives
+  (2, 2 and 1). Both enrolled accounts hold a course that is archived and
+  still see it.
+
+No enrolment was made on live: that would be a write.
+
+**The same cycle elsewhere: none.** Reading the live catalog for which
+table each policy reads: `course_comments` reads `courses` and
+`enrollments`, `course_ratings` reads `enrollments`, `lessons` reads
+`courses`, `categories` and `courses` read `profiles`. Nothing reads
+`course_comments`, `course_ratings` or `lessons` back, and `profiles`
+reads nothing, so `enrollments` and `courses` were the only pair.
+
+**Do not copy the old policy text again.** That is how this survived five
+migrations. `test/enrolment_policy_test.dart` reads the migrations and
+fails if the newest text of any policy on `courses` mentions
+`enrollments`. It checks the repo, not the database.
+
+**Outstanding:**
+
+- Enrol in a free course from a real student account, in the app. Nothing
+  has done that yet. On 10 October the catalogue holds one course (14 of
+  the 16 are archived and one is taken down), it is free, and it has no
+  students.
+- The drafts migration (`20261010000001`, on the drafts branch) recreates
+  this policy with the old read. It has already been run on the live
+  project, and this file comes after it. Running it again would bring the
+  bug back until this one is run again after it. Both orders were tried
+  locally.
+- The app shows the raw database error when an enrolment fails. Worth a
+  plain sentence instead.
+
+**Files:** `supabase/migrations/20261010000002_free_enrolment_policy_recursion.sql`,
+`test/enrolment_policy_test.dart`.
 
 ---
 

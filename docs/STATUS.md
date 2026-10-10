@@ -213,10 +213,13 @@ On the website, with the numbers kept in `website/src/site.ts`:
 
 ## Still open from the checklists
 
-- **Free enrolment is refused on the live project** (found 10 October). A
-  student who taps Enrol on a free course gets a database error: two
-  row-level security policies read each other. Paid enrolment works. A fix
-  is described in `DEVLOG.md`, 10 October; it has not been made.
+- **Free enrolment: fixed in the database on 10 October.** Until then the
+  live project refused every free enrolment, because two row-level security
+  policies read each other. Usman ran
+  `supabase/migrations/20261010000002_free_enrolment_policy_recursion.sql`
+  and it was checked on live with reads. A student's free enrolment has
+  gone through since (10 October, 14:17 UTC, "Welcome to PadiLearn").
+  `DEVLOG.md`, 10 October.
 - Drafts: nothing deletes an abandoned one, and the admin panel does not
   show how much storage each teacher uses.
 - Course reporting from the player: added 8 October; test it on a phone.
