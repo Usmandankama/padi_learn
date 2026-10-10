@@ -12,6 +12,59 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-10-10 — "Save to drafts" did nothing once the title had scrolled away
+
+**Reported** by Usman an hour after drafts went out: "the draft works for
+android but not web".
+
+**What the logs showed.** The Android app had asked for the draft count and
+inserted a draft. From app.padilearn.com, in two browsers running the new
+build, there was no such request at all: the tap never reached the network.
+
+**Why.** The form was a `ListView`. That builds lazily and discards whatever
+scrolls out of view, and "Save to drafts" asked the title *field* whether it
+was filled in (`_titleKey.currentState?.validate() ?? false`). The buttons
+are at the bottom of a long form; by the time they are on screen the title
+field is gone, the check comes back empty, and the tap returns without a
+word. It worked on the phone only because the title still had the
+keyboard's focus, which keeps a field alive. Fill in anything else first
+and it failed there too. So it was never a web bug: the APK has it as well.
+
+The same laziness had always weakened "Upload" and the edit screen's save:
+a `Form` validates only the fields that are still built, so an empty field
+far above the button was never checked.
+
+**Now.**
+
+- Both forms are a `SingleChildScrollView` holding a `Column`, so every
+  field stays built and is validated. A dozen fields is nothing worth
+  building lazily.
+- The draft check reads the text, not the field.
+- A refusal is said where the teacher is looking: "Give the course a title
+  before saving it to drafts." (and the form scrolls to it), or "Some
+  details are missing. Check the fields marked in red."
+
+**Checked.** `test/create_course_screen_test.dart` pumps the real screen,
+types a title, leaves the field, scrolls to the buttons and taps. Against
+the released code the tap produced nothing, which is the report reproduced;
+with the change it carries on to the save. `flutter test`: 154 pass.
+`flutter analyze`: 61 infos, as before.
+
+**Not checked:** in a browser or on a phone against the live project.
+
+**What went wrong in the checking.** The drafts entry below says the
+screens behind a teacher's sign-in "were exercised only through their
+parts". This is what that missed: the buttons were tested, the screen that
+holds them was not. The screen can be pumped in a test after all, with
+Supabase initialised against an address nothing answers at.
+
+**Outstanding:** APK 1.0.7 carries the bug. It needs a 1.0.8.
+
+**Touches:** `create_course_screen.dart`, `editCourse_screen.dart`,
+`test/create_course_screen_test.dart` (new).
+
+---
+
 ## 2026-10-10 — Course drafts: "Save to drafts" beside "Upload"
 
 **Asked for** by Usman, in these words: "the draft system should be like a

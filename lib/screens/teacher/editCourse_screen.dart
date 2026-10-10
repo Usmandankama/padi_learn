@@ -142,7 +142,11 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
   // ---------------------------------------------------------------------------
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      _notify('Some details are missing. Check the fields marked in red.',
+          isError: true);
+      return;
+    }
 
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) {
@@ -244,109 +248,118 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
       ),
       body: Form(
         key: _formKey,
-        child: ListView(
+        // Not a ListView, for the reason given in create_course_screen.dart:
+        // a Form can only validate the fields that are still built.
+        child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 32.h),
-          children: [
-            _section(
-              title: 'Course details',
-              children: [
-                _field(
-                  controller: _title,
-                  label: 'Title',
-                  icon: Icons.title,
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Please enter a course title'
-                      : null,
-                ),
-                SizedBox(height: 14.h),
-                _field(
-                  controller: _description,
-                  label: 'Description',
-                  icon: Icons.notes,
-                  maxLines: 5,
-                  validator: (v) => !_isDraft && (v == null || v.trim().isEmpty)
-                      ? 'Please enter a description'
-                      : null,
-                ),
-                SizedBox(height: 14.h),
-                _field(
-                  controller: _author,
-                  label: 'Author name',
-                  icon: Icons.person_outline,
-                  validator: (v) => !_isDraft && (v == null || v.trim().isEmpty)
-                      ? 'Please enter the author name'
-                      : null,
-                ),
-              ],
-            ),
-            SizedBox(height: 14.h),
-            _section(
-              title: 'Category & price',
-              children: [
-                CategoryPicker(
-                  value: _category,
-                  enabled: !_saving,
-                  required: !_isDraft,
-                  decoration: _decoration('Category', Icons.category_outlined),
-                  onChanged: (value) => setState(() => _category = value),
-                ),
-                SizedBox(height: 14.h),
-                _field(
-                  controller: _price,
-                  label: 'Price (NGN) — 0 makes it free',
-                  icon: Icons.sell_outlined,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  // Rebuild so the earnings estimate tracks what they type.
-                  onChanged: (_) => setState(() {}),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) {
-                      return _isDraft ? null : 'Enter a price';
-                    }
-                    if (double.tryParse(v.trim()) == null) {
-                      return 'Enter a valid number';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 10.h),
-                EarningsHint(priceText: _price.text),
-              ],
-            ),
-            SizedBox(height: 14.h),
-            _section(
-              title: 'Cover image',
-              children: [
-                _thumbnailPicker(),
-                SizedBox(height: 12.h),
-                // Videos belong to lessons now, so they are edited there
-                // rather than here.
-                Row(
-                  children: [
-                    Icon(Icons.info_outline,
-                        size: 15.sp, color: AppColors.palette.inkSoft),
-                    SizedBox(width: 6.w),
-                    Expanded(
-                      child: Text(
-                        'Lesson videos are managed in the Lessons tab.',
-                        style: GoogleFonts.poppins(
-                            fontSize: 11.sp, color: AppColors.palette.inkSoft),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            SizedBox(height: 24.h),
-            if (_saving)
-              UploadProgressCard(progress: _progress)
-            else
-              PrimaryButton(
-                label: 'Save changes',
-                isLoading: false,
-                onPressed: _save,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _section(
+                title: 'Course details',
+                children: [
+                  _field(
+                    controller: _title,
+                    label: 'Title',
+                    icon: Icons.title,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Please enter a course title'
+                        : null,
+                  ),
+                  SizedBox(height: 14.h),
+                  _field(
+                    controller: _description,
+                    label: 'Description',
+                    icon: Icons.notes,
+                    maxLines: 5,
+                    validator: (v) =>
+                        !_isDraft && (v == null || v.trim().isEmpty)
+                            ? 'Please enter a description'
+                            : null,
+                  ),
+                  SizedBox(height: 14.h),
+                  _field(
+                    controller: _author,
+                    label: 'Author name',
+                    icon: Icons.person_outline,
+                    validator: (v) =>
+                        !_isDraft && (v == null || v.trim().isEmpty)
+                            ? 'Please enter the author name'
+                            : null,
+                  ),
+                ],
               ),
-          ],
+              SizedBox(height: 14.h),
+              _section(
+                title: 'Category & price',
+                children: [
+                  CategoryPicker(
+                    value: _category,
+                    enabled: !_saving,
+                    required: !_isDraft,
+                    decoration:
+                        _decoration('Category', Icons.category_outlined),
+                    onChanged: (value) => setState(() => _category = value),
+                  ),
+                  SizedBox(height: 14.h),
+                  _field(
+                    controller: _price,
+                    label: 'Price (NGN) — 0 makes it free',
+                    icon: Icons.sell_outlined,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    // Rebuild so the earnings estimate tracks what they type.
+                    onChanged: (_) => setState(() {}),
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) {
+                        return _isDraft ? null : 'Enter a price';
+                      }
+                      if (double.tryParse(v.trim()) == null) {
+                        return 'Enter a valid number';
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 10.h),
+                  EarningsHint(priceText: _price.text),
+                ],
+              ),
+              SizedBox(height: 14.h),
+              _section(
+                title: 'Cover image',
+                children: [
+                  _thumbnailPicker(),
+                  SizedBox(height: 12.h),
+                  // Videos belong to lessons now, so they are edited there
+                  // rather than here.
+                  Row(
+                    children: [
+                      Icon(Icons.info_outline,
+                          size: 15.sp, color: AppColors.palette.inkSoft),
+                      SizedBox(width: 6.w),
+                      Expanded(
+                        child: Text(
+                          'Lesson videos are managed in the Lessons tab.',
+                          style: GoogleFonts.poppins(
+                              fontSize: 11.sp,
+                              color: AppColors.palette.inkSoft),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              SizedBox(height: 24.h),
+              if (_saving)
+                UploadProgressCard(progress: _progress)
+              else
+                PrimaryButton(
+                  label: 'Save changes',
+                  isLoading: false,
+                  onPressed: _save,
+                ),
+            ],
+          ),
         ),
       ),
     );

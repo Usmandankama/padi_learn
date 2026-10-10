@@ -211,9 +211,27 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   /// result.
   Future<void> _submit({required bool asDraft}) async {
     if (asDraft) {
-      if (!(_titleKey.currentState?.validate() ?? false)) return;
+      // Asked of the text itself, not of the field: the buttons are a long
+      // scroll below the title, and a check that needs the field on screen
+      // is a check that can silently not happen.
+      if (_title.text.trim().isEmpty) {
+        _titleKey.currentState?.validate();
+        final field = _titleKey.currentContext;
+        if (field != null) {
+          Scrollable.ensureVisible(field,
+              duration: const Duration(milliseconds: 250), alignment: 0.1);
+        }
+        _notify('Give the course a title before saving it to drafts.',
+            isError: true);
+        return;
+      }
     } else {
-      if (!_formKey.currentState!.validate()) return;
+      if (!_formKey.currentState!.validate()) {
+        // The field at fault may be a screen or two above the button.
+        _notify('Some details are missing. Check the fields marked in red.',
+            isError: true);
+        return;
+      }
 
       if (_video == null || _thumbnail == null) {
         _notify('Please add a cover image and a video for the first lesson.',
@@ -380,111 +398,119 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       ),
       body: Form(
         key: _formKey,
-        child: ListView(
+        // Not a ListView: that builds lazily and throws away the fields that
+        // scroll out of view, and a Form can only validate the fields it
+        // still has. With the button at the bottom, that was most of them.
+        child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 32.h),
-          children: [
-            _section(
-              title: 'Course details',
-              children: [
-                _field(
-                  fieldKey: _titleKey,
-                  controller: _title,
-                  label: 'Course title',
-                  icon: Icons.title,
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Please enter a course title'
-                      : null,
-                ),
-                SizedBox(height: 14.h),
-                _field(
-                  controller: _description,
-                  label: 'What will students learn?',
-                  icon: Icons.notes,
-                  maxLines: 5,
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Please enter a description'
-                      : null,
-                ),
-                SizedBox(height: 14.h),
-                _field(
-                  controller: _author,
-                  label: 'Author name',
-                  icon: Icons.person_outline,
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Please enter the author name'
-                      : null,
-                ),
-              ],
-            ),
-            SizedBox(height: 14.h),
-            _section(
-              title: 'Category & price',
-              children: [
-                CategoryPicker(
-                  value: _category,
-                  enabled: !_saving,
-                  decoration: _decoration('Category', Icons.category_outlined),
-                  onChanged: (v) => setState(() => _category = v),
-                ),
-                SizedBox(height: 14.h),
-                _field(
-                  controller: _price,
-                  label: 'Price (NGN) — 0 makes it free',
-                  icon: Icons.sell_outlined,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  // Rebuild so the earnings estimate tracks what they type.
-                  onChanged: (_) => setState(() {}),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Enter a price';
-                    if (double.tryParse(v.trim()) == null) {
-                      return 'Enter a valid number';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 10.h),
-                EarningsHint(priceText: _price.text),
-              ],
-            ),
-            SizedBox(height: 14.h),
-            _section(
-              title: 'Cover image',
-              children: [_thumbnailPicker()],
-            ),
-            SizedBox(height: 14.h),
-            _section(
-              title: 'First lesson',
-              subtitle:
-                  'Courses are made of lessons. Add one to get started — you '
-                  'can add the rest right after.',
-              children: [
-                _field(
-                  controller: _lessonTitle,
-                  label: 'Lesson title',
-                  icon: Icons.play_lesson_outlined,
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Give the first lesson a title'
-                      : null,
-                ),
-                SizedBox(height: 14.h),
-                _videoPicker(),
-                SizedBox(height: 6.h),
-                _previewToggle(),
-              ],
-            ),
-            SizedBox(height: 24.h),
-            if (_saving)
-              UploadProgressCard(progress: _progress)
-            else
-              CourseSubmitButtons(
-                // Null (not an empty callback) so the buttons actually grey
-                // out while the duration probe runs.
-                onSaveDraft:
-                    _readingVideo ? null : () => _submit(asDraft: true),
-                onUpload: _readingVideo ? null : () => _submit(asDraft: false),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _section(
+                title: 'Course details',
+                children: [
+                  _field(
+                    fieldKey: _titleKey,
+                    controller: _title,
+                    label: 'Course title',
+                    icon: Icons.title,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Please enter a course title'
+                        : null,
+                  ),
+                  SizedBox(height: 14.h),
+                  _field(
+                    controller: _description,
+                    label: 'What will students learn?',
+                    icon: Icons.notes,
+                    maxLines: 5,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Please enter a description'
+                        : null,
+                  ),
+                  SizedBox(height: 14.h),
+                  _field(
+                    controller: _author,
+                    label: 'Author name',
+                    icon: Icons.person_outline,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Please enter the author name'
+                        : null,
+                  ),
+                ],
               ),
-          ],
+              SizedBox(height: 14.h),
+              _section(
+                title: 'Category & price',
+                children: [
+                  CategoryPicker(
+                    value: _category,
+                    enabled: !_saving,
+                    decoration:
+                        _decoration('Category', Icons.category_outlined),
+                    onChanged: (v) => setState(() => _category = v),
+                  ),
+                  SizedBox(height: 14.h),
+                  _field(
+                    controller: _price,
+                    label: 'Price (NGN) — 0 makes it free',
+                    icon: Icons.sell_outlined,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    // Rebuild so the earnings estimate tracks what they type.
+                    onChanged: (_) => setState(() {}),
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return 'Enter a price';
+                      if (double.tryParse(v.trim()) == null) {
+                        return 'Enter a valid number';
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 10.h),
+                  EarningsHint(priceText: _price.text),
+                ],
+              ),
+              SizedBox(height: 14.h),
+              _section(
+                title: 'Cover image',
+                children: [_thumbnailPicker()],
+              ),
+              SizedBox(height: 14.h),
+              _section(
+                title: 'First lesson',
+                subtitle:
+                    'Courses are made of lessons. Add one to get started — you '
+                    'can add the rest right after.',
+                children: [
+                  _field(
+                    controller: _lessonTitle,
+                    label: 'Lesson title',
+                    icon: Icons.play_lesson_outlined,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Give the first lesson a title'
+                        : null,
+                  ),
+                  SizedBox(height: 14.h),
+                  _videoPicker(),
+                  SizedBox(height: 6.h),
+                  _previewToggle(),
+                ],
+              ),
+              SizedBox(height: 24.h),
+              if (_saving)
+                UploadProgressCard(progress: _progress)
+              else
+                CourseSubmitButtons(
+                  // Null (not an empty callback) so the buttons actually grey
+                  // out while the duration probe runs.
+                  onSaveDraft:
+                      _readingVideo ? null : () => _submit(asDraft: true),
+                  onUpload:
+                      _readingVideo ? null : () => _submit(asDraft: false),
+                ),
+            ],
+          ),
         ),
       ),
     );
