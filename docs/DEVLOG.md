@@ -122,7 +122,7 @@ a teacher holds at most 3 drafts.
 | `get-course-video` | Refuses anyone but the owner, preview lessons included |
 | `initialize-payment` | Refuses to sell a draft |
 
-**Checked, not assumed.** The migration was run on a local Postgres 18
+**Checked, not assumed.** The migration was run on a local Postgres 17
 built from the live catalog: the tables as the catalog describes them, the
 policies on `courses`, `lessons` and `enrollments` as `pg_policies` prints
 them, the grants, and the twelve functions involved, each hashing the same
