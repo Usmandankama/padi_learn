@@ -21,9 +21,17 @@ runs), the four steps from sign-up to a first course, recording tips for a
 phone, what happens after publishing, and a teachers' FAQ. The header's
 "Teachers" link and the landing page's teacher section now point to it.
 
-**What it does not claim:** when Paystack's payment reaches a teacher's
-bank. Paystack has been asked about weekly or held settlement; until it
-answers, the site says only "on Paystack's payout schedule".
+**Payout timing, after Paystack answered** (the same evening): Paystack
+does not operate an escrow model, so a subaccount's share cannot be held
+for 7 days before release; teachers are paid on its standard schedule,
+usually the next working day. For refunds after a teacher has been paid,
+Paystack recommends a clear policy covering adjustments to future
+payments, which is what `checkout_terms()` already does. The terms,
+`/refunds`, the landing FAQ and `/teach` now say "usually the next working
+day" and that a refund after payment is kept back from later sales. The
+7-day hold in the ledger (`payout_hold()`) now applies only to money
+PadiLearn itself holds. The cost of this model: a refund for a teacher who
+never sells again is PadiLearn's, since the terms promise not to chase it.
 
 **The terms said the old thing.** Section 6 still promised a 7-day hold
 and payouts on request, which stopped being true for new sales when
