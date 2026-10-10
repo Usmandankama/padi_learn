@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -38,7 +36,7 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _title;
 
-  File? _video;
+  XFile? _video;
   int _videoBytes = 0;
   int? _videoDuration;
   bool _readingVideo = false;
@@ -76,8 +74,7 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
     final picked = await ImagePicker().pickVideo(source: ImageSource.gallery);
     if (picked == null) return;
 
-    final file = File(picked.path);
-    final bytes = await file.length();
+    final bytes = await picked.length();
     if (bytes > kMaxVideoBytes) {
       _notify(
         'That video is ${formatBytes(bytes)}. The limit is '
@@ -89,12 +86,12 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
 
     if (!mounted) return;
     setState(() {
-      _video = file;
+      _video = picked;
       _videoBytes = bytes;
       _readingVideo = true;
     });
 
-    final duration = await readVideoDurationSeconds(file);
+    final duration = await readVideoDurationSeconds(picked);
     if (!mounted) return;
     setState(() {
       _videoDuration = duration;
@@ -298,7 +295,7 @@ class _LessonEditorScreenState extends State<LessonEditorScreen> {
               Expanded(
                 child: Text(
                   _video != null
-                      ? '${_video!.path.split(RegExp(r"[\\/]")).last} '
+                      ? '${_video!.name} '
                           '(${formatBytes(_videoBytes)})'
                       : hasExisting
                           ? 'Current video will be kept'

@@ -36,6 +36,9 @@ dependencies:
   # with progress (the Supabase SDK's upload() offers no progress callback).
   http: ^1.6.0
   http_parser: ^4.1.2
+  # The browser side of the same upload (picked_file_web.dart): `http` buffers
+  # a whole request body on the web, so the file goes through XMLHttpRequest.
+  web: ^1.1.1
   supabase_flutter: ^2.5.6
   image_picker: ^1.1.2
   # video_thumbnail: ^0.5.3

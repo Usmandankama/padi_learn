@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -13,6 +11,7 @@ import 'package:padi_learn/screens/teacher/components/paid_course_gate.dart';
 import 'package:padi_learn/screens/teacher/components/upload_progress_card.dart';
 import 'package:padi_learn/screens/teacher/course_detail_screen.dart';
 import 'package:padi_learn/services/lesson_service.dart';
+import 'package:padi_learn/services/picked_file/picked_file.dart';
 import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/services/supabase_storage_service.dart';
 import 'package:padi_learn/utils/colors.dart';
@@ -40,8 +39,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   final _lessonTitle = TextEditingController(text: 'Lesson 1');
   String? _category;
 
-  File? _video;
-  File? _thumbnail;
+  XFile? _video;
+  XFile? _thumbnail;
   int _videoBytes = 0;
   int _thumbnailBytes = 0;
   int? _videoDuration;
@@ -106,8 +105,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     final picked = await ImagePicker().pickVideo(source: ImageSource.gallery);
     if (picked == null) return;
 
-    final file = File(picked.path);
-    final bytes = await file.length();
+    final bytes = await picked.length();
     if (bytes > kMaxVideoBytes) {
       _notify(
         'That video is ${formatBytes(bytes)}. The limit is '
@@ -119,13 +117,13 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
     if (!mounted) return;
     setState(() {
-      _video = file;
+      _video = picked;
       _videoBytes = bytes;
       _readingVideo = true;
     });
 
     // Captured before upload so the curriculum can show a runtime.
-    final duration = await readVideoDurationSeconds(file);
+    final duration = await readVideoDurationSeconds(picked);
     if (!mounted) return;
     setState(() {
       _videoDuration = duration;
@@ -138,8 +136,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
         .pickImage(source: ImageSource.gallery, imageQuality: 85);
     if (picked == null) return;
 
-    final file = File(picked.path);
-    final bytes = await file.length();
+    final bytes = await picked.length();
     if (bytes > kMaxThumbnailBytes) {
       _notify(
         'That image is ${formatBytes(bytes)}. The limit is '
@@ -151,7 +148,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
     if (!mounted) return;
     setState(() {
-      _thumbnail = file;
+      _thumbnail = picked;
       _thumbnailBytes = bytes;
     });
   }
@@ -403,7 +400,10 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
           child: AspectRatio(
             aspectRatio: 16 / 9,
             child: _thumbnail != null
-                ? Image.file(_thumbnail!, fit: BoxFit.cover)
+                ? Image(
+                    image: pickedImageProvider(_thumbnail!),
+                    fit: BoxFit.cover,
+                  )
                 : Container(
                     color: AppColors.primaryAccent,
                     child: Column(
@@ -468,7 +468,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                 child: Text(
                   _video == null
                       ? 'No video chosen yet'
-                      : '${_video!.path.split(RegExp(r"[\\/]")).last} '
+                      : '${_video!.name} '
                           '(${formatBytes(_videoBytes)})',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,

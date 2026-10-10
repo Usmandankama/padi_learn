@@ -12,6 +12,81 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-10-10 — Uploading works in a browser
+
+**Reported:** "the web upload does not work". It is the gap the 9 October
+entry found and left: on app.padilearn.com a teacher could not create a
+course, add or replace a lesson video, change a cover, or set a profile
+photo. Only the Android app could publish.
+
+**Why.** Every screen that takes a file built a `dart:io` `File` from the
+picker's path. In a browser the picker returns a `blob:` URL, not a path,
+and `dart:io` throws on any call. The first thing each screen did after
+picking was `File(...).length()`, so the file was never even shown as
+chosen.
+
+**Now** the screens keep the picker's own `XFile`, and anything that needs
+the bytes goes through `lib/services/picked_file/`, split by conditional
+import the way `services/checkout/` is:
+
+- **Phone:** as before. The multipart body is streamed from disk through
+  `http` and counted as it leaves. The code moved; it did not change.
+- **Browser:** the file behind the `blob:` URL is handed to
+  `XMLHttpRequest` as form data. Not `package:http`, which on the web reads
+  the whole body into memory before sending and reports nothing while it
+  goes, and not `XFile.openRead()`, which does the same. XHR lets the
+  browser read the file from disk as it sends, and is the one browser API
+  that reports upload progress. So the 300 MB limit and the progress card
+  hold on the web too.
+- **Same request either way:** `cacheControl`, `x-upsert: false`, one file
+  part. It is also what supabase-js sends.
+- **Name and type:** a `blob:` URL has no file name in it, so both come
+  from the `XFile`. The type is still decided by extension; a browser's own
+  report is used only when the extension is one we do not know.
+- **Before uploading:** the cover preview and the duration probe load the
+  `blob:` URL directly. The probe now gives up after 15 seconds: the web
+  player finishes starting only on `canplay` or `error`, and the save
+  button waits on it.
+- **Profile photo:** sent as bytes with the SDK's `uploadBinary` on both
+  platforms. It is small.
+
+`web` is now a direct dependency. It was already in the lockfile.
+
+**Checked, not assumed.** A release web build (dart2js, as deployed) ran
+the real `uploadCourseMedia` in Chromium against a local stand-in for
+Storage, with files built the way the web picker builds them. A 24 MB
+video and a cover arrived with matching SHA-256; the body had the fields
+above, the file name and the type; a 413 and a dropped connection gave the
+teacher-facing messages; a failed cover took the video back out; an
+18-second demo clip read as 18 seconds from its `blob:` URL and a file no
+browser can play gave no duration without hanging; the cover preview
+decoded. The live Storage endpoint answers the browser's preflight for a
+`PUT` carrying `x-upsert` from `app.padilearn.com`. The phone half is
+pinned by `test/course_media_upload_test.dart`, which runs it against a
+real local server.
+
+**Not checked:** an upload by a signed-in teacher against the live project,
+Safari on an iPhone, and the refactored phone path on an actual phone.
+
+**Outstanding:**
+
+- Push to `main` deploys the web app. No new APK is needed: nothing a
+  phone does has changed.
+- After the deploy, upload one lesson on the live site, and once from an
+  iPhone. Then change `/teach`, which still says lessons are uploaded from
+  the Android app (step 1 and the "iPhone or a computer" question).
+- A computer offers files a phone gallery never would (`.mkv`, `.avi`,
+  HEVC `.mov`). They upload, but a file the teacher's browser cannot play
+  gets no duration, and students' browsers may not play it either. That
+  is part of the video-hosting decision, not this fix.
+
+**Touches:** `lib/services/picked_file/` (new), `supabase_storage_service.dart`,
+`lib/utils/video_metadata.dart`, `create_course_screen.dart`,
+`lesson_editor_screen.dart`, `editCourse_screen.dart`,
+`editprofile_screen.dart`, `pubspec.yaml`, `test/course_media_upload_test.dart`.
+
+---
+
 ## 2026-10-09 — padilearn.com/teach, and the terms catch up with subaccounts
 
 **A page to send tutors.** Recruiting starts now, and the landing page's

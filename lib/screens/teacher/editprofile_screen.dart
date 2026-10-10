@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:padi_learn/config/web_links.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -12,6 +10,7 @@ import 'package:padi_learn/controller/teacher_controller.dart';
 import 'package:padi_learn/controller/user_controller.dart';
 import 'package:padi_learn/screens/components/custom_textfield.dart';
 import 'package:padi_learn/screens/components/primary_button.dart';
+import 'package:padi_learn/services/picked_file/picked_file.dart';
 import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/utils/colors.dart';
 
@@ -24,7 +23,7 @@ class EditTeacherProfileScreen extends StatefulWidget {
 }
 
 class _EditTeacherProfileScreenState extends State<EditTeacherProfileScreen> {
-  File? _image;
+  XFile? _image;
   String? _profileImageUrl;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -78,18 +77,24 @@ class _EditTeacherProfileScreenState extends State<EditTeacherProfileScreen> {
     final picked = await ImagePicker()
         .pickImage(source: ImageSource.gallery, imageQuality: 80);
     if (picked != null) {
-      setState(() => _image = File(picked.path));
+      setState(() => _image = picked);
     }
   }
 
   Future<void> _uploadProfileImage(String userId) async {
-    if (_image == null) return;
+    final image = _image;
+    if (image == null) return;
     final path = '$userId/avatar.jpg';
-    await supabase.storage.from('profile-images').upload(
+    // As bytes, not as a `File`: a browser has no file to open, and an avatar
+    // is small enough to hold in memory on a phone too.
+    final reported = image.mimeType?.trim() ?? '';
+    await supabase.storage.from('profile-images').uploadBinary(
           path,
-          _image!,
-          fileOptions:
-              const FileOptions(contentType: 'image/jpeg', upsert: true),
+          await image.readAsBytes(),
+          fileOptions: FileOptions(
+            contentType: reported.isEmpty ? 'image/jpeg' : reported,
+            upsert: true,
+          ),
         );
     final publicUrl =
         supabase.storage.from('profile-images').getPublicUrl(path);
@@ -237,7 +242,7 @@ class _EditTeacherProfileScreenState extends State<EditTeacherProfileScreen> {
 
     ImageProvider? bg;
     if (_image != null) {
-      bg = FileImage(_image!);
+      bg = pickedImageProvider(_image!);
     } else if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty) {
       bg = NetworkImage(_profileImageUrl!);
     }

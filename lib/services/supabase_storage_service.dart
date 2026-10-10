@@ -1,9 +1,9 @@
-import 'dart:io';
 import 'dart:math';
 
-import 'package:http/http.dart' as http;
-import 'package:http_parser/http_parser.dart';
+import 'package:image_picker/image_picker.dart' show XFile;
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:padi_learn/services/picked_file/picked_file.dart';
 
 /// Private bucket holding course videos. Objects here are never public — the
 /// `get-course-video` edge function issues a short-lived signed URL once it has
@@ -231,6 +231,8 @@ Future<void> removeStoredObject(
 /// Both files are optional so this serves creation (video + thumbnail) and
 /// editing (replace one, keep the other) from one path.
 ///
+/// - Files are taken as the picker's own [XFile], never a `dart:io` `File`:
+///   in a browser there is no path to open, only a `blob:` URL.
 /// - Sizes are validated up front against the bucket limits.
 /// - The video goes to the private [videoBucket] and only its object key is
 ///   returned; the thumbnail goes to the public [thumbnailBucket] and comes
@@ -248,8 +250,8 @@ Future<void> removeStoredObject(
 /// Pass a custom [client] in tests; defaults to [Supabase.instance.client].
 Future<MediaUploadResult> uploadCourseMedia({
   required String userId,
-  File? videoFile,
-  File? thumbnailFile,
+  XFile? videoFile,
+  XFile? thumbnailFile,
   SupabaseClient? client,
   String videoBucket = kCourseMediaBucket,
   String thumbnailBucket = kCourseThumbnailBucket,
@@ -271,9 +273,9 @@ Future<MediaUploadResult> uploadCourseMedia({
   try {
     videoBytes = videoFile == null ? 0 : await videoFile.length();
     thumbnailBytes = thumbnailFile == null ? 0 : await thumbnailFile.length();
-  } on FileSystemException catch (e) {
+  } catch (_) {
     return MediaUploadResult.failure(
-        'Could not read the selected files: ${e.message}');
+        'Could not read the selected files. Please choose them again.');
   }
 
   final sizeError = validateCourseMedia(
@@ -304,7 +306,7 @@ Future<MediaUploadResult> uploadCourseMedia({
     videoPath = _buildObjectPath(
       userId: userId,
       folder: _videoFolder,
-      sourceName: videoFile.path,
+      sourceName: videoFile.name,
     );
 
     final outcome = await _uploadObject(
@@ -330,7 +332,7 @@ Future<MediaUploadResult> uploadCourseMedia({
     thumbnailPath = _buildObjectPath(
       userId: userId,
       folder: _thumbnailFolder,
-      sourceName: thumbnailFile.path,
+      sourceName: thumbnailFile.name,
     );
 
     final outcome = await _uploadObject(
@@ -384,94 +386,44 @@ class _UploadOutcome {
 /// The Supabase SDK's own `upload()` is deliberately not used here: it builds
 /// the body with `MultipartFile.fromBytes(file.readAsBytesSync())`, which loads
 /// the whole video into memory on the UI isolate (janking the app on large
-/// files) and exposes no progress. This streams from disk instead.
+/// files) and exposes no progress. [putPickedFile] sends it without buffering
+/// instead, in the way each platform allows.
 Future<_UploadOutcome> _uploadObject(
   SupabaseClient supabase,
   String bucket,
   String path,
-  File file, {
+  XFile file, {
   required void Function(int deltaBytes) onBytes,
 }) async {
-  final String name = _basename(file.path);
-  http.Client? httpClient;
+  final String name = file.name;
   try {
     // Signing runs as the current user, so storage RLS still decides whether
     // this path may be written — the upload itself just redeems the token.
     final signed =
         await supabase.storage.from(bucket).createSignedUploadUrl(path);
-    final uri = Uri.parse(signed.signedUrl);
 
-    // Build a multipart body (what the storage endpoint expects) but stream it
-    // from disk rather than buffering it.
-    final multipart = http.MultipartRequest('PUT', uri)
-      ..fields['cacheControl'] = '3600'
-      ..headers['x-upsert'] = 'false'
-      ..files.add(await http.MultipartFile.fromPath(
-        '',
-        file.path,
-        filename: name,
-        contentType: MediaType.parse(_resolveContentType(file.path)),
-      ));
-
-    // finalize() returns the body stream and stamps the multipart boundary
-    // onto the request headers.
-    final body = multipart.finalize();
-    final contentLength = multipart.contentLength;
-
-    final counted = body.map((chunk) {
-      onBytes(chunk.length);
-      return chunk;
-    });
-
-    final request = _StreamedBodyRequest('PUT', uri, counted, contentLength)
-      ..headers.addAll(multipart.headers);
-
-    httpClient = http.Client();
-    final response = await httpClient.send(request);
-    final responseBody = await response.stream.bytesToString();
+    final response = await putPickedFile(
+      uri: Uri.parse(signed.signedUrl),
+      file: file,
+      filename: name,
+      contentType: _resolveContentType(file),
+      onBytes: onBytes,
+    );
 
     if (response.statusCode >= 300) {
       return _UploadOutcome.failure(
-        _describeHttpFailure(name, response.statusCode, responseBody),
+        _describeHttpFailure(name, response.statusCode, response.body),
       );
     }
     return const _UploadOutcome.success();
   } on StorageException catch (e) {
     return _UploadOutcome.failure('Storage error on "$name": ${e.message}');
-  } on SocketException catch (_) {
-    return _UploadOutcome.failure(
-        'Network dropped while uploading "$name". Check your connection and try again.');
-  } on http.ClientException catch (e) {
-    return _UploadOutcome.failure(
-        'Upload of "$name" was interrupted: ${e.message}');
+  } on ObjectUploadInterrupted catch (e) {
+    return _UploadOutcome.failure(e.detail == null
+        ? 'Network dropped while uploading "$name". Check your connection and try again.'
+        : 'Upload of "$name" was interrupted: ${e.detail}');
   } catch (e) {
     return _UploadOutcome.failure('Unexpected error uploading "$name": $e');
-  } finally {
-    httpClient?.close();
-  }
-}
-
-/// A request whose body is an already-prepared byte stream.
-///
-/// Lets the multipart body be piped through a counter without buffering it,
-/// while `http` still applies backpressure from the socket — so the progress
-/// figure tracks bytes actually sent rather than bytes queued in memory.
-class _StreamedBodyRequest extends http.BaseRequest {
-  final Stream<List<int>> _body;
-
-  _StreamedBodyRequest(
-    String method,
-    Uri url,
-    this._body,
-    int length,
-  ) : super(method, url) {
-    contentLength = length;
-  }
-
-  @override
-  http.ByteStream finalize() {
-    super.finalize();
-    return http.ByteStream(_body);
   }
 }
 
@@ -510,7 +462,10 @@ String _buildObjectPath({
 }
 
 /// Maps a file's extension to an explicit MIME type for correct streaming/render.
-String _resolveContentType(String fileName) {
+///
+/// A browser also reports the type itself, which covers a file whose name has
+/// no extension we know; the mobile picker reports none.
+String _resolveContentType(XFile file) {
   const Map<String, String> contentTypes = <String, String>{
     'mp4': 'video/mp4',
     'mov': 'video/quicktime',
@@ -525,7 +480,10 @@ String _resolveContentType(String fileName) {
     'gif': 'image/gif',
     'heic': 'image/heic',
   };
-  return contentTypes[_extensionOf(fileName)] ?? 'application/octet-stream';
+  final known = contentTypes[_extensionOf(file.name)];
+  if (known != null) return known;
+  final reported = file.mimeType?.trim() ?? '';
+  return reported.isEmpty ? 'application/octet-stream' : reported;
 }
 
 /// Lower-cased file extension without the dot, or '' if none.

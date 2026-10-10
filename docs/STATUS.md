@@ -1,6 +1,6 @@
 # Where PadiLearn stands
 
-A snapshot, not a plan. **Last updated 9 October 2026.** The checklists live
+A snapshot, not a plan. **Last updated 10 October 2026.** The checklists live
 in `LAUNCH_WEB.md`, `LAUNCH_ANDROID.md` and `ADMIN_PANEL.md`. `DEVLOG.md`
 says why things are the way they are. When this page and a checklist
 disagree, trust the checklist and fix this page.
@@ -54,6 +54,11 @@ share 14 short clips of about 18 seconds each.
    pays their share straight into it; how soon depends on what Paystack
    agrees (step 3 below). Until then: a sale clears after 7 days, teachers
    ask for payouts in the app, and transfers are sent by hand.
+4. **Deploy the browser upload fix (10 October) and try it.** Until it is
+   live, a tutor on app.padilearn.com cannot create a course, add a lesson
+   or change a cover or profile photo; only the Android app can. After the
+   deploy, upload one lesson on the live site and once from an iPhone, then
+   change `/teach`, which still tells tutors to install the Android app.
 
 ---
 

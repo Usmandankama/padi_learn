@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -12,6 +10,7 @@ import 'package:padi_learn/screens/teacher/components/earnings_hint.dart';
 import 'package:padi_learn/screens/teacher/components/paid_course_gate.dart';
 import 'package:padi_learn/screens/teacher/components/upload_progress_card.dart';
 import 'package:padi_learn/services/course_service.dart';
+import 'package:padi_learn/services/picked_file/picked_file.dart';
 import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/services/supabase_storage_service.dart';
 import 'package:padi_learn/utils/colors.dart';
@@ -47,7 +46,7 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
   String? _category;
 
   /// Newly picked replacement. Null means "keep the existing cover".
-  File? _newThumbnail;
+  XFile? _newThumbnail;
   int _newThumbnailBytes = 0;
 
   bool _saving = false;
@@ -100,8 +99,7 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
         .pickImage(source: ImageSource.gallery, imageQuality: 85);
     if (picked == null) return;
 
-    final file = File(picked.path);
-    final bytes = await file.length();
+    final bytes = await picked.length();
     if (bytes > kMaxThumbnailBytes) {
       _notify(
         'That image is ${formatBytes(bytes)}. The limit is '
@@ -113,7 +111,7 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
 
     if (!mounted) return;
     setState(() {
-      _newThumbnail = file;
+      _newThumbnail = picked;
       _newThumbnailBytes = bytes;
     });
   }
@@ -354,7 +352,10 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
           child: AspectRatio(
             aspectRatio: 16 / 9,
             child: _newThumbnail != null
-                ? Image.file(_newThumbnail!, fit: BoxFit.cover)
+                ? Image(
+                    image: pickedImageProvider(_newThumbnail!),
+                    fit: BoxFit.cover,
+                  )
                 : currentUrl.isEmpty
                     ? Container(color: AppColors.primaryAccent)
                     : Image.network(
