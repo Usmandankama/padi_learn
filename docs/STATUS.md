@@ -62,7 +62,7 @@ share 14 short clips of about 18 seconds each.
 
 ---
 
-## Course drafts (built 10 October, not live)
+## Course drafts (database and functions live 10 October; the app is not)
 
 A teacher can "Save to drafts" beside "Upload" on the create screen, finish
 the course later on a phone or in a browser, and upload it then. Only its
@@ -74,8 +74,8 @@ To release it, in this order:
 
 | # | Step | Who |
 |---|---|---|
-| 1 | Run `supabase/migrations/20261010000001_course_drafts.sql` in the SQL editor. Safe to run twice. The apps in use today keep working once it has run: a course they create is still live at once. | Usman |
-| 2 | Deploy `get-course-video` and `initialize-payment`. Only after step 1: they read the new column, and before it exists every playback and purchase would fail. | Claude |
+| 1 | ~~Run `supabase/migrations/20261010000001_course_drafts.sql` in the SQL editor.~~ Run by Usman, 10 October (so it is not in Supabase's migration history); checked afterwards with reads: 16 courses, none a draft, each dated from when it was created; the policy, grants, triggers and functions are in place. The apps in use today keep working: a course they create is still live at once. | Usman |
+| 2 | ~~Deploy `get-course-video` and `initialize-payment`.~~ Done 10 October: `get-course-video` version 4, `initialize-payment` version 5, each its live source plus the draft check, JWT verification on as before. Both answer a preflight. Neither has been called by a signed-in user since. | Claude |
 | 3 | Merge and push to `main` (the web app, the admin app and `/teach`), and build a new APK. Only after step 1: "Save to drafts" and the admin's Courses screen need the column. | Usman and Claude |
 | 4 | Try it for real: save a draft with only a title, check a second account cannot see it, finish it, upload it, and try a fourth draft. | Usman |
 

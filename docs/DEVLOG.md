@@ -19,9 +19,11 @@ button next to upload that says save to drafts or upload". So the create
 screen keeps its one-step shape and gains a second button. It was not
 rebuilt into "save the course first, add lessons later".
 
-**Not live yet.** Nothing here has been run against the live project or
-pushed to `main`. The order to release it in is under Outstanding, and it
-matters.
+**Half live.** The same day, after this was written: Usman ran the
+migration in the SQL editor, and `get-course-video` (version 4) and
+`initialize-payment` (version 5) were deployed. The app itself is not on
+`main`, so no teacher can save a draft yet. The order is under Outstanding,
+and it matters.
 
 **What a teacher sees.**
 
@@ -150,7 +152,9 @@ The new widgets were rendered to images in both themes and looked at.
 **Not checked:** anything on the live project. Not on a phone, and not in
 a browser against a real backend: the screens behind a teacher's sign-in
 were exercised only through their parts. The two edge functions were not
-type-checked (no Deno on this machine) and are not deployed.
+type-checked (no Deno on this machine). Once deployed, each answered a
+preflight request, which shows it starts; neither has been called by a
+signed-in user since.
 
 **Found on the way: free self-enrolment is refused on the live project.**
 `insert into enrollments` by a signed-in student fails with "infinite
@@ -167,11 +171,12 @@ migration adds.
 
 **Outstanding:**
 
-- **Release order.** (1) Usman runs the migration in the SQL editor.
-  (2) `get-course-video` and `initialize-payment` are deployed. Not
-  before: they select a column that would not exist yet, and every
-  playback and purchase would fail. (3) The app is pushed and a new APK
-  built. Not before (1): "Save to drafts" would fail on a missing column,
+- **Release order.** (1) ~~Usman runs the migration in the SQL editor.~~
+  Done 10 October, and checked with reads: 16 courses, none a draft.
+  (2) ~~`get-course-video` and `initialize-payment` are deployed.~~ Done
+  10 October. Not before (1): they select a column that would not have
+  existed, and every playback and purchase would have failed. (3) The app
+  is pushed and a new APK built. Not before (1): "Save to drafts" would fail on a missing column,
   and so would the admin's Courses screen.
 - **An old APK does not know what a draft is.** A teacher who saves a
   draft in a browser and opens it in 1.0.6 or earlier sees it listed with
