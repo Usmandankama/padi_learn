@@ -14,10 +14,11 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ## 2026-10-10 — Free enrolment was refused by the database
 
-**Not live until Usman runs the SQL.** The fix is
-`supabase/migrations/20261010000002_free_enrolment_policy_recursion.sql`,
-run whole in the SQL editor. No app or function changes: once it has run,
-the web app and every installed APK can enrol again.
+**Live since 10 October.** Usman ran
+`supabase/migrations/20261010000002_free_enrolment_policy_recursion.sql`
+in the SQL editor that day. No app or function changes: the web app and
+every installed APK can enrol again. What was checked on the live project
+afterwards is under "Checked on live" below.
 
 **What was wrong.** A signed-in student tapping Enrol on a free course got
 a database error, `42P17: infinite recursion detected in policy for
@@ -94,9 +95,25 @@ the live text by hash before the fix went on.
   one who is not.
 - Running the file twice changes nothing.
 
-On the live project only the plan was checked: an `EXPLAIN` without
-`ANALYZE`, in a transaction that was rolled back, gives the error. Nothing
-was written there.
+On the live project, before the fix, only the plan was checked: an
+`EXPLAIN` without `ANALYZE`, in a transaction that was rolled back, gave
+the error.
+
+**Checked on live,** after Usman ran it, with reads only:
+
+- The function is there as written, security definer with an empty
+  search path, executable by `authenticated` and its owner only.
+- The courses policy has the new third branch and still has
+  `published_at is not null`. The other 28 policies on the five tables
+  are unchanged by hash, the enrolment policy among them. No policy on
+  `courses` reads `enrollments`.
+- The same `EXPLAIN` now returns a plan instead of the error.
+- Read as each of the two accounts that hold an enrolment, and as an
+  account with none: each sees exactly the courses the old rule gives
+  (2, 2 and 1). Both enrolled accounts hold a course that is archived and
+  still see it.
+
+No enrolment was made on live: that would be a write.
 
 **The same cycle elsewhere: none.** Reading the live catalog for which
 table each policy reads: `course_comments` reads `courses` and
@@ -112,8 +129,10 @@ fails if the newest text of any policy on `courses` mentions
 
 **Outstanding:**
 
-- Usman runs the migration. Then enrol in a free course from a real
-  student account, which nothing here has done.
+- Enrol in a free course from a real student account, in the app. Nothing
+  has done that yet. On 10 October the catalogue holds one course (14 of
+  the 16 are archived and one is taken down), it is free, and it has no
+  students.
 - The drafts migration (`20261010000001`, on the drafts branch) recreates
   this policy with the old read. It has already been run on the live
   project, and this file comes after it. Running it again would bring the
