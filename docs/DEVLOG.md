@@ -46,8 +46,17 @@ visit that finds the new build installs it, and the one after runs it.
 
 **Outstanding:**
 
-- Android reports nothing until a new APK: 1.0.5 and earlier were built
-  without the DSN.
+- ~~Android reports nothing until a new APK.~~ APK 1.0.6 went out the same
+  day and is the first Android build that reports. It is 2 MB larger than
+  1.0.5 (44.9 MB): with no DSN the compiler dropped Sentry's Dart code as
+  unreachable, and now it is kept. Installs of 1.0.5 and earlier stay
+  silent until they update.
+- Found while checking 1.0.6, and already true of 1.0.5: the APK carries a
+  `lib/x86_64/` folder of about 1 MB holding only plugin libraries (Sentry,
+  jni, datastore), with no `libapp.so` or `libflutter.so`. The phones we
+  target are ARM and are unaffected. An x86_64 device (emulators, some
+  Chromebooks) would likely pick that folder and fail to start.
+  `abiFilters` in `android/app/build.gradle` would remove it.
 - The admin app has no Sentry in it.
 - Name Sentry's crash logs in the Play Data safety form when that form is
   filled in. The privacy policy already names Sentry.

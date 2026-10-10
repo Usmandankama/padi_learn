@@ -222,6 +222,11 @@ native libraries uncompressed (`minSdkVersion` 24 lets Android load them in
 place), so every architecture costs its full size in the download, and
 students pay for that data.
 
+The flag keeps out Flutter's own `x86_64` code, not the plugins'. Checked on
+2026-10-10: 1.0.5 and 1.0.6 both carry a `lib/x86_64/` folder of about 1 MB
+with Sentry's, jni's and datastore's libraries and nothing else. See the
+Sentry entry for 10 October in `DEVLOG.md`.
+
 Signed with the release keystore (`CN=Groundwork Tech Ltd`), APK Signature
 Scheme v2 and no v1 — v1 is only needed below Android 7.0, which `minSdkVersion`
 24 already excludes. That is why `minAndroid: '7.0'` in `site.ts` is
