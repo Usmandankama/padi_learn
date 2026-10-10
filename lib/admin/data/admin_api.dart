@@ -114,8 +114,8 @@ class AdminApi {
 
   // --- Courses ---------------------------------------------------------------
 
-  /// Every course, newest first, including archived and taken-down ones, with
-  /// its teacher's name as `owner_name`.
+  /// Every course, newest first, including drafts, archived and taken-down
+  /// ones, with its teacher's name as `owner_name`.
   ///
   /// Read straight from the table: the "Admins can see every course" policy
   /// (20261006000002) lets an admin session see all of them. The names come
@@ -125,7 +125,7 @@ class AdminApi {
     final rows = _rows(await supabase
         .from('courses')
         .select('id, title, price, category, user_id, enrollments, '
-            'created_at, archived_at, removed_at, removed_reason')
+            'created_at, published_at, archived_at, removed_at, removed_reason')
         .order('created_at', ascending: false)
         .limit(coursePageSize));
     await _attachNames(rows, idKey: 'user_id', nameKey: 'owner_name');

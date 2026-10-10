@@ -245,6 +245,12 @@ class _Overview extends StatelessWidget {
                     label: 'taken down',
                     value: count(catalogue, 'taken_down'),
                     indent: true),
+                // Saved by their teacher and never uploaded. Counted in the
+                // total above, and in none of the figures below.
+                StatRow(
+                    label: 'drafts, not uploaded',
+                    value: count(catalogue, 'drafts'),
+                    indent: true),
                 StatRow(
                     label: 'Paid courses', value: count(catalogue, 'paid')),
                 StatRow(label: 'Lessons', value: count(catalogue, 'lessons')),

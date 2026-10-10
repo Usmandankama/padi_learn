@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:padi_learn/services/course_service.dart';
 import 'package:padi_learn/services/supabase.dart';
 import 'package:padi_learn/services/transaction_service.dart';
 
@@ -6,7 +7,11 @@ class TeacherController extends GetxController {
   // Observable variables
   var teacherName = 'Loading...'.obs;
   var profileImageUrl = ''.obs;
+
+  /// Courses that have been uploaded, live or archived. Drafts are not
+  /// courses yet and are counted in [draftCount].
   var totalCoursesUploaded = 0.obs;
+  var draftCount = 0.obs;
 
   /// Naira this teacher has earned, less what refunds took back. From
   /// `my_teacher_balance()`, the same figures the admin panel pays from.
@@ -75,9 +80,14 @@ class TeacherController extends GetxController {
     if (userId == null) return;
 
     try {
+      // Whole rows, not just ids: a draft is told apart by a column that a
+      // narrower select would have to name, and naming it fails outright on a
+      // database from before drafts.
       final rows =
-          await supabase.from('courses').select('id').eq('user_id', userId);
-      totalCoursesUploaded.value = rows.length;
+          await supabase.from('courses').select().eq('user_id', userId);
+      final drafts = rows.where(isDraftCourse).length;
+      totalCoursesUploaded.value = rows.length - drafts;
+      draftCount.value = drafts;
     } catch (e) {
       // Leave the previous count on failure.
     }

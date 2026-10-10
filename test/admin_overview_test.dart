@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:padi_learn/admin/screens/overview_screen.dart';
 import 'package:padi_learn/admin/shell/sections.dart';
 import 'package:padi_learn/admin/widgets/format.dart';
+import 'package:padi_learn/admin/widgets/panel.dart';
 
 import 'admin_fakes.dart';
 
@@ -114,6 +115,48 @@ void main() {
 
       await tester.tap(find.text('Category suggestions'));
       expect(opened, AdminSection.categories);
+    });
+
+    testWidgets('drafts are counted apart from live courses', (tester) async {
+      // As admin_overview() returns it from 20261010000001: the total is
+      // every course, and live + archived + taken down + drafts add up to it.
+      final api = FakeAdminApi(
+        overviewDoc: () => {
+          ...liveOverview(),
+          'catalogue': {
+            'courses': 16,
+            'live': 11,
+            'archived': 2,
+            'taken_down': 0,
+            'drafts': 3,
+            'paid': 1,
+            'lessons': 123,
+            'teachers_with_live_courses': 1,
+          },
+        },
+      );
+      await pumpAdminScreen(tester, OverviewScreen(onOpen: (_) {}, api: api));
+
+      expect(tester.takeException(), isNull);
+      final drafts = find.ancestor(
+        of: find.text('drafts, not uploaded'),
+        matching: find.byType(StatRow),
+      );
+      expect(find.descendant(of: drafts, matching: find.text('3')),
+          findsOneWidget);
+    });
+
+    testWidgets('a document from before drafts shows none, not an error',
+        (tester) async {
+      final api = FakeAdminApi(overviewDoc: liveOverview);
+      await pumpAdminScreen(tester, OverviewScreen(onOpen: (_) {}, api: api));
+
+      final drafts = find.ancestor(
+        of: find.text('drafts, not uploaded'),
+        matching: find.byType(StatRow),
+      );
+      expect(find.descendant(of: drafts, matching: find.text('0')),
+          findsOneWidget);
     });
 
     testWidgets('a refused call says why, and can be retried', (tester) async {

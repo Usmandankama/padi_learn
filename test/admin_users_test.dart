@@ -107,6 +107,19 @@ FakeAdminApi directory() => FakeAdminApi()
           'removed_at': null,
           'removed_reason': null,
         },
+        // As admin_user_detail() returns a draft since 20261010000001. The
+        // two above are from before it and carry no `published_at` at all.
+        {
+          'id': 'c3',
+          'title': 'Half-Written Course',
+          'price': null,
+          'enrollments': 0,
+          'created_at': '2026-10-09T09:00:00+00:00',
+          'published_at': null,
+          'archived_at': null,
+          'removed_at': null,
+          'removed_reason': null,
+        },
       ],
       balance: {
         'sales_count': 1,
@@ -205,6 +218,7 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('Excel for Small Businesses (live)'), findsOneWidget);
     expect(find.text('An Old Course (archived)'), findsOneWidget);
+    expect(find.text('Half-Written Course (draft)'), findsOneWidget);
     expect(find.text('NGN 4,250.00'), findsWidgets);
     expect(find.text('Suspend'), findsOneWidget);
   });

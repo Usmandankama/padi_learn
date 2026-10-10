@@ -400,6 +400,13 @@ a `DEVLOG.md` entry.
     - **Shared wording.** The takedown question and its result sentence moved
       to `widgets/course_actions.dart`, so Reports and Courses say the same
       thing. Tests: `test/admin_courses_test.dart`.
+    - **Drafts** *(2026-10-10, `20261010000001_course_drafts.sql`)*. A
+      course its teacher saved and has not uploaded is listed too, labelled
+      "Draft, not uploaded", with its own filter. Nobody else has ever seen
+      it. A course is one of taken down, draft, archived or live, in that
+      order of precedence, here and in the overview, whose catalogue gained
+      a drafts row and whose other figures leave drafts out. The user list
+      counts uploaded courses only; a user's detail lists drafts, labelled.
   - [x] **12e. Refunds.** What is owed, record a refund, refunds recorded.
     *Built 2026-10-07:* the owed tab lists each paid sale of a taken-down
     course with the buyer's email, the Paystack payment reference to find it

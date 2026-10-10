@@ -37,6 +37,14 @@ class AppColors {
   static const Color lightGrey = Color.fromARGB(255, 217, 217, 217);
   static const Color beige = Color(0xFF253031);
 
+  /// What a draft course is marked with: a warm amber, apart from the green
+  /// of a live course and the red of one taken down. Lighter on a dark
+  /// surface, where the deep amber would not read.
+  static Color draftOf(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? const Color(0xFFFFB74D)
+          : const Color(0xFFB26A00);
+
   /// The surface palette for the current theme.
   ///
   /// Prefer this in a `build` that already has a context.

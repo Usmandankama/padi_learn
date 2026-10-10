@@ -62,6 +62,28 @@ share 14 short clips of about 18 seconds each.
 
 ---
 
+## Course drafts (built 10 October, not live)
+
+A teacher can "Save to drafts" beside "Upload" on the create screen, finish
+the course later on a phone or in a browser, and upload it then. Only its
+owner and an admin can see a draft, and a teacher holds at most 3. It is on
+the branch `usmandankama/lucid-volhard-8fb156`, not on `main`. Details in
+`DEVLOG.md`, 10 October.
+
+To release it, in this order:
+
+| # | Step | Who |
+|---|---|---|
+| 1 | Run `supabase/migrations/20261010000001_course_drafts.sql` in the SQL editor. Safe to run twice. The apps in use today keep working once it has run: a course they create is still live at once. | Usman |
+| 2 | Deploy `get-course-video` and `initialize-payment`. Only after step 1: they read the new column, and before it exists every playback and purchase would fail. | Claude |
+| 3 | Merge and push to `main` (the web app, the admin app and `/teach`), and build a new APK. Only after step 1: "Save to drafts" and the admin's Courses screen need the column. | Usman and Claude |
+| 4 | Try it for real: save a draft with only a title, check a second account cannot see it, finish it, upload it, and try a fourth draft. | Usman |
+
+An APK from before this (1.0.6 and earlier) shows a draft its teacher made
+elsewhere without a badge, and cannot upload it.
+
+---
+
 ## Payments: what stands between us and live money
 
 A **company Paystack account** now exists, **approved on 9 October**. The
@@ -191,6 +213,12 @@ On the website, with the numbers kept in `website/src/site.ts`:
 
 ## Still open from the checklists
 
+- **Free enrolment is refused on the live project** (found 10 October). A
+  student who taps Enrol on a free course gets a database error: two
+  row-level security policies read each other. Paid enrolment works. A fix
+  is described in `DEVLOG.md`, 10 October; it has not been made.
+- Drafts: nothing deletes an abandoned one, and the admin panel does not
+  show how much storage each teacher uses.
 - Course reporting from the player: added 8 October; test it on a phone.
 - Sentry: on since 10 October for the web app and for Android from APK
   1.0.6. Installs of 1.0.5 and earlier report nothing until they update.

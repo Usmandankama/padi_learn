@@ -6,6 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:padi_learn/controller/teacher_controller.dart';
 import 'package:padi_learn/screens/components/course_thumbnail.dart';
 import 'package:padi_learn/screens/components/primary_button.dart';
+import 'package:padi_learn/screens/teacher/components/draft_panel.dart';
+import 'package:padi_learn/screens/teacher/components/paid_course_gate.dart';
 import 'package:padi_learn/screens/teacher/components/teacher_course_card.dart';
 import 'package:padi_learn/screens/teacher/editCourse_screen.dart';
 import 'package:padi_learn/screens/teacher/lesson_editor_screen.dart';
@@ -20,6 +22,10 @@ import 'package:padi_learn/utils/money.dart';
 
 /// Everything a teacher does with one course: see how it is performing, read
 /// and moderate what students are asking, edit it, take it down.
+///
+/// A draft opens here too. It has nothing to perform yet, so in place of the
+/// figures it shows what the course still needs and the button that uploads
+/// it; the same Edit course and Lessons tab fill in the rest.
 ///
 /// Takes an id rather than a row so it can be opened from a notification as
 /// well as from the course list.
@@ -120,6 +126,45 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     }
   }
 
+  /// Uploads a draft: live in the marketplace on this tap, with no review.
+  ///
+  /// The list of what is missing is worked out here so the answer is instant,
+  /// and the database checks the same list again before it lets the course
+  /// out (`publish_course`).
+  Future<void> _publish() async {
+    final course = _course;
+    if (course == null) return;
+
+    // Asked again first: a lesson list that failed to load earlier would
+    // otherwise have this say a lesson is missing when it is not.
+    await _loadLessons();
+    if (!mounted) return;
+
+    final gaps = publishGaps(course, _lessons);
+    if (gaps.isNotEmpty) {
+      _notify(publishGapsMessage(gaps), isError: true);
+      return;
+    }
+
+    // A paid course needs a bank account. A draft was allowed to carry a
+    // price without one; this is where it is asked for.
+    final price = (course['price'] as num?)?.toDouble() ?? 0;
+    if (price > 0 && !await ensureCanSellPaid(context)) return;
+    if (!mounted) return;
+
+    setState(() => _busy = true);
+    try {
+      await CourseService.publish(widget.courseId);
+      await _load();
+      await _refreshTeacherData();
+      _notify('Your course is live in the marketplace.');
+    } catch (e) {
+      _notify(e.toString().replaceFirst('Exception: ', ''), isError: true);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _toggleArchive() async {
     final course = _course;
     if (course == null) return;
@@ -171,14 +216,15 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   Future<void> _delete() async {
     final course = _course;
     if (course == null) return;
+    final draft = isDraftCourse(course);
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete course'),
-        content: const Text(
-          'This permanently removes the course and its video. '
-          'It cannot be undone.',
+        title: Text(draft ? 'Delete draft' : 'Delete course'),
+        content: Text(
+          'This permanently removes the ${draft ? 'draft' : 'course'} and its '
+          'video. It cannot be undone.',
         ),
         actions: [
           TextButton(
@@ -200,7 +246,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
       await _refreshTeacherData();
       if (!mounted) return;
       Navigator.pop(context, true);
-      _notify('Course deleted.');
+      _notify(draft ? 'Draft deleted.' : 'Course deleted.');
     } catch (e) {
       _notify(e.toString().replaceFirst('Exception: ', ''), isError: true);
       if (mounted) setState(() => _busy = false);
@@ -214,6 +260,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     AppColors.watch(context);
     final course = _course;
     final archived = course?['archived_at'] != null;
+    final draft = course != null && isDraftCourse(course);
     final students = (course?['enrollments'] as num?)?.toInt() ?? 0;
 
     return DefaultTabController(
@@ -256,10 +303,12 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                 itemBuilder: (_) => [
                   const PopupMenuItem(
                       value: 'edit', child: Text('Edit course')),
-                  PopupMenuItem(
-                    value: 'archive',
-                    child: Text(archived ? 'Make it live again' : 'Archive'),
-                  ),
+                  // A draft was never live, so there is nothing to archive.
+                  if (!draft)
+                    PopupMenuItem(
+                      value: 'archive',
+                      child: Text(archived ? 'Make it live again' : 'Archive'),
+                    ),
                   // Deleting cascades to enrollments, so it is only offered
                   // while nobody would lose access.
                   if (students == 0)
@@ -337,6 +386,8 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     final ratingAvg = (course['rating_avg'] as num?)?.toDouble() ?? 0;
     final ratingCount = (course['rating_count'] as num?)?.toInt() ?? 0;
     final archived = course['archived_at'] != null;
+    final draft = isDraftCourse(course);
+    final description = (course['description'] ?? '').toString().trim();
 
     return RefreshIndicator(
       color: AppColors.primaryColor,
@@ -350,55 +401,67 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             SizedBox(height: 12.h),
             _takenDownNotice(course),
           ],
-          SizedBox(height: 16.h),
-          Row(
-            children: [
-              Expanded(
-                child: _statTile(
-                  Icons.people_outline,
-                  'Students',
-                  '$students',
+          if (draft) ...[
+            SizedBox(height: 12.h),
+            DraftPanel(
+              gaps: publishGaps(course, _lessons),
+              busy: _busy,
+              onUpload: _publish,
+            ),
+          ],
+          // Students, earnings and ratings are all nothing until a course has
+          // been uploaded.
+          if (!draft) ...[
+            SizedBox(height: 16.h),
+            Row(
+              children: [
+                Expanded(
+                  child: _statTile(
+                    Icons.people_outline,
+                    'Students',
+                    '$students',
+                  ),
                 ),
-              ),
-              SizedBox(width: 10.w),
-              Expanded(
-                child: _statTile(
-                  Icons.payments_outlined,
-                  _salesCount == 1
-                      ? 'Earned · 1 sale'
-                      : 'Earned · $_salesCount sales',
-                  _revenue == null ? '—' : formatNaira(_revenue!),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: _statTile(
+                    Icons.payments_outlined,
+                    _salesCount == 1
+                        ? 'Earned · 1 sale'
+                        : 'Earned · $_salesCount sales',
+                    _revenue == null ? '—' : formatNaira(_revenue!),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 10.h),
-          Row(
-            children: [
-              Expanded(
-                child: _statTile(
-                  Icons.star_outline_rounded,
-                  'Rating',
-                  ratingCount == 0
-                      ? 'No ratings'
-                      : '${ratingAvg.toStringAsFixed(1)} · $ratingCount',
+              ],
+            ),
+            SizedBox(height: 10.h),
+            Row(
+              children: [
+                Expanded(
+                  child: _statTile(
+                    Icons.star_outline_rounded,
+                    'Rating',
+                    ratingCount == 0
+                        ? 'No ratings'
+                        : '${ratingAvg.toStringAsFixed(1)} · $ratingCount',
+                  ),
                 ),
-              ),
-              SizedBox(width: 10.w),
-              Expanded(
-                child: _statTile(
-                  Icons.sell_outlined,
-                  'Price',
-                  formatPriceLabel(price),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: _statTile(
+                    Icons.sell_outlined,
+                    'Price',
+                    formatPriceLabel(price),
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
           SizedBox(height: 20.h),
           _section(
             'About this course',
             Text(
-              (course['description'] ?? 'No description yet.').toString(),
+              description.isEmpty ? 'No description yet.' : description,
               style: GoogleFonts.poppins(
                 fontSize: 13.sp,
                 height: 1.6,
@@ -421,34 +484,74 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                       LessonService.totalDurationLabel(_lessons)!,
                   ].join(' · '),
                 ),
-                _detailRow('Status', archived ? 'Archived' : 'Live'),
+                if (draft)
+                  _detailRow(
+                    'Price',
+                    course['price'] == null
+                        ? 'Not set'
+                        : formatPriceLabel(price),
+                  ),
+                _detailRow(
+                  'Status',
+                  draft
+                      ? 'Draft'
+                      : archived
+                          ? 'Archived'
+                          : 'Live',
+                ),
                 _detailRow('Created', _formatDate(course['created_at'])),
               ],
             ),
           ),
           SizedBox(height: 24.h),
-          PrimaryButton(
-            label: 'Edit course',
-            isLoading: _busy,
-            onPressed: _openEditor,
-          ),
-          SizedBox(height: 10.h),
-          TextButton.icon(
-            onPressed: _busy ? null : _toggleArchive,
-            icon: Icon(
-              archived ? Icons.unarchive_outlined : Icons.archive_outlined,
-              size: 18.sp,
-              color: AppColors.palette.inkSoft,
+          // On a draft the one filled button is Upload, in the panel above.
+          if (draft)
+            SecondaryButton(
+              label: 'Edit course',
+              onPressed: _busy ? null : _openEditor,
+            )
+          else
+            PrimaryButton(
+              label: 'Edit course',
+              isLoading: _busy,
+              onPressed: _openEditor,
             ),
-            label: Text(
-              archived ? 'Make it live again' : 'Archive this course',
-              style: GoogleFonts.poppins(
-                fontSize: 13.sp,
+          SizedBox(height: 10.h),
+          if (draft)
+            // In plain sight, not only in the menu: drafts are limited, and
+            // deleting one is how a teacher makes room.
+            TextButton.icon(
+              onPressed: _busy ? null : _delete,
+              icon: Icon(
+                Icons.delete_outline,
+                size: 18.sp,
                 color: AppColors.palette.inkSoft,
               ),
+              label: Text(
+                'Delete this draft',
+                style: GoogleFonts.poppins(
+                  fontSize: 13.sp,
+                  color: AppColors.palette.inkSoft,
+                ),
+              ),
+            )
+          else
+            TextButton.icon(
+              onPressed: _busy ? null : _toggleArchive,
+              icon: Icon(
+                archived ? Icons.unarchive_outlined : Icons.archive_outlined,
+                size: 18.sp,
+                color: AppColors.palette.inkSoft,
+              ),
+              label: Text(
+                archived ? 'Make it live again' : 'Archive this course',
+                style: GoogleFonts.poppins(
+                  fontSize: 13.sp,
+                  color: AppColors.palette.inkSoft,
+                ),
+              ),
             ),
-          ),
-          if (archived)
+          if (archived && !draft)
             Padding(
               padding: EdgeInsets.only(top: 4.h),
               child: Text(
@@ -523,6 +626,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             child: CourseStatusChip(
               archived: archived,
               removed: course['removed_at'] != null,
+              draft: isDraftCourse(course),
             ),
           ),
         ],
@@ -675,7 +779,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
         title: const Text('Delete lesson'),
         content: Text(
           '"${lesson.title}" and its video will be removed permanently. '
-          'Students who bought this course will no longer see it.',
+          'Students who have this course will no longer see it.',
         ),
         actions: [
           TextButton(

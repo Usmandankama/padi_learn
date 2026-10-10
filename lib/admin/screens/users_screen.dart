@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'package:padi_learn/services/course_service.dart';
 import 'package:padi_learn/utils/colors.dart';
 import 'package:padi_learn/utils/money.dart';
 
@@ -396,9 +397,11 @@ class _UserDetailState extends State<UserDetail> {
 
     String courseState(Map c) => c['removed_at'] != null
         ? 'taken down'
-        : c['archived_at'] != null
-            ? 'archived'
-            : 'live';
+        : isDraftCourse(c)
+            ? 'draft'
+            : c['archived_at'] != null
+                ? 'archived'
+                : 'live';
 
     return ListView(
       padding: const EdgeInsets.all(24),

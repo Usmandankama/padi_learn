@@ -16,12 +16,17 @@ class CategoryPicker extends StatefulWidget {
   final InputDecoration decoration;
   final bool enabled;
 
+  /// False only while editing a draft, which may be saved without a category
+  /// and is asked for one when it is uploaded.
+  final bool required;
+
   const CategoryPicker({
     super.key,
     required this.value,
     required this.onChanged,
     required this.decoration,
     this.enabled = true,
+    this.required = true,
   });
 
   @override
@@ -202,8 +207,9 @@ class _CategoryPickerState extends State<CategoryPicker> {
               widget.onChanged(value);
             }
           : null,
-      validator: (v) =>
-          (v == null || v.isEmpty) ? 'Please pick a category' : null,
+      validator: (v) => widget.required && (v == null || v.isEmpty)
+          ? 'Please pick a category'
+          : null,
     );
   }
 }

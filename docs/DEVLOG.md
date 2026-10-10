@@ -12,6 +12,204 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-10-10 — Course drafts: "Save to drafts" beside "Upload"
+
+**Asked for** by Usman, in these words: "the draft system should be like a
+button next to upload that says save to drafts or upload". So the create
+screen keeps its one-step shape and gains a second button. It was not
+rebuilt into "save the course first, add lessons later".
+
+**Not live yet.** Nothing here has been run against the live project or
+pushed to `main`. The order to release it in is under Outstanding, and it
+matters.
+
+**What a teacher sees.**
+
+- **Create screen:** two buttons side by side. "Upload" (it used to say
+  "Create course") does what the screen did before: the whole form is
+  required and the course is in the marketplace at once. "Save to drafts"
+  needs only a title and saves whatever else is filled in.
+- **My Courses:** a draft has a Draft badge and its own filter. It shows
+  no students or rating, and "No price yet" if none was chosen.
+- **The draft's own screen** is the course screen. In place of the figures
+  it lists what the course still needs, with an Upload button. Edit course
+  and the Lessons tab fill in the rest, over as many sittings as it takes,
+  on a phone or in a browser. Editing a draft requires only its title.
+- **Uploading a draft** is instant on the tap, with no review. If something
+  is missing the teacher is told exactly what, for example "This course
+  cannot be uploaded yet. It still needs a description and a lesson with a
+  video."
+- **Deleting a draft** is the existing delete, which already removes the
+  videos. It is in plain sight on a draft, because drafts are limited.
+
+**Decided** (proposed to Usman as defaults, not objected to): uploading is
+instant, with no admin review yet; an uploaded course cannot go back to
+draft, since archiving already hides a live course and keeps its students;
+a teacher holds at most 3 drafts.
+
+**The database** (`20261010000001_course_drafts.sql`).
+
+- **`courses.published_at`.** Null is a draft. A new column, because
+  `archived_at` and `removed_at` both mean "was live, now hidden, students
+  keep it", and a draft has never been live and has no students.
+- **Why the default is `now()`, not null.** The APKs already installed
+  (1.0.6 and earlier) insert a course without this column and expect it to
+  be live. So leaving the column out has to keep meaning "live", and the
+  new app sends `published_at: null` explicitly for a draft. The new
+  "Upload" also leaves the column out, so it and an old APK can never come
+  to mean different things. `test/course_drafts_api_test.dart` pins both.
+- **Why a draft uploads its files.** A draft has to survive closing the
+  app, and a browser cannot keep a picked file between visits: all it has
+  is a `blob:` URL that dies with the tab. So a chosen video or cover goes
+  to storage when the draft is saved. That is what the limit of 3 is for:
+  each draft can hold up to 300 MB that nobody may ever watch.
+- **Who can see a draft.** The select policy's discovery branch gains
+  "has been uploaded". The owner still matches the "it is yours" branch,
+  and admins the separate "Admins can see every course" policy. Lessons
+  follow the course's visibility, so a draft's curriculum is hidden with
+  it. The marketplace lists whatever the policy allows, by query and by
+  realtime, so it needed no change.
+- **Going live** is one function, `publish_course()`. The teacher holds no
+  UPDATE on the column, so they cannot set it, clear it or backdate it by
+  hand, and nothing takes a course back to draft.
+- **What a course needs before it is live** is one list, held to what the
+  create form has always insisted on: a description, an author name, a
+  category, a price (0 is a price; none is not), a cover image and a
+  lesson with a video. When it has a price, its teacher must also be able
+  to sell (the bank account rule of 9 October). The brief named four of
+  those; author name and price were added so that a course finished as a
+  draft is held to the same standard as one uploaded in a single sitting.
+  The app keeps a copy of the list for the checklist
+  (`publishGaps` in `course_service.dart`); the database has the final say.
+- **A course inserted live** (every old APK, and the new "Upload") is
+  checked for the same list minus the lesson. The lesson cannot be asked
+  for at that point: those apps insert the course first and its first
+  lesson a moment later. Every one of them already required the rest
+  before it would insert, so this refuses nothing they send.
+- **A draft may carry a price before its teacher has a bank account.**
+  Someone halfway through a course should not lose their work to a payouts
+  form. The rule is checked when the draft is uploaded.
+- **The limit of 3** is a trigger, with a per-teacher lock so that two
+  saves at once cannot both count two. Its message is written to be shown
+  as it is: "You already have 3 drafts. Upload or delete one before saving
+  another." The app asks first, before sending a video, with the same
+  sentence. "Upload" from the create screen is not counted: it never is a
+  draft.
+- **Nobody enrols in a draft,** its owner included. That keeps "a draft
+  has no students" true, which is what lets a draft always be deleted.
+- **Safe to run twice.** The backfill (every existing course is live,
+  dated from when it was created) runs only alongside the statement that
+  adds the column, so a second run cannot publish every draft.
+
+**Counted or labelled, case by case.**
+
+| Where | Drafts |
+|---|---|
+| Marketplace, student dashboard | Never reach them (row-level security) |
+| Teacher's list | Labelled, with their own filter; not in "Live" |
+| Teacher's dashboard | "2 courses · 1 draft": counted apart |
+| Admin overview | A new "drafts, not uploaded" row. Live, archived, paid, lessons and "teachers with live courses" leave drafts out. Courses is still the total: live + archived + taken down + drafts |
+| Admin courses screen | Listed and labelled "Draft, not uploaded", with a Drafts filter |
+| Admin user list | The course count is uploaded courses only |
+| Admin user detail | Listed, labelled "(draft)" |
+| Suspending a teacher | "N courses left the catalogue" no longer counts drafts |
+| Changing a teacher's role | Still counts drafts: a teacher with only drafts still owns courses the student side cannot manage |
+| Categories (counts, rename, delete) | Still count drafts: a draft holds its category like any course |
+| New-course notifications | There is no such trigger. The two that exist fire on an enrolment and on a comment, and a draft can have neither |
+| Offline cache of ongoing courses | Built from the student's own enrolments, so a draft cannot be in it |
+| `get-course-video` | Refuses anyone but the owner, preview lessons included |
+| `initialize-payment` | Refuses to sell a draft |
+
+**Checked, not assumed.** The migration was run on a local Postgres 18
+built from the live catalog: the tables as the catalog describes them, the
+policies on `courses`, `lessons` and `enrollments` as `pg_policies` prints
+them, the grants, and the twelve functions involved, each hashing the same
+as the live one. Acting as signed-in users, with row-level security on:
+
+- an insert as an installed APK makes it produced a live course a student
+  could see at once;
+- a draft was invisible to a student and to another teacher, visible to
+  its owner and to an admin with a second factor, and so were its lessons;
+- the teacher could not set or clear `published_at` by UPDATE;
+- an incomplete draft was refused with the list, a lesson without a video
+  did not count, a paid draft was refused until its teacher could sell,
+  and a complete one went live; a second tap changed nothing;
+- a fourth draft was refused with the sentence above; of five drafts saved
+  at the same moment by a teacher with none, exactly three got in;
+- a suspended teacher could neither save nor upload a draft;
+- the admin counts added up, and running the file a second time changed no
+  course.
+
+The app's half is in `test/course_drafts_test.dart` (the list, the
+sentences, the two buttons, the draft panel, the badge) and
+`test/course_drafts_api_test.dart` (what is actually sent, against a local
+server). The three admin tests gained drafts. `flutter test`: 151 pass.
+`flutter analyze`: the same 61 infos as before, none on a changed line.
+The new widgets were rendered to images in both themes and looked at.
+
+**Not checked:** anything on the live project. Not on a phone, and not in
+a browser against a real backend: the screens behind a teacher's sign-in
+were exercised only through their parts. The two edge functions were not
+type-checked (no Deno on this machine) and are not deployed.
+
+**Found on the way: free self-enrolment is refused on the live project.**
+`insert into enrollments` by a signed-in student fails with "infinite
+recursion detected in policy for relation enrollments": the self-enrol
+policy reads `courses`, and the courses policy reads `enrollments` back
+(since the archiving migration). Confirmed on live with a plan-only
+EXPLAIN, which executes nothing, and on the local copy before any drafts
+change. Paid enrolment is unaffected, since it is written by the service
+role. Not fixed here: it is not a drafts problem, and a change to who can
+see a course deserves its own review. A fix that worked on the local copy
+is to put the courses policy's "you are enrolled" read behind a function.
+Whoever makes it must keep the two `published_at` conditions this
+migration adds.
+
+**Outstanding:**
+
+- **Release order.** (1) Usman runs the migration in the SQL editor.
+  (2) `get-course-video` and `initialize-payment` are deployed. Not
+  before: they select a column that would not exist yet, and every
+  playback and purchase would fail. (3) The app is pushed and a new APK
+  built. Not before (1): "Save to drafts" would fail on a missing column,
+  and so would the admin's Courses screen.
+- **An old APK does not know what a draft is.** A teacher who saves a
+  draft in a browser and opens it in 1.0.6 or earlier sees it listed with
+  no badge, and labelled Live on its own screen. It is not live, and that
+  APK cannot upload it. A new APK fixes this.
+- **No deletion of abandoned drafts.** A draft keeps its files until its
+  teacher deletes it. Follow-up: tell teachers about drafts untouched for
+  some weeks, then delete them.
+- **Storage per teacher** is not shown in the admin panel. Follow-up, and
+  the thing to look at before raising the limit of 3.
+- **A course uploaded from a draft** reaches a student's already-open
+  marketplace on their next refresh, not instantly: the realtime stream
+  ignores an update to a row it was not already showing. Un-archiving a
+  course has always behaved the same way. A course uploaded in one go
+  still appears at once.
+- **A draft's cover** is in the public thumbnails bucket, like every
+  cover. Its address is unguessable but not secret. Videos are private.
+- A draft saved without a video has no lesson, so a lesson title typed
+  without one is not kept.
+- The button says "Upload" as Usman worded it. On a draft's own screen
+  nothing is being uploaded at that moment; "Publish" would say it better
+  there if the wording is ever revisited.
+
+**Touches:** `supabase/migrations/20261010000001_course_drafts.sql`,
+`supabase/functions/get-course-video`, `supabase/functions/initialize-payment`,
+`lib/services/course_service.dart`, `lesson_service.dart`,
+`create_course_screen.dart`, `course_detail_screen.dart`,
+`editCourse_screen.dart`, `my_courses.dart`, `teacher_dashboard.dart`,
+`teacher_controller.dart`, `components/course_submit_buttons.dart` and
+`components/draft_panel.dart` (new), `teacher_course_card.dart`,
+`category_picker.dart`, `primary_button.dart`, `utils/colors.dart`,
+`marketplace_screen.dart` ("Latest" now sorts by when a course went live),
+the admin's `admin_api.dart`, `courses_screen.dart`, `users_screen.dart`
+and `overview_screen.dart`, the tests named above, `STATUS.md`,
+`ADMIN_PANEL.md`, and `website/src/pages/teach.astro`.
+
+---
+
 ## 2026-10-10 — Sentry is switched on
 
 Usman created the Sentry project (EU region) and supplied its DSN. The

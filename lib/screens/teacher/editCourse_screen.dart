@@ -22,6 +22,10 @@ import 'package:padi_learn/utils/colors.dart';
 /// Taking a course off the marketplace lives on the course detail screen rather
 /// than here — it needs the explanation about enrolled students keeping access,
 /// and one home for that decision is less confusing than two.
+///
+/// A draft is edited here too, over as many sittings as it takes: only its
+/// title is required, and what is still missing is asked for when it is
+/// uploaded from the detail screen, not on every save.
 class EditCourseScreen extends StatefulWidget {
   final String courseId;
   final Map<String, dynamic> courseData;
@@ -52,6 +56,8 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
   bool _saving = false;
   UploadProgress? _progress;
 
+  bool get _isDraft => isDraftCourse(widget.courseData);
+
   @override
   void initState() {
     super.initState();
@@ -59,8 +65,12 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
     _title = TextEditingController(text: (data['title'] ?? '').toString());
     _description =
         TextEditingController(text: (data['description'] ?? '').toString());
+    // A draft saved before its price was chosen shows an empty box, not a 0
+    // that would quietly make the course free.
     _price = TextEditingController(
-        text: ((data['price'] as num?)?.toDouble() ?? 0).toStringAsFixed(0));
+        text: data['price'] == null && _isDraft
+            ? ''
+            : ((data['price'] as num?)?.toDouble() ?? 0).toStringAsFixed(0));
     _author = TextEditingController(text: (data['author'] ?? '').toString());
 
     // Kept as-is even if it is no longer an approved category — the picker
@@ -141,10 +151,16 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
     }
 
     // Turning a free course paid needs a bank account; the database refuses
-    // it otherwise. A course that is already paid can be edited regardless.
-    final price = double.tryParse(_price.text.trim()) ?? 0;
+    // it otherwise. A course that is already paid can be edited regardless,
+    // and a draft is asked when it is uploaded, not while it is being written.
+    final priceText = _price.text.trim();
+    final price =
+        _isDraft && priceText.isEmpty ? null : double.tryParse(priceText) ?? 0;
     final previousPrice = (widget.courseData['price'] as num?)?.toDouble() ?? 0;
-    if (price > 0 && previousPrice <= 0 && !await ensureCanSellPaid(context)) {
+    if (!_isDraft &&
+        (price ?? 0) > 0 &&
+        previousPrice <= 0 &&
+        !await ensureCanSellPaid(context)) {
       return;
     }
     if (!mounted) return;
@@ -186,9 +202,10 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
 
       if (!mounted) return;
       Navigator.pop(context, true);
-      _notify('Course updated.');
+      _notify(_isDraft ? 'Draft saved.' : 'Course updated.');
     } catch (e) {
-      _notify('Could not save your changes: $e', isError: true);
+      _notify(courseErrorMessage(e, fallback: 'Could not save your changes'),
+          isError: true);
     } finally {
       if (mounted) {
         setState(() {
@@ -247,7 +264,7 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
                   label: 'Description',
                   icon: Icons.notes,
                   maxLines: 5,
-                  validator: (v) => (v == null || v.trim().isEmpty)
+                  validator: (v) => !_isDraft && (v == null || v.trim().isEmpty)
                       ? 'Please enter a description'
                       : null,
                 ),
@@ -256,7 +273,7 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
                   controller: _author,
                   label: 'Author name',
                   icon: Icons.person_outline,
-                  validator: (v) => (v == null || v.trim().isEmpty)
+                  validator: (v) => !_isDraft && (v == null || v.trim().isEmpty)
                       ? 'Please enter the author name'
                       : null,
                 ),
@@ -269,6 +286,7 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
                 CategoryPicker(
                   value: _category,
                   enabled: !_saving,
+                  required: !_isDraft,
                   decoration: _decoration('Category', Icons.category_outlined),
                   onChanged: (value) => setState(() => _category = value),
                 ),
@@ -282,7 +300,9 @@ class _EditCourseScreenState extends State<EditCourseScreen> {
                   // Rebuild so the earnings estimate tracks what they type.
                   onChanged: (_) => setState(() {}),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Enter a price';
+                    if (v == null || v.trim().isEmpty) {
+                      return _isDraft ? null : 'Enter a price';
+                    }
                     if (double.tryParse(v.trim()) == null) {
                       return 'Enter a valid number';
                     }

@@ -3,13 +3,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 
-import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/screens/teacher/components/category_picker.dart';
+import 'package:padi_learn/screens/teacher/components/course_submit_buttons.dart';
 import 'package:padi_learn/screens/teacher/components/earnings_hint.dart';
 import 'package:padi_learn/screens/teacher/components/paid_course_gate.dart';
 import 'package:padi_learn/screens/teacher/components/upload_progress_card.dart';
 import 'package:padi_learn/screens/teacher/course_detail_screen.dart';
+import 'package:padi_learn/services/course_service.dart';
 import 'package:padi_learn/services/lesson_service.dart';
 import 'package:padi_learn/services/picked_file/picked_file.dart';
 import 'package:padi_learn/services/supabase.dart';
@@ -22,6 +24,13 @@ import 'package:padi_learn/utils/video_metadata.dart';
 /// A course is a series of lessons, so this screen deliberately frames the
 /// video as *lesson one* rather than "the course video" — and says so — then
 /// drops the teacher on the course's Lessons tab to add the rest.
+///
+/// It ends in two buttons. "Upload" needs the whole form and puts the course
+/// in the marketplace. "Save to drafts" needs only a title and keeps whatever
+/// else is filled in where only the teacher can see it, to be finished from
+/// the course's own screen. A draft still sends its files now: it has to
+/// outlast closing the app, and a browser cannot hold on to a picked file
+/// between visits.
 class CreateCourseScreen extends StatefulWidget {
   const CreateCourseScreen({super.key});
 
@@ -31,6 +40,10 @@ class CreateCourseScreen extends StatefulWidget {
 
 class _CreateCourseScreenState extends State<CreateCourseScreen> {
   final _formKey = GlobalKey<FormState>();
+
+  /// So "Save to drafts" can ask for the title alone, without lighting up
+  /// every other field's error.
+  final _titleKey = GlobalKey<FormFieldState<String>>();
 
   final _title = TextEditingController();
   final _description = TextEditingController();
@@ -168,13 +181,45 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   // Save
   // ---------------------------------------------------------------------------
 
-  Future<void> _create() async {
-    if (!_formKey.currentState!.validate()) return;
+  /// Whether the teacher already holds as many drafts as they may.
+  ///
+  /// Asked before the upload for the same reason as the bank account: the
+  /// database refuses a draft over the limit, and a video can take minutes to
+  /// send first. If the count cannot be read the save goes ahead and the
+  /// database decides.
+  Future<bool> _draftLimitReached(String userId) async {
+    try {
+      return await CourseService.draftCount(userId) >= kMaxCourseDrafts;
+    } catch (_) {
+      return false;
+    }
+  }
 
-    if (_video == null || _thumbnail == null) {
-      _notify('Please add a cover image and a video for the first lesson.',
-          isError: true);
-      return;
+  void _openCourse(String courseId) {
+    // Land on the course itself, where lesson two is one tap away — rather
+    // than dropping them back on a list with no obvious next step.
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CourseDetailScreen(courseId: courseId),
+      ),
+    );
+  }
+
+  /// Both buttons end here. [asDraft] is the only difference between them:
+  /// what has to be filled in first, and whether anyone else can see the
+  /// result.
+  Future<void> _submit({required bool asDraft}) async {
+    if (asDraft) {
+      if (!(_titleKey.currentState?.validate() ?? false)) return;
+    } else {
+      if (!_formKey.currentState!.validate()) return;
+
+      if (_video == null || _thumbnail == null) {
+        _notify('Please add a cover image and a video for the first lesson.',
+            isError: true);
+        return;
+      }
     }
 
     final userId = supabase.auth.currentUser?.id;
@@ -183,10 +228,22 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       return;
     }
 
-    // Before the upload, not after: a paid course needs a bank account, and
-    // the video can take minutes to send.
-    final price = double.tryParse(_price.text.trim()) ?? 0;
-    if (price > 0 && !await ensureCanSellPaid(context)) return;
+    // A draft keeps an empty price empty; "free" is a choice, and its teacher
+    // has not made it yet.
+    final priceText = _price.text.trim();
+    final price = priceText.isEmpty ? null : double.tryParse(priceText);
+
+    if (asDraft) {
+      if (await _draftLimitReached(userId)) {
+        _notify(kDraftLimitMessage, isError: true);
+        return;
+      }
+    } else if ((price ?? 0) > 0 && !await ensureCanSellPaid(context)) {
+      // Before the upload, not after: a paid course needs a bank account, and
+      // the video can take minutes to send. A draft is asked when it is
+      // uploaded instead.
+      return;
+    }
     if (!mounted) return;
 
     setState(() {
@@ -194,8 +251,10 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       _progress = null;
     });
 
+    MediaUploadResult? upload;
+    String? courseId;
     try {
-      final upload = await uploadCourseMedia(
+      upload = await uploadCourseMedia(
         userId: userId,
         videoFile: _video,
         thumbnailFile: _thumbnail,
@@ -205,45 +264,84 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
         _notify(upload.error ?? 'Media upload failed', isError: true);
         return;
       }
+      // A draft with no files sends nothing, so nothing has moved the card on
+      // from "Preparing upload".
+      if (_video == null && _thumbnail == null && mounted) {
+        setState(() => _progress = const UploadProgress(
+              stage: UploadStage.saving,
+              bytesSent: 0,
+              totalBytes: 0,
+              elapsed: Duration.zero,
+            ));
+      }
 
-      final course = await supabase
-          .from('courses')
-          .insert({
-            'title': _title.text.trim(),
-            'description': _description.text.trim(),
-            'price': price,
-            'category': _category,
-            'author': _author.text.trim(),
-            'thumbnail_url': upload.thumbnailUrl,
-            'user_id': userId,
-          })
-          .select('id')
-          .single();
-
-      final courseId = (course['id'] ?? '').toString();
-
-      await LessonService.add(
-        courseId: courseId,
-        title: _lessonTitle.text.trim().isEmpty
-            ? 'Lesson 1'
-            : _lessonTitle.text.trim(),
-        videoPath: upload.videoPath!,
-        durationSeconds: _videoDuration,
-        isPreview: _firstLessonIsPreview,
+      courseId = await CourseService.create(
+        userId: userId,
+        title: _title.text,
+        description: _description.text,
+        price: asDraft ? price : price ?? 0,
+        category: _category,
+        author: _author.text,
+        thumbnailUrl: upload.thumbnailUrl,
+        asDraft: asDraft,
       );
+
+      // A lesson is its video, so a draft saved without one has no lesson
+      // yet; it is added from the course's Lessons tab.
+      if (upload.videoPath != null) {
+        await LessonService.add(
+          courseId: courseId,
+          title: _lessonTitle.text.trim().isEmpty
+              ? 'Lesson 1'
+              : _lessonTitle.text.trim(),
+          videoPath: upload.videoPath!,
+          durationSeconds: _videoDuration,
+          isPreview: _firstLessonIsPreview,
+        );
+      }
 
       if (!mounted) return;
-      // Land on the course itself, where lesson two is one tap away — rather
-      // than dropping them back on a list with no obvious next step.
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => CourseDetailScreen(courseId: courseId),
-        ),
-      );
-      _notify('Course created. Add more lessons whenever you are ready.');
+      _openCourse(courseId);
+      _notify(!asDraft
+          ? 'Your course is live. Add more lessons whenever you are ready.'
+          : upload.videoPath == null
+              ? 'Saved to drafts, without a lesson yet. Only you can see it '
+                  'until you upload it.'
+              : 'Saved to drafts. Only you can see it until you upload it.');
     } catch (e) {
-      _notify('Failed to create course: $e', isError: true);
+      // Only when the database itself said no is it certain that nothing
+      // points at the files just sent, and safe to take them back out. After
+      // a dropped connection the row may well have been written.
+      final refused = e is PostgrestException;
+
+      if (courseId == null) {
+        if (refused) {
+          await removeStoredObject(upload?.videoPath,
+              fallbackBucket: kCourseMediaBucket);
+          await removeStoredObject(upload?.thumbnailUrl,
+              fallbackBucket: kCourseThumbnailBucket);
+        }
+        _notify(
+          courseErrorMessage(e,
+              fallback: asDraft
+                  ? 'Could not save the draft'
+                  : 'Failed to create course'),
+          isError: true,
+        );
+      } else {
+        // The course is saved and only its first lesson is not. Staying on
+        // this form would invite a second copy of the course.
+        if (refused) {
+          await removeStoredObject(upload?.videoPath,
+              fallbackBucket: kCourseMediaBucket);
+        }
+        if (mounted) _openCourse(courseId);
+        _notify(
+          'The course was saved, but its first lesson was not. Add it from '
+          'the Lessons tab.',
+          isError: true,
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -289,6 +387,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
               title: 'Course details',
               children: [
                 _field(
+                  fieldKey: _titleKey,
                   controller: _title,
                   label: 'Course title',
                   icon: Icons.title,
@@ -378,12 +477,12 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
             if (_saving)
               UploadProgressCard(progress: _progress)
             else
-              PrimaryButton(
-                label: 'Create course',
-                isLoading: false,
-                // Null (not an empty callback) so the button actually greys
+              CourseSubmitButtons(
+                // Null (not an empty callback) so the buttons actually grey
                 // out while the duration probe runs.
-                onPressed: _readingVideo ? null : _create,
+                onSaveDraft:
+                    _readingVideo ? null : () => _submit(asDraft: true),
+                onUpload: _readingVideo ? null : () => _submit(asDraft: false),
               ),
           ],
         ),
@@ -618,6 +717,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   }
 
   Widget _field({
+    Key? fieldKey,
     required TextEditingController controller,
     required String label,
     required IconData icon,
@@ -628,6 +728,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     String? Function(String?)? validator,
   }) {
     return TextFormField(
+      key: fieldKey,
       controller: controller,
       maxLines: maxLines,
       keyboardType: keyboardType,

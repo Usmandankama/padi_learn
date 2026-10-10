@@ -1,3 +1,5 @@
+import 'package:supabase_flutter/supabase_flutter.dart' show SupabaseClient;
+
 import 'package:padi_learn/services/supabase.dart';
 
 /// One lesson within a course.
@@ -81,8 +83,11 @@ class LessonService {
       'id, course_id, title, position, video_url, duration_seconds, is_preview';
 
   /// The course's lessons in running order.
-  static Future<List<Lesson>> forCourse(String courseId) async {
-    final rows = await supabase
+  static Future<List<Lesson>> forCourse(
+    String courseId, {
+    SupabaseClient? client,
+  }) async {
+    final rows = await (client ?? supabase)
         .from('lessons')
         .select(_columns)
         .eq('course_id', courseId)
@@ -100,13 +105,14 @@ class LessonService {
     required String videoPath,
     int? durationSeconds,
     bool isPreview = false,
+    SupabaseClient? client,
   }) async {
-    final existing = await forCourse(courseId);
+    final existing = await forCourse(courseId, client: client);
     final nextPosition = existing.isEmpty
         ? 1
         : existing.map((l) => l.position).reduce((a, b) => a > b ? a : b) + 1;
 
-    final row = await supabase
+    final row = await (client ?? supabase)
         .from('lessons')
         .insert({
           'course_id': courseId,

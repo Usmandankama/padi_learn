@@ -133,10 +133,17 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 child: Obx(
                   () => Text(
                     // Counts archived courses too, so "published" would be
-                    // inaccurate here.
-                    controller.totalCoursesUploaded.value == 1
-                        ? '1 course'
-                        : '${controller.totalCoursesUploaded.value} courses',
+                    // inaccurate here. Drafts are named apart: they are not
+                    // courses anyone else can see yet.
+                    [
+                      controller.totalCoursesUploaded.value == 1
+                          ? '1 course'
+                          : '${controller.totalCoursesUploaded.value} courses',
+                      if (controller.draftCount.value == 1)
+                        '1 draft'
+                      else if (controller.draftCount.value > 1)
+                        '${controller.draftCount.value} drafts',
+                    ].join(' · '),
                     style: GoogleFonts.poppins(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,

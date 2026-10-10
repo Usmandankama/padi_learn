@@ -47,10 +47,17 @@ Deno.serve(async (req) => {
     // Authoritative price comes from the DB, never the client.
     const { data: course, error: courseErr } = await admin
       .from("courses")
-      .select("id, title, price, user_id, archived_at, removed_at")
+      .select("id, title, price, user_id, archived_at, removed_at, published_at")
       .eq("id", courseId)
       .maybeSingle();
     if (courseErr || !course) return json({ error: "Course not found" }, 404);
+
+    // A draft is not for sale to anyone, its owner included: to a buyer it
+    // does not exist. Needs the column from 20261010000001_course_drafts.sql,
+    // so deploy this after that has run.
+    if (course.published_at === null) {
+      return json({ error: "Course not found" }, 404);
+    }
 
     // The service role sees courses RLS hides, so an archived or taken-down
     // course would still sell to anyone holding its id. Refuse both before

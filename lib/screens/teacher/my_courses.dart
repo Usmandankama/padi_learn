@@ -8,10 +8,11 @@ import 'package:padi_learn/screens/components/primary_button.dart';
 import 'package:padi_learn/screens/teacher/components/teacher_course_card.dart';
 import 'package:padi_learn/screens/teacher/course_detail_screen.dart';
 import 'package:padi_learn/screens/teacher/create_course_screen.dart';
+import 'package:padi_learn/services/course_service.dart';
 import 'package:padi_learn/utils/colors.dart';
 
 /// Which slice of the teacher's catalogue is on screen.
-enum _CourseFilter { all, live, archived }
+enum _CourseFilter { all, live, drafts, archived }
 
 extension on _CourseFilter {
   String get label {
@@ -20,6 +21,8 @@ extension on _CourseFilter {
         return 'All';
       case _CourseFilter.live:
         return 'Live';
+      case _CourseFilter.drafts:
+        return 'Drafts';
       case _CourseFilter.archived:
         return 'Archived';
     }
@@ -65,12 +68,17 @@ class _TeacherMyCoursesPageState extends State<TeacherMyCoursesPage> {
       final archived = course['archived_at'] != null;
       // A taken-down course is not live, whatever its archive switch says.
       final removed = course['removed_at'] != null;
+      // Nor is a draft, which has never been uploaded.
+      final draft = isDraftCourse(course);
       switch (_filter) {
         case _CourseFilter.live:
-          if (archived || removed) return false;
+          if (archived || removed || draft) return false;
+          break;
+        case _CourseFilter.drafts:
+          if (!draft) return false;
           break;
         case _CourseFilter.archived:
-          if (!archived) return false;
+          if (!archived || draft) return false;
           break;
         case _CourseFilter.all:
           break;

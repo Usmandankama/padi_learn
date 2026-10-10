@@ -17,6 +17,7 @@ Map<String, dynamic> course(
   String? archivedAt,
   String? removedAt,
   String? removedReason,
+  String? publishedAt = '2026-10-02T09:00:00+00:00',
 }) =>
     {
       'id': id,
@@ -27,6 +28,7 @@ Map<String, dynamic> course(
       'owner_name': owner,
       'enrollments': 2,
       'created_at': '2026-10-02T09:00:00+00:00',
+      'published_at': publishedAt,
       'archived_at': archivedAt,
       'removed_at': removedAt,
       'removed_reason': removedReason,
@@ -79,6 +81,48 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Photoshop Basics'), findsOneWidget);
     expect(find.text('Excel for Small Businesses'), findsNothing);
+  });
+
+  testWidgets('a draft is listed and labelled, and never counted as live',
+      (tester) async {
+    final api = catalogue()
+      ..courseRows.add(
+          course('c4', 'Half-Written Course', owner: 'Chidi', publishedAt: null))
+      // Archived by hand before it was ever uploaded: still a draft.
+      ..courseRows.add(course('c5', 'Shelved Draft',
+          publishedAt: null, archivedAt: '2026-10-04T09:00:00+00:00'));
+    await pumpAdminScreen(tester, CoursesScreen(api: api));
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('All 5'), findsOneWidget);
+    expect(find.text('Live 1'), findsOneWidget);
+    expect(find.text('Drafts 2'), findsOneWidget);
+    expect(find.text('Archived 1'), findsOneWidget);
+    expect(find.text('Taken down 1'), findsOneWidget);
+    expect(find.text('Draft, not uploaded'), findsNWidgets(2));
+
+    await tester.tap(find.text('Drafts 2'));
+    await tester.pumpAndSettle();
+    expect(find.text('Half-Written Course'), findsOneWidget);
+    expect(find.text('Shelved Draft'), findsOneWidget);
+    expect(find.text('Excel for Small Businesses'), findsNothing);
+
+    await tester.tap(find.text('Live 1'));
+    await tester.pumpAndSettle();
+    expect(find.text('Half-Written Course'), findsNothing);
+    expect(find.text('Excel for Small Businesses'), findsOneWidget);
+  });
+
+  testWidgets('a row from before drafts existed still reads as live',
+      (tester) async {
+    final api = FakeAdminApi()
+      ..courseRows = [
+        course('c1', 'Excel for Small Businesses')..remove('published_at'),
+      ];
+    await pumpAdminScreen(tester, CoursesScreen(api: api));
+
+    expect(find.text('Live 1'), findsOneWidget);
+    expect(find.text('Drafts 0'), findsOneWidget);
   });
 
   testWidgets('search matches the teacher as well as the title',

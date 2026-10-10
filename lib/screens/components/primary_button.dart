@@ -72,6 +72,70 @@ class PrimaryButton extends StatelessWidget {
   }
 }
 
+/// The outlined partner to [PrimaryButton], for the second choice beside it:
+/// same height and corners, so the two sit level in a row.
+class SecondaryButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onPressed;
+  final double? height;
+  final IconData? icon;
+
+  const SecondaryButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.height,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: height ?? 54.h,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primaryColor,
+          disabledForegroundColor:
+              AppColors.primaryColor.withValues(alpha: 0.5),
+          side: BorderSide(
+            color: onPressed == null
+                ? AppColors.primaryColor.withValues(alpha: 0.4)
+                : AppColors.primaryColor,
+            width: 1.4,
+          ),
+          padding: EdgeInsets.symmetric(horizontal: 10.w),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14.r),
+          ),
+        ),
+        // Scales down rather than wrapping when two buttons share a narrow
+        // phone's width.
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 18.sp),
+                SizedBox(width: 8.w),
+              ],
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Branded, centered page-level loading indicator.
 class AppLoader extends StatelessWidget {
   final double size;

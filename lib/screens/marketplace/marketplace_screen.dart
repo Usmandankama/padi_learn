@@ -129,9 +129,11 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       list.sort((a, b) => ((b['enrollments'] as num?) ?? 0)
           .compareTo((a['enrollments'] as num?) ?? 0));
     } else {
-      list.sort((a, b) => (b['created_at'] ?? '')
-          .toString()
-          .compareTo((a['created_at'] ?? '').toString()));
+      // Newest to go live first. A course finished as a draft went live when
+      // it was uploaded, which can be weeks after it was created.
+      String liveSince(Map<String, dynamic> c) =>
+          (c['published_at'] ?? c['created_at'] ?? '').toString();
+      list.sort((a, b) => liveSince(b).compareTo(liveSince(a)));
     }
     return list;
   }

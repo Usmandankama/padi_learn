@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:padi_learn/services/course_service.dart';
 import 'package:padi_learn/utils/colors.dart';
 import 'package:padi_learn/utils/money.dart';
 
@@ -13,6 +14,9 @@ import '../widgets/panel.dart';
 ///
 /// "Archived" is the teacher's own switch and "taken down" is PadiLearn's;
 /// the screen keeps them apart because only the second is an admin's to undo.
+///
+/// A draft is listed too, labelled: a course its teacher has saved and not
+/// uploaded, which nobody else has ever seen. It is never counted as live.
 class CoursesScreen extends StatefulWidget {
   const CoursesScreen({super.key, this.api = const AdminApi()});
 
@@ -22,13 +26,18 @@ class CoursesScreen extends StatefulWidget {
   State<CoursesScreen> createState() => _CoursesScreenState();
 }
 
-enum _Filter { all, live, archived, takenDown }
+enum _Filter { all, live, drafts, archived, takenDown }
 
+/// One state per course, in this order of precedence, the same one
+/// `admin_overview()` counts by: a draft was never live whatever its archive
+/// switch says, and a takedown outranks both.
 String _state(Map<String, dynamic> c) => c['removed_at'] != null
     ? 'takenDown'
-    : c['archived_at'] != null
-        ? 'archived'
-        : 'live';
+    : isDraftCourse(c)
+        ? 'draft'
+        : c['archived_at'] != null
+            ? 'archived'
+            : 'live';
 
 class _CoursesScreenState extends State<CoursesScreen> {
   _Filter _filter = _Filter.all;
@@ -81,6 +90,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
     final byFilter = switch (_filter) {
       _Filter.all => true,
       _Filter.live => state == 'live',
+      _Filter.drafts => state == 'draft',
       _Filter.archived => state == 'archived',
       _Filter.takenDown => state == 'takenDown',
     };
@@ -122,6 +132,9 @@ class _CoursesScreenState extends State<CoursesScreen> {
                       ButtonSegment(
                           value: _Filter.live,
                           label: Text('Live ${count('live')}')),
+                      ButtonSegment(
+                          value: _Filter.drafts,
+                          label: Text('Drafts ${count('draft')}')),
                       ButtonSegment(
                           value: _Filter.archived,
                           label: Text('Archived ${count('archived')}')),
@@ -206,6 +219,7 @@ class _CourseRow extends StatelessWidget {
     final state = _state(course);
     final (stateLabel, stateColor) = switch (state) {
       'takenDown' => ('Taken down', error),
+      'draft' => ('Draft, not uploaded', AppColors.draftOf(context)),
       'archived' => ('Archived by teacher', palette.inkSoft),
       _ => ('Live', AppColors.primaryColor),
     };

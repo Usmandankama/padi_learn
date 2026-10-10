@@ -73,12 +73,20 @@ Deno.serve(async (req) => {
     // service role bypasses RLS, so this check is the only thing enforcing it.
     const { data: course } = await admin
       .from("courses")
-      .select("id, user_id, removed_at")
+      .select("id, user_id, removed_at, published_at")
       .eq("id", lesson.course_id)
       .maybeSingle();
     if (!course) return json({ error: "Course not found" }, 404);
 
     const isOwner = course.user_id === user.id;
+
+    // A draft has never been uploaded. To anyone but its owner it does not
+    // exist, its preview lessons included: a preview is an advert, and there
+    // is nothing to advertise yet. Needs the column from
+    // 20261010000001_course_drafts.sql, so deploy this after that has run.
+    if (course.published_at === null && !isOwner) {
+      return json({ error: "Course not found" }, 404);
+    }
 
     if (course.removed_at && !isOwner) {
       // Shown verbatim by the player. Students who paid are owed a refund,

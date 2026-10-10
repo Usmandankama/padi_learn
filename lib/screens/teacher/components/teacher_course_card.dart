@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:padi_learn/screens/components/course_thumbnail.dart';
+import 'package:padi_learn/services/course_service.dart';
 import 'package:padi_learn/utils/colors.dart';
 import 'package:padi_learn/utils/money.dart';
 
@@ -34,6 +35,7 @@ class TeacherCourseCard extends StatelessWidget {
     final ratingCount = (course['rating_count'] as num?)?.toInt() ?? 0;
     final archived = course['archived_at'] != null;
     final removed = course['removed_at'] != null;
+    final draft = isDraftCourse(course);
 
     return GestureDetector(
       onTap: onTap,
@@ -73,15 +75,23 @@ class TeacherCourseCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (archived || removed) ...[
+                      if (archived || removed || draft) ...[
                         SizedBox(width: 6.w),
-                        CourseStatusChip(archived: archived, removed: removed),
+                        CourseStatusChip(
+                          archived: archived,
+                          removed: removed,
+                          draft: draft,
+                        ),
                       ],
                     ],
                   ),
                   SizedBox(height: 6.h),
                   Text(
-                    formatPriceLabel(price),
+                    // Only a draft can be without a price; "Free" would be a
+                    // decision its teacher has not made.
+                    course['price'] == null && draft
+                        ? 'No price yet'
+                        : formatPriceLabel(price),
                     style: GoogleFonts.poppins(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w700,
@@ -89,19 +99,29 @@ class TeacherCourseCard extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: 8.h),
-                  Row(
-                    children: [
-                      _stat(Icons.people_outline, '$students'),
-                      SizedBox(width: 14.w),
-                      _stat(
-                        Icons.star_rounded,
-                        ratingCount == 0
-                            ? '—'
-                            : '${ratingAvg.toStringAsFixed(1)} ($ratingCount)',
-                        color: const Color(0xFFFFC107),
+                  // A draft has no students or ratings to count yet.
+                  if (draft)
+                    Text(
+                      'Not uploaded yet. Only you can see it.',
+                      style: GoogleFonts.poppins(
+                        fontSize: 11.5.sp,
+                        color: AppColors.palette.inkSoft,
                       ),
-                    ],
-                  ),
+                    )
+                  else
+                    Row(
+                      children: [
+                        _stat(Icons.people_outline, '$students'),
+                        SizedBox(width: 14.w),
+                        _stat(
+                          Icons.star_rounded,
+                          ratingCount == 0
+                              ? '—'
+                              : '${ratingAvg.toStringAsFixed(1)} ($ratingCount)',
+                          color: const Color(0xFFFFC107),
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),
@@ -144,16 +164,20 @@ class TeacherCourseCard extends StatelessWidget {
 }
 
 /// Small pill showing whether a course is live or archived.
-/// Live, archived (the teacher's own switch) or taken down (PadiLearn's, see
-/// docs/ADMIN_PANEL.md item 2). Taken down wins: it is the one the teacher
-/// cannot undo, so it is the one they most need to see.
+/// Live, a draft (never uploaded), archived (the teacher's own switch) or
+/// taken down (PadiLearn's, see docs/ADMIN_PANEL.md item 2). Taken down wins:
+/// it is the one the teacher cannot undo, so it is the one they most need to
+/// see. Draft comes next, because a draft has never been live whatever its
+/// archive switch says.
 class CourseStatusChip extends StatelessWidget {
   final bool archived;
   final bool removed;
+  final bool draft;
   const CourseStatusChip({
     super.key,
     required this.archived,
     this.removed = false,
+    this.draft = false,
   });
 
   @override
@@ -163,9 +187,11 @@ class CourseStatusChip extends StatelessWidget {
     AppColors.watch(context);
     final color = removed
         ? Theme.of(context).colorScheme.error
-        : archived
-            ? AppColors.palette.inkSoft
-            : AppColors.primaryColor;
+        : draft
+            ? AppColors.draftOf(context)
+            : archived
+                ? AppColors.palette.inkSoft
+                : AppColors.primaryColor;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
       decoration: BoxDecoration(
@@ -175,9 +201,11 @@ class CourseStatusChip extends StatelessWidget {
       child: Text(
         removed
             ? 'Taken down'
-            : archived
-                ? 'Archived'
-                : 'Live',
+            : draft
+                ? 'Draft'
+                : archived
+                    ? 'Archived'
+                    : 'Live',
         style: GoogleFonts.poppins(
           fontSize: 9.5.sp,
           fontWeight: FontWeight.w700,
