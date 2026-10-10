@@ -75,11 +75,11 @@ Released in this order:
 |---|---|---|
 | 1 | ~~Run `supabase/migrations/20261010000001_course_drafts.sql` in the SQL editor.~~ Run by Usman, 10 October (so it is not in Supabase's migration history); checked afterwards with reads: 16 courses, none a draft, each dated from when it was created; the policy, grants, triggers and functions are in place. The apps in use today keep working: a course they create is still live at once. | Usman |
 | 2 | ~~Deploy `get-course-video` and `initialize-payment`.~~ Done 10 October: `get-course-video` version 4, `initialize-payment` version 5, each its live source plus the draft check, JWT verification on as before. Both answer a preflight. Neither has been called by a signed-in user since. | Claude |
-| 3 | ~~Merge and push to `main`, and build a new APK.~~ Done 10 October: the web app and the admin app deployed from `a3eb85c`, and the live `main.dart.js` and `/teach` carry the change. APK 1.0.7 is at dl.padilearn.com. | Claude |
+| 3 | ~~Merge and push to `main`, and build a new APK.~~ Done 10 October: the web app and the admin app deployed from `a3eb85c`, and the live `main.dart.js` and `/teach` carry the change. APK 1.0.7 went up, and was replaced within the hour by 1.0.8: "Save to drafts" did nothing once the title field had scrolled out of view, in the browser and in 1.0.7 alike (`DEVLOG.md`, 10 October). The fix is on the web from `e5d609d` and in APK 1.0.8 at dl.padilearn.com. | Claude |
 | 4 | Try it for real: save a draft with only a title, check a second account cannot see it, finish it, upload it, and try a fourth draft. | Usman |
 
 An APK from before 1.0.7 shows a draft its teacher made elsewhere without a
-badge, and cannot upload it. Nothing tells an installed app to update, so a
+badge, and cannot upload it; 1.0.7 itself has the bug above. Nothing tells an installed app to update, so a
 tutor on an older APK has to be told.
 
 ---

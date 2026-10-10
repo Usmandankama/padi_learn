@@ -50,6 +50,13 @@ the released code the tap produced nothing, which is the report reproduced;
 with the change it carries on to the save. `flutter test`: 154 pass.
 `flutter analyze`: 61 infos, as before.
 
+**Released the same afternoon.** The web app deployed from `e5d609d`, and
+the live `main.dart.js` carries the new title message. APK 1.0.8 (build
+9): 44,997,113 bytes, MD5 39e230a2...32e9, matching R2's ETag on both
+objects; signed by Groundwork Tech Ltd, checkout on, built with
+`sentry_dsn.json`. It is the same size as 1.0.7 to the byte and a
+different file.
+
 **Not checked:** in a browser or on a phone against the live project.
 
 **What went wrong in the checking.** The drafts entry below says the
@@ -58,7 +65,8 @@ parts". This is what that missed: the buttons were tested, the screen that
 holds them was not. The screen can be pumped in a test after all, with
 Supabase initialised against an address nothing answers at.
 
-**Outstanding:** APK 1.0.7 carries the bug. It needs a 1.0.8.
+**Outstanding:** anyone who installed APK 1.0.7 in the hour it was the
+download has the bug, and nothing tells an installed app to update.
 
 **Touches:** `create_course_screen.dart`, `editCourse_screen.dart`,
 `test/create_course_screen_test.dart` (new).

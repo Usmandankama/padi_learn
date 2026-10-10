@@ -58,7 +58,7 @@ export const site = {
    */
   android: {
     apkUrl: 'https://dl.padilearn.com/padilearn-latest.apk',
-    apkVersion: '1.0.7',
+    apkVersion: '1.0.8',
     apkSize: '45.0 MB',
     apkUpdated: '10 October 2026',
     /** Lowest Android this build installs on — `minSdkVersion` 24. */
