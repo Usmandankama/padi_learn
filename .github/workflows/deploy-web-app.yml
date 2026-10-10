@@ -79,10 +79,23 @@ jobs:
       # Real errors stop a deploy; the repo's existing lint infos do not.
       - run: flutter analyze --no-fatal-infos
 
-      # No --dart-define needed: kPaidCheckoutEnabled defaults to on for web.
-      # `web/_redirects` is copied into the bundle here, which is what supplies
-      # the SPA fallback that Paystack's /payment-callback return depends on.
-      - run: flutter build web --release
+      # No --dart-define needed for checkout: kPaidCheckoutEnabled defaults to
+      # on for web. `web/_redirects` is copied into the bundle here, which is
+      # what supplies the SPA fallback that Paystack's /payment-callback return
+      # depends on.
+      #
+      # SENTRY_DSN switches error reporting on (lib/main.dart). It ships in the
+      # bundle, so it is a secret only to keep it out of a public repo. Without
+      # it the build still succeeds and reports nothing, which is worth a
+      # warning rather than a failed deploy.
+      - name: Build
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+        run: |
+          if [ -z "$SENTRY_DSN" ]; then
+            echo "::warning::Repository secret SENTRY_DSN is not set, so this build reports no errors."
+          fi
+          flutter build web --release --dart-define=SENTRY_DSN="$SENTRY_DSN"
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3

@@ -108,8 +108,8 @@ pages would remove the only compliant discovery channel there is.
   Marketing plus `/privacy`, `/terms`, `/delete-account`, `/email-confirmed`,
   `/payment-callback`.
 - **Email** — `hello@padilearn.com`. Inbound on Hostinger, outbound via Resend.
-- **Errors** — Sentry is wired into `main.dart` but dark until a DSN is passed
-  at build time.
+- **Errors** — Sentry, in `main.dart`, on only in builds given a DSN: the web
+  deploy since 10 October 2026, and APKs after 1.0.5.
 
 **Entitlement is one row.** An `enrollments` row is what grants access, and
 `get-course-video` checks for it before signing a playback URL. Payment

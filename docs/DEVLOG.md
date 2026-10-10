@@ -12,6 +12,53 @@ Each entry: what changed, why, what it touches, and anything still outstanding.
 
 ---
 
+## 2026-10-10 — Sentry is switched on
+
+Usman created the Sentry project (EU region) and supplied its DSN. The
+code has been waiting for one since 14 September: `main.dart` starts Sentry
+only when the build defines `SENTRY_DSN`, so until now no build reported
+anything.
+
+**Where the DSN lives.** Not in git. A DSN ships inside every build that
+uses it, so it is not a secret in the usual sense, but this repo is public
+and there is no reason to hand it out.
+
+- **The web deploy** reads the `SENTRY_DSN` repository secret. If the
+  secret is ever missing the build warns and deploys without reporting,
+  rather than failing: a deploy is worth more than its error reports.
+- **Builds made by hand** read `sentry_dsn.json` in the repo root, which is
+  git-ignored, through `--dart-define-from-file=sentry_dsn.json`. Here the
+  choice goes the other way: a missing file stops the build, so an APK
+  cannot go out silent by accident. `sentry_dsn.example.json` shows the
+  shape, and the documented build commands now carry the flag.
+
+**Checked:** a local release web build given the file loaded Sentry's
+browser SDK, pointed at the right project with `environment: production`
+and tracing off, and a test message was accepted by the ingest endpoint
+(HTTP 200). It is in the project as "Wiring check from a local build on
+10 October (safe to delete)". A build pointed at a file that does not
+exist stops with "Did not find the file".
+
+One thing that cost ten minutes: the first reloads of the local build
+showed no Sentry at all, because the service worker was still serving the
+previous build. A returning visitor sees the same after any deploy: the
+visit that finds the new build installs it, and the one after runs it.
+
+**Outstanding:**
+
+- Android reports nothing until a new APK: 1.0.5 and earlier were built
+  without the DSN.
+- The admin app has no Sentry in it.
+- Name Sentry's crash logs in the Play Data safety form when that form is
+  filled in. The privacy policy already names Sentry.
+
+**Touches:** `.github/workflows/deploy-web-app.yml`, `.gitignore`,
+`sentry_dsn.example.json`, `lib/main.dart` (a comment), `LAUNCH_WEB.md`
+("Error reporting"), `LAUNCH_ANDROID.md`, `STATUS.md`, `PRODUCT_OVERVIEW.md`.
+Outside the repo: the `SENTRY_DSN` secret on GitHub.
+
+---
+
 ## 2026-10-10 — Uploading works in a browser
 
 **Reported:** "the web upload does not work". It is the gap the 9 October

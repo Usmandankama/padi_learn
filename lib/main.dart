@@ -57,8 +57,9 @@ Future<void> main() async {
   // Crash and error reporting. Play's Android vitals only sees native crashes
   // and ANRs; a Dart exception doesn't crash the app, so without this nobody
   // hears about testers' bugs. The DSN comes from the build, not the source:
-  //   flutter build appbundle --dart-define=SENTRY_DSN=https://...
-  // A build without one (every local `flutter run`) reports nothing.
+  //   flutter build apk --release --dart-define-from-file=sentry_dsn.json
+  // (git-ignored; CI passes the SENTRY_DSN secret instead). A build without
+  // one (every local `flutter run`) reports nothing.
   const sentryDsn = String.fromEnvironment('SENTRY_DSN');
   if (sentryDsn.isEmpty) {
     runApp(const MyApp());

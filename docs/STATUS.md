@@ -192,7 +192,10 @@ On the website, with the numbers kept in `website/src/site.ts`:
 ## Still open from the checklists
 
 - Course reporting from the player: added 8 October; test it on a phone.
-- Sentry: wired in, but no DSN in either CI build, so crashes go unseen.
+- Sentry: project created 10 October. The web app reports from the deploy
+  that carries the `SENTRY_DSN` secret. Android does not until a new APK:
+  1.0.5 and earlier were built without the DSN. The admin app does not
+  report at all.
 - Database backups: daily on Pro. `tool/region_move/dump.sh` is still worth running before a risky change, and it is the only copy that survives deleting the project.
 - Supabase region is Mumbai until `REGION_MOVE.md` is done.
 - Google sign-in: no OAuth clients yet. Email and password work.

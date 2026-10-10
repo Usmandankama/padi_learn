@@ -47,6 +47,9 @@ app.*.map.json
 lib/firebase_options.dart
 lib/config/secrets.dart
 lib/config/supabase_config.dart
+# The Sentry DSN for hand-made release builds (--dart-define-from-file).
+# sentry_dsn.example.json shows the shape; CI reads the SENTRY_DSN secret.
+/sentry_dsn.json
 firebase.json
 android/app/google-services.json
 

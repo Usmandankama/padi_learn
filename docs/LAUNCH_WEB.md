@@ -9,10 +9,13 @@ Android and iOS.
 Build:
 
 ```bash
-flutter build web --release
+flutter build web --release --dart-define-from-file=sentry_dsn.json
 ```
 
 Output is `build/web/`. Deploy the contents of that folder.
+
+`sentry_dsn.json` is what switches error reporting on; see "Error reporting"
+below. A plain `flutter build web --release` still works and reports nothing.
 
 ---
 
@@ -32,7 +35,7 @@ The Pages project is **`padilearn-app`** (Direct Upload, separate from the
 Git-connected `padi-learn` project that builds the marketing site).
 
 ```bash
-flutter build web --release
+flutter build web --release --dart-define-from-file=sentry_dsn.json
 npx wrangler@3 pages deploy build/web --project-name padilearn-app --branch main
 ```
 
@@ -55,9 +58,10 @@ re-downloaded. The command below remains the fallback, and is what
 Two things the workflow needs that a local build does not:
 
 - **Repository secrets.** `CLOUDFLARE_API_TOKEN` (scoped to Pages : Edit),
-  `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`, plus `GOOGLE_WEB_CLIENT_ID`
-  and `GOOGLE_IOS_CLIENT_ID` once those exist. The account id is in the
-  workflow in clear, because it is not a secret.
+  `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`, `SENTRY_DSN` (since 10
+  October; without it the build succeeds, warns, and reports no errors), plus
+  `GOOGLE_WEB_CLIENT_ID` and `GOOGLE_IOS_CLIENT_ID` once those exist. The
+  account id is in the workflow in clear, because it is not a secret.
 - **`supabase_config.dart` regenerated at build time.** It is git-ignored, so a
   fresh clone cannot compile; the workflow writes it from those secrets. If a
   field is added to that class, the workflow's heredoc has to learn about it or
@@ -69,6 +73,24 @@ Two things the workflow needs that a local build does not:
 A freshly created project can answer 522 for a minute or so while it
 propagates; the assets return 200 before the HTML routes do. Re-check before
 assuming a bad deploy.
+
+### Error reporting
+
+Sentry is in `lib/main.dart` and stays off unless the build is given a DSN,
+so `flutter run` and debug builds never report. The DSN is kept out of this
+public repo, though it is not a secret in the usual sense: it ships inside
+every build that uses it.
+
+- **CI** reads the `SENTRY_DSN` repository secret.
+- **A build made by hand** (every APK, and a manual web deploy) reads the
+  git-ignored `sentry_dsn.json` in the repo root, through
+  `--dart-define-from-file=sentry_dsn.json`. `sentry_dsn.example.json` shows
+  the shape. The value is in Sentry under Settings → Projects → Client Keys.
+  If the file is missing the build stops, which is the point: a release that
+  cannot report should not go out by accident.
+
+Errors only: no tracing, no IP addresses, and the account id but never a
+name or email. The admin app does not report.
 
 ### Custom domain (one-time, dashboard)
 
@@ -136,7 +158,7 @@ Two objects per release:
 The bucket and the custom domain already exist; this is the per-release part.
 
 ```bash
-flutter build apk --release --target-platform android-arm,android-arm64 --dart-define=PAID_CHECKOUT=true
+flutter build apk --release --target-platform android-arm,android-arm64 --dart-define=PAID_CHECKOUT=true --dart-define-from-file=sentry_dsn.json
 APK=build/app/outputs/flutter-apk/app-release.apk
 CT=application/vnd.android.package-archive
 
@@ -152,6 +174,10 @@ first with checkout on. It must never be passed to a build for Google Play.
 Check before uploading: the message must be absent from the build,
 `unzip -p $APK lib/arm64-v8a/libapp.so | grep -a -c "be bought in the app yet"`
 prints 0.
+
+**`--dart-define-from-file=sentry_dsn.json` switches error reporting on**
+("Error reporting" above). 1.0.5 and everything before it went out without
+it, so those installs report nothing.
 
 **`--pipe` is not optional, and it is the part worth remembering.** Passing
 `--file` instead failed from this machine twice in a row, each time after about

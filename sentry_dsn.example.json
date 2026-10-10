@@ -1,0 +1,3 @@
+{
+  "SENTRY_DSN": "https://<key>@<org>.ingest.de.sentry.io/<project>"
+}
