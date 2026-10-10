@@ -191,6 +191,15 @@ On the website, with the numbers kept in `website/src/site.ts`:
 
 ## Still open from the checklists
 
+- **Free enrolment is refused on the live project until one migration is
+  run** (found 10 October). A student who taps Enrol on a free course gets
+  a database error, because two row-level security policies read each
+  other. Paid enrolment works. The fix is written and checked on a local
+  copy of the live database:
+  `supabase/migrations/20261010000002_free_enrolment_policy_recursion.sql`.
+  Usman runs it in the SQL editor; nothing needs deploying. Then enrol in a
+  free course from a student account to see it for real. `DEVLOG.md`,
+  10 October.
 - Course reporting from the player: added 8 October; test it on a phone.
 - Sentry: on since 10 October for the web app and for Android from APK
   1.0.6. Installs of 1.0.5 and earlier report nothing until they update.
