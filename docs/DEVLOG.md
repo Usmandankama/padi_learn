@@ -117,11 +117,14 @@ Safari on an iPhone, and the refactored phone path on an actual phone.
 
 **Outstanding:**
 
-- Push to `main` deploys the web app. No new APK is needed: nothing a
-  phone does has changed.
-- After the deploy, upload one lesson on the live site, and once from an
-  iPhone. Then change `/teach`, which still says lessons are uploaded from
-  the Android app (step 1 and the "iPhone or a computer" question).
+- ~~Push to `main` deploys the web app.~~ Deployed the same morning, and
+  Usman confirmed an upload on the live site. No new APK was needed for
+  this: nothing a phone does has changed.
+- ~~Change `/teach`, which still says lessons are uploaded from the Android
+  app.~~ Done the same day: step 1, the "iPhone or a computer" question and
+  both sets of buttons now offer the browser first.
+- Still to try: an upload from Safari on an iPhone. `/teach` now says it
+  works.
 - A computer offers files a phone gallery never would (`.mkv`, `.avi`,
   HEVC `.mov`). They upload, but a file the teacher's browser cannot play
   gets no duration, and students' browsers may not play it either. That

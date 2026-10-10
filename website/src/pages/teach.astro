@@ -21,7 +21,7 @@ const examples = [
 const steps = [
   {
     title: 'Sign up as a teacher',
-    body: 'Install the PadiLearn Android app from padilearn.com, create an account and choose Teacher.',
+    body: 'Open PadiLearn in your browser, or install the Android app from padilearn.com. Create an account and choose Teacher.',
   },
   {
     title: 'Add your bank account',
@@ -73,7 +73,7 @@ const faqs = [
   },
   {
     q: 'Can I upload from my iPhone or a computer?',
-    a: 'Not yet. For now, lessons are uploaded from the PadiLearn Android app. Students can watch on any phone or in any browser.',
+    a: 'Yes. Open app.padilearn.com in your browser, sign in as a teacher and upload from there, with nothing to install. The Android app does the same.',
   },
   {
     q: 'What can’t I teach?',
@@ -97,7 +97,8 @@ const faqs = [
         straight into your bank account.
       </p>
       <div class="links">
-        <a class="button" href={site.android.apkUrl}>Get the Android app</a>
+        <a class="button" href={site.appUrl}>Start in your browser</a>
+        <a class="button ghost" href={site.android.apkUrl}>Get the Android app</a>
         <a class="more" href="#how">See how it works</a>
       </div>
     </div>
@@ -239,13 +240,14 @@ const faqs = [
   <section class="alt">
     <div class="container center">
       <h2>Start your first course today.</h2>
-      <p class="sub">Install the app, sign up as a teacher, and upload your first lesson.</p>
+      <p class="sub">Sign up as a teacher, in your browser or in the Android app, and upload your first lesson.</p>
       <div class="links">
-        <a class="button" href={site.android.apkUrl}>Get the Android app</a>
+        <a class="button" href={site.appUrl}>Start in your browser</a>
+        <a class="button ghost" href={site.android.apkUrl}>Get the Android app</a>
         <a class="more" href={mailto('I want to teach on PadiLearn')}>Talk to us first</a>
       </div>
       <p class="note">
-        Android {site.android.minAndroid} or later · {site.android.apkSize}. Questions? Email
+        The Android app needs Android {site.android.minAndroid} or later · {site.android.apkSize}. Questions? Email
         {' '}<a href={mailto('Teaching on PadiLearn')}>{site.supportEmail}</a>.
       </p>
     </div>
@@ -289,6 +291,16 @@ const faqs = [
     gap: 1rem 2rem;
     margin-top: 2rem;
     font-size: 1.0625rem;
+  }
+
+  .ghost {
+    background: transparent;
+    color: var(--green-text);
+    box-shadow: inset 0 0 0 1px var(--green);
+  }
+
+  .ghost:hover {
+    background: color-mix(in srgb, var(--green) 10%, transparent);
   }
 
   .note {

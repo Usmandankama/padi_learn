@@ -54,11 +54,11 @@ share 14 short clips of about 18 seconds each.
    pays their share straight into it; how soon depends on what Paystack
    agrees (step 3 below). Until then: a sale clears after 7 days, teachers
    ask for payouts in the app, and transfers are sent by hand.
-4. **Deploy the browser upload fix (10 October) and try it.** Until it is
-   live, a tutor on app.padilearn.com cannot create a course, add a lesson
-   or change a cover or profile photo; only the Android app can. After the
-   deploy, upload one lesson on the live site and once from an iPhone, then
-   change `/teach`, which still tells tutors to install the Android app.
+4. **Tutors can publish from a browser** since 10 October: creating a
+   course, adding a lesson, changing a cover or profile photo. Before that
+   only the Android app could. Usman confirmed an upload on the live site,
+   and `/teach` now offers the browser first. Still to try: Safari on an
+   iPhone, which `/teach` says works.
 
 ---
 
